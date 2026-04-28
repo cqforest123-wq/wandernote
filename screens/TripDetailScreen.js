@@ -1,0 +1,284 @@
+import React, { useState } from 'react';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+
+export default function TripDetailScreen({ route, navigation, trips, setTrips }) {
+  const { tripId } = route.params;
+  const trip = trips.find(t => t.id === tripId);
+
+  const [showAddDay, setShowAddDay] = useState(false);
+  const [dayNote, setDayNote] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  // 编辑旅程名
+  const [showEditTrip, setShowEditTrip] = useState(false);
+  const [editCity, setEditCity] = useState('');
+
+  if (!trip) return null;
+
+  const today = new Date();
+  today.setHours(23,59,59,999);
+
+  const dateStr = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth()+1).padStart(2,'0')}.${String(selectedDate.getDate()).padStart(2,'0')}`;
+  const weekDay = WEEKDAYS[selectedDate.getDay()];
+  const existsAlready = trip.days.find(d => d.date === dateStr);
+
+  const openAddDay = () => {
+    setSelectedDate(new Date());
+    setDayNote('');
+    setShowAddDay(true);
+  };
+
+  const addDay = () => {
+    if (selectedDate > today) { Alert.alert('提示','不能记录未来的日期'); return; }
+    if (existsAlready) { setShowAddDay(false); navigation.navigate('DayDetail',{tripId,dayDate:dateStr}); return; }
+    const pad = n=>String(n).padStart(2,'0');
+    const now = new Date();
+    const newDay = {
+      date: dateStr, weekDay,
+      memos: dayNote.trim()?[{id:Date.now(),text:dayNote.trim(),tag:'感受',time:`${pad(now.getHours())}:${pad(now.getMinutes())}`}]:[],
+      photos:[], videos:[],
+    };
+    setTrips(trips.map(t=>t.id===tripId?{...t,days:[...t.days,newDay].sort((a,b)=>a.date.localeCompare(b.date))}:t));
+    setDayNote(''); setShowAddDay(false);
+    navigation.navigate('DayDetail',{tripId,dayDate:dateStr});
+  };
+
+  const saveEditTrip = () => {
+    if (!editCity.trim()) return;
+    setTrips(trips.map(t=>t.id===tripId?{...t,city:editCity.trim()}:t));
+    setShowEditTrip(false);
+  };
+
+  const deleteTrip = () => {
+    Alert.alert('删除旅程',`确定删除「${trip.city}」的全部记录？此操作不可恢复。`,[
+      {text:'取消',style:'cancel'},
+      {text:'删除',style:'destructive',onPress:()=>{ setTrips(trips.filter(t=>t.id!==tripId)); navigation.goBack(); }},
+    ]);
+  };
+
+  const deleteDay = (dayDate) => {
+    Alert.alert('删除这天',`确定删除 ${dayDate} 的全部记录？`,[
+      {text:'取消',style:'cancel'},
+      {text:'删除',style:'destructive',onPress:()=>setTrips(trips.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
+    ]);
+  };
+
+  return (
+    <SafeAreaView style={s.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
+      <ScrollView contentContainerStyle={s.scroll}>
+        <View style={s.topRow}>
+          <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← 返回</Text></TouchableOpacity>
+          <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>删除旅程</Text></TouchableOpacity>
+        </View>
+
+        {/* 旅程标题 — 点击可编辑 */}
+        <TouchableOpacity style={s.tripHeader} onPress={()=>{setEditCity(trip.city);setShowEditTrip(true);}}>
+          <Text style={s.tripEmoji}>{trip.emoji}</Text>
+          <View style={{flex:1}}>
+            <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+              <Text style={s.tripCity}>{trip.city}</Text>
+              <Text style={s.editHint}>✏️</Text>
+            </View>
+            <Text style={s.tripMeta}>{trip.country} · {trip.date}</Text>
+          </View>
+        </TouchableOpacity>
+
+        <View style={s.statsRow}>
+          {[
+            [String(trip.days.length),'天'],
+            [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'备忘'],
+            [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),'照片'],
+          ].map(([n,l])=>(
+            <View key={l} style={s.statBox}>
+              <Text style={s.statNum}>{n}</Text>
+              <Text style={s.statLabel}>{l}</Text>
+            </View>
+          ))}
+        </View>
+
+        <TouchableOpacity style={s.addDayBtn} onPress={openAddDay}>
+          <Text style={s.addDayIcon}>+</Text>
+          <View>
+            <Text style={s.addDayText}>记录今天</Text>
+            <Text style={s.addDayHint}>{`${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`} · {WEEKDAYS[today.getDay()]}</Text>
+          </View>
+        </TouchableOpacity>
+
+        {trip.days.length===0 ? (
+          <View style={s.emptyBox}>
+            <Text style={s.emptyEmoji}>📖</Text>
+            <Text style={s.emptyText}>还没有记录</Text>
+            <Text style={s.emptyHint}>点上方按钮开始记录今天</Text>
+          </View>
+        ) : (
+          <>
+            <Text style={s.sectionTitle}>旅行日志 · {trip.days.length}天</Text>
+            {[...trip.days].reverse().map((day,i)=>{
+              const photos = day.photos||[];
+              return (
+                <TouchableOpacity key={day.date} style={s.dayCard}
+                  onPress={()=>navigation.navigate('DayDetail',{tripId,dayDate:day.date})}
+                  onLongPress={()=>deleteDay(day.date)}>
+                  <View style={s.dayLeft}>
+                    <Text style={s.dayNumLabel}>DAY</Text>
+                    <Text style={s.dayNumBig}>{trip.days.length-i}</Text>
+                    <Text style={s.dayWeekText}>{day.weekDay}</Text>
+                  </View>
+                  <View style={s.dayRight}>
+                    <Text style={s.dayDateText}>{day.date}</Text>
+                    {day.memos.length>0 && <Text style={s.dayPreview} numberOfLines={2}>{day.memos[0].text}</Text>}
+                    {photos.length>0 && (
+                      <View style={s.thumbRow}>
+                        {photos.slice(0,4).map(p=>(
+                          <Image key={String(p.id)} source={{uri:p.uri}} style={s.thumbImg}/>
+                        ))}
+                        {photos.length>4 && <View style={s.thumbMore}><Text style={s.thumbMoreText}>+{photos.length-4}</Text></View>}
+                      </View>
+                    )}
+                    <View style={s.dayStats}>
+                      {day.memos.length>0 && <Text style={s.dayStat}>📝 {day.memos.length}</Text>}
+                      {photos.length>0 && <Text style={s.dayStat}>📸 {photos.length}</Text>}
+                    </View>
+                  </View>
+                  <Text style={s.dayArrow}>→</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </>
+        )}
+      </ScrollView>
+
+      {/* 记录今天弹窗 — 使用iOS原生日期选择器 */}
+      <Modal visible={showAddDay} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
+          <View style={s.sheet}>
+            <View style={s.sheetHeader}>
+              <Text style={s.sheetTitle}>记录这一天</Text>
+              <TouchableOpacity onPress={()=>setShowAddDay(false)}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
+            </View>
+
+            {/* iOS原生日期滚轮 */}
+            <View style={s.pickerContainer}>
+              <DateTimePicker
+                value={selectedDate}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date()}
+                minimumDate={new Date(1990,0,1)}
+                onChange={(_,date)=>{ if(date) setSelectedDate(date); }}
+                locale="zh-CN"
+                style={{height:160}}
+                textColor="#F0EDE8"
+              />
+            </View>
+
+            {/* 日期预览 */}
+            <View style={s.datePreview}>
+              <Text style={s.datePreviewText}>{dateStr}</Text>
+              <Text style={s.datePreviewWeek}>{existsAlready?'✓ 已有记录':weekDay}</Text>
+            </View>
+
+            <Text style={s.inputLabel}>写点什么（可选）</Text>
+            <TextInput
+              style={[s.input,{height:72,textAlignVertical:'top'}]}
+              placeholder="今天去了哪里，看到了什么..."
+              placeholderTextColor="#444"
+              multiline
+              value={dayNote}
+              onChangeText={setDayNote}
+            />
+
+            <TouchableOpacity style={s.confirmBtn} onPress={addDay}>
+              <Text style={s.confirmText}>{existsAlready?'进入这天的记录 →':'开始记录 →'}</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* 编辑旅程名弹窗 */}
+      <Modal visible={showEditTrip} animationType="slide" transparent>
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
+          <View style={s.sheet}>
+            <View style={s.sheetHeader}>
+              <Text style={s.sheetTitle}>修改旅程名称</Text>
+              <TouchableOpacity onPress={()=>setShowEditTrip(false)}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
+            </View>
+            <Text style={s.inputLabel}>目的地名称</Text>
+            <TextInput
+              style={s.input}
+              placeholder="城市或景点名称"
+              placeholderTextColor="#444"
+              value={editCity}
+              onChangeText={setEditCity}
+              autoFocus
+            />
+            <View style={{flexDirection:'row',gap:12}}>
+              <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowEditTrip(false)}><Text style={s.cancelText}>取消</Text></TouchableOpacity>
+              <TouchableOpacity style={s.confirmBtn} onPress={saveEditTrip}><Text style={s.confirmText}>保存</Text></TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+    </SafeAreaView>
+  );
+}
+
+const s = StyleSheet.create({
+  container:{flex:1,backgroundColor:'#0D0D0D'},
+  scroll:{padding:24,paddingBottom:100},
+  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20},
+  backText:{color:'#D4AF37',fontSize:15},
+  deleteText:{color:'#FF6B6B',fontSize:13},
+  tripHeader:{flexDirection:'row',alignItems:'center',gap:16,marginBottom:24},
+  tripEmoji:{fontSize:48},
+  tripCity:{fontSize:28,color:'#F0EDE8',fontWeight:'300'},
+  editHint:{fontSize:16,color:'#444'},
+  tripMeta:{fontSize:14,color:'#555',marginTop:4},
+  statsRow:{flexDirection:'row',gap:12,marginBottom:24},
+  statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
+  statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
+  statLabel:{fontSize:10,color:'#555',marginTop:4},
+  addDayBtn:{backgroundColor:'#D4AF3715',borderWidth:1,borderColor:'#D4AF3740',borderRadius:14,padding:18,flexDirection:'row',alignItems:'center',gap:14,marginBottom:28},
+  addDayIcon:{fontSize:28,color:'#D4AF37'},
+  addDayText:{fontSize:16,color:'#D4AF37'},
+  addDayHint:{fontSize:12,color:'#666',marginTop:3},
+  emptyBox:{alignItems:'center',paddingVertical:48},
+  emptyEmoji:{fontSize:48,marginBottom:12},
+  emptyText:{fontSize:16,color:'#555'},
+  emptyHint:{fontSize:13,color:'#333',marginTop:6},
+  sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:14},
+  dayCard:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'flex-start',gap:14,borderWidth:1,borderColor:'#242424'},
+  dayLeft:{width:48,alignItems:'center',paddingTop:2},
+  dayNumLabel:{fontSize:9,color:'#D4AF37',letterSpacing:2},
+  dayNumBig:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
+  dayWeekText:{fontSize:10,color:'#444',marginTop:2},
+  dayRight:{flex:1},
+  dayDateText:{fontSize:12,color:'#555',marginBottom:4},
+  dayPreview:{fontSize:13,color:'#888',lineHeight:18,marginBottom:8},
+  thumbRow:{flexDirection:'row',gap:4,marginBottom:8},
+  thumbImg:{width:44,height:44,borderRadius:6,backgroundColor:'#2A2A2A'},
+  thumbMore:{width:44,height:44,borderRadius:6,backgroundColor:'#2A2A2A',alignItems:'center',justifyContent:'center'},
+  thumbMoreText:{color:'#888',fontSize:11},
+  dayStats:{flexDirection:'row',gap:10},
+  dayStat:{fontSize:12,color:'#555'},
+  dayArrow:{color:'#333',fontSize:16,paddingTop:2},
+  overlay:{flex:1,justifyContent:'flex-end',backgroundColor:'#000000BB'},
+  sheet:{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:24,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A'},
+  sheetHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:16},
+  sheetTitle:{fontSize:20,color:'#F0EDE8',fontWeight:'300'},
+  closeBtn:{fontSize:18,color:'#555'},
+  pickerContainer:{backgroundColor:'#1A1A1A',borderRadius:14,marginBottom:16,overflow:'hidden'},
+  datePreview:{flexDirection:'row',justifyContent:'center',gap:12,alignItems:'center',marginBottom:16,backgroundColor:'#D4AF3715',borderRadius:12,padding:12,borderWidth:1,borderColor:'#D4AF3740'},
+  datePreviewText:{fontSize:18,color:'#D4AF37',fontWeight:'300'},
+  datePreviewWeek:{fontSize:13,color:'#888'},
+  inputLabel:{fontSize:11,color:'#555',letterSpacing:2,textTransform:'uppercase',marginBottom:10},
+  input:{backgroundColor:'#1A1A1A',borderRadius:12,padding:14,color:'#F0EDE8',fontSize:15,marginBottom:20,borderWidth:1,borderColor:'#2A2A2A'},
+  confirmBtn:{backgroundColor:'#D4AF37',borderRadius:14,padding:16,alignItems:'center'},
+  confirmText:{color:'#0D0D0D',fontSize:15,fontWeight:'700'},
+  cancelBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#1A1A1A',alignItems:'center'},
+  cancelText:{color:'#555',fontSize:15},
+});
