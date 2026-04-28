@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 const CONTINENTS = [
@@ -147,7 +148,7 @@ const CONTINENTS = [
     {name:'多米尼加',cities:['蓬塔卡纳','圣多明各','萨曼纳']},
     {name:'智利',cities:['圣地亚哥','阿塔卡马沙漠','托雷斯德尔潘恩','复活节岛','瓦尔帕莱索']},
   ]},
-  { name:'🌊 大洋洲', countries:[
+  { name:'🦘 大洋洲', countries:[
     {name:'澳大利亚',cities:['悉尼','墨尔本','乌鲁鲁/艾尔斯岩','大堡礁','塔斯马尼亚','黄金海岸','珀斯','布里斯班','阿德莱德','达尔文','蓝山','凯恩斯']},
     {name:'斐济',cities:['维提岛','南迪','玛玛努卡群岛']},
     {name:'基里巴斯',cities:['南塔拉瓦']},
@@ -164,7 +165,7 @@ const CONTINENTS = [
     {name:'法属波利尼西亚/塔希提',cities:['帕皮提','波拉波拉岛','莫雷阿岛']},
     {name:'巴布亚新几内亚',cities:['莫尔斯比港','戈罗卡']},
   ]},
-  { name:'🐧 极地', countries:[
+  { name:'❄️ 极地', countries:[
     {name:'南极洲',cities:['南极点','麦克默多站','半岛地区','南乔治亚岛']},
     {name:'格陵兰(丹麦)',cities:['努克','伊卢利萨特冰湾','迪斯科湾','东格陵兰']},
     {name:'斯瓦尔巴群岛(挪威)',cities:['朗伊尔城','新奥尔松','北极熊观测地']},
@@ -175,65 +176,103 @@ const CONTINENTS = [
 
 const ALL_COUNTRIES = CONTINENTS.flatMap(c => c.countries);
 
-// 丰富的emoji图标，按类别分组
 const EMOJIS = [
-  // 地标建筑
   '🗼','🏯','🏛','🕌','⛩','🗽','🏰','🕍','🛕','🏟',
-  // 自然风景
   '🌋','🏔','🌊','🏝','🏜','🌅','🌄','🌃','🌉','🌌',
   '🌿','🌺','🌸','🍁','🌵','🎋','🌾','🌲','🏕','🗺',
-  // 交通工具
   '✈️','🚂','🚢','⛵','🚁','🛳','🚗','🚌','🏍','🛵',
   '🚴','🚶','🛺','🚠','🚞','🛶','🚤','🛥','🚀','🛸',
-  // 运动户外
   '🧗','🏄','🤿','🎿','⛷','🏂','🪂','🧘','🏇','🚵',
   '🤸','🏊','🎣','🧭','🏋','⛺','🎯','🎽','🥾','🧳',
-  // 美食
   '🍜','🍣','🍕','🌮','🥘','🫕','🍱','🥗','🍛','🫔',
   '🍷','🍺','☕','🧋','🍵','🥂','🍸','🍹','🧃','🫖',
-  // 动物
   '🦁','🐘','🦒','🦓','🐊','🦅','🦜','🐋','🦩','🦘',
   '🦬','🐪','🦏','🦛','🐆','🦋','🐬','🦈','🐧','🦭',
 ];
 
-const MONTHS = Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0'));
+
+function CountdownCard({ trips }) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  // 找最近的未来旅程
+  const upcoming = trips
+    .filter(t => t.plannedDate)
+    .map(t => {
+      const parts = t.plannedDate.split('.');
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      return { ...t, dateObj: d };
+    })
+    .filter(t => t.dateObj >= today)
+    .sort((a,b) => a.dateObj - b.dateObj)[0];
+
+  if (!upcoming) return null;
+
+  const diff = Math.ceil((upcoming.dateObj - today) / (1000*60*60*24));
+
+  return (
+    <View style={cd.card}>
+      <View style={cd.left}>
+        <Text style={cd.days}>{diff}</Text>
+        <Text style={cd.daysLabel}>天后出发</Text>
+      </View>
+      <View style={cd.right}>
+        <Text style={cd.emoji}>{upcoming.emoji}</Text>
+        <Text style={cd.city}>{upcoming.city}</Text>
+        <Text style={cd.date}>{upcoming.plannedDate}</Text>
+      </View>
+      <View style={cd.glow}/>
+    </View>
+  );
+}
+
+const cd = StyleSheet.create({
+  card:{backgroundColor:'#0D2B28',borderWidth:1.5,borderColor:'#4ECDC4',borderRadius:16,padding:20,flexDirection:'row',alignItems:'center',marginBottom:20,overflow:'hidden'},
+  left:{alignItems:'center',marginRight:24,minWidth:70},
+  days:{fontSize:52,color:'#4ECDC4',fontWeight:'300',lineHeight:56},
+  daysLabel:{fontSize:12,color:'#F0EDE8',letterSpacing:1,marginTop:2},
+  right:{flex:1},
+  emoji:{fontSize:32,marginBottom:6},
+  city:{fontSize:20,color:'#FFFFFF',fontWeight:'500'},
+  date:{fontSize:13,color:'#4ECDC4',marginTop:4},
+  glow:{position:'absolute',right:-20,top:-20,width:80,height:80,borderRadius:40,backgroundColor:'#4ECDC4',opacity:0.08},
+});
 
 export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
-  const now = new Date();
   const [showAdd, setShowAdd] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedContinent, setSelectedContinent] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
-  const [selectedCity, setSelectedCity] = useState('');
+  const [selectedCities, setSelectedCities] = useState([]);
   const [customCity, setCustomCity] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState(null);
-  const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()));
-  const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth()+1).padStart(2,'0'));
   const [search, setSearch] = useState('');
-
-  // 年份：1990到今年
-  const YEARS = Array.from({length: now.getFullYear()-1989}, (_,i) => String(now.getFullYear()-i));
-  // 月份限制：如果是今年，只到今月
-  const maxMonth = selectedYear === String(now.getFullYear()) ? now.getMonth()+1 : 12;
-  const availableMonths = MONTHS.slice(0, maxMonth);
+  const [plannedDate, setPlannedDate] = useState('');
+  const [plannedDateObj, setPlannedDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
+  const [enableCountdown, setEnableCountdown] = useState(false);
 
   const resetForm = () => {
-    const n = new Date();
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
-    setSelectedCity(''); setCustomCity(''); setSelectedEmoji(null);
-    setSelectedYear(String(n.getFullYear()));
-    setSelectedMonth(String(n.getMonth()+1).padStart(2,'0'));
+    setSelectedCities([]); setCustomCity(''); setSelectedEmoji(null);
     setSearch('');
+    setPlannedDate('');
+    setPlannedDateObj(new Date(Date.now() + 7*24*60*60*1000));
+    setEnableCountdown(false);
   };
 
   const addTrip = () => {
-    const city = customCity.trim() || selectedCity;
-    if (!city || !selectedCountry) return;
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
+    const emoji = selectedEmoji || '🌍';
+    const cityName = customCity.trim() || selectedCities.join(' · ');
+    if (!cityName) return;
     const newTrip = {
-      id: Date.now(), city, country: selectedCountry.name,
-      date: `${selectedYear}.${selectedMonth}`,
-      emoji: selectedEmoji || '🌍',
-      days: []
+      id: Date.now(), city: cityName,
+      country: selectedCountry.name, date: dateStr, emoji, days: [],
+      plannedDate: enableCountdown ? (() => {
+        const d = plannedDateObj;
+        return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+      })() : null
     };
     setTrips([newTrip, ...trips]);
     resetForm(); setShowAdd(false);
@@ -259,6 +298,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const searchResults = search ? ALL_COUNTRIES.filter(c => c.name.includes(search)) : null;
+  const hasSelection = selectedCities.length > 0 || customCity.trim().length > 0;
 
   return (
     <SafeAreaView style={s.container}>
@@ -274,11 +314,13 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
           </TouchableOpacity>
         </View>
 
+        <CountdownCard trips={trips} />
         <View style={s.statsRow}>
           {[
             [String(trips.length),'旅程'],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),'备忘'],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0)),'照片'],
+            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0)),'视频'],
             [String(trips.reduce((a,t)=>a+t.days.length,0)),'天数'],
           ].map(([n,l]) => (
             <View key={l} style={s.statBox}>
@@ -305,7 +347,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
               <Text style={s.cityName}>{trip.city}</Text>
               <Text style={s.countryName}>{trip.country} · {trip.days.length}天 · {trip.days.reduce((a,d)=>a+d.memos.length,0)}条备忘</Text>
             </View>
-            <Text style={s.cardDate}>{trip.date}</Text>
+            <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
           </TouchableOpacity>
         ))}
         {trips.length > 0 && <Text style={s.longPressHint}>长按旅程卡片可删除</Text>}
@@ -315,6 +357,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
           <View style={s.sheet}>
 
+            {/* Step 1: 选国家 */}
             {step===1 && <>
               <View style={s.sheetHeader}>
                 <Text style={s.sheetTitle}>选择目的地</Text>
@@ -346,69 +389,91 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
               </ScrollView>
             </>}
 
+            {/* Step 2: 多选城市 */}
             {step===2 && <>
               <View style={s.sheetHeader}>
                 <TouchableOpacity onPress={()=>setStep(1)}><Text style={s.backBtn}>← {selectedCountry?.name}</Text></TouchableOpacity>
                 <TouchableOpacity onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
-              <Text style={s.inputLabel}>推荐目的地</Text>
-              <ScrollView style={{maxHeight:180}} nestedScrollEnabled>
+              <Text style={s.inputLabel}>推荐目的地 <Text style={{color:'#444',fontSize:10}}>（可多选）</Text></Text>
+              <ScrollView style={{maxHeight:200}} nestedScrollEnabled>
                 <View style={s.cityGrid}>
                   {selectedCountry?.cities.map(c=>(
-                    <TouchableOpacity key={c} style={[s.cityChip,selectedCity===c&&s.cityChipActive]} onPress={()=>{setSelectedCity(c);setCustomCity('');}}>
-                      <Text style={[s.cityChipText,selectedCity===c&&s.cityChipTextActive]}>{c}</Text>
+                    <TouchableOpacity
+                      key={c}
+                      style={[s.cityChip, selectedCities.includes(c) && s.cityChipActive]}
+                      onPress={()=>{
+                        setCustomCity('');
+                        setSelectedCities(prev =>
+                          prev.includes(c) ? prev.filter(x=>x!==c) : [...prev, c]
+                        );
+                      }}>
+                      <Text style={[s.cityChipText, selectedCities.includes(c) && s.cityChipTextActive]}>
+                        {selectedCities.includes(c) ? '✓ ' : ''}{c}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </ScrollView>
+
               <Text style={[s.inputLabel,{marginTop:16}]}>或手动输入其他地点</Text>
-              <TextInput style={s.input} placeholder="城市、景点、地区..." placeholderTextColor="#444" value={customCity} onChangeText={t=>{setCustomCity(t);setSelectedCity('');}} />
-              {(selectedCity||customCity.trim()) && <TouchableOpacity style={s.nextBtn} onPress={()=>setStep(3)}><Text style={s.nextBtnText}>下一步 →</Text></TouchableOpacity>}
+              <TextInput
+                style={s.input}
+                placeholder="城市、景点、地区..."
+                placeholderTextColor="#444"
+                value={customCity}
+                onChangeText={t=>{setCustomCity(t); if(t) setSelectedCities([]);}}
+              />
+
+              {hasSelection && (
+                <View>
+                  {selectedCities.length > 0 && (
+                    <Text style={s.selectedHint}>
+                      已选 {selectedCities.length} 个：{selectedCities.join(' · ')}
+                    </Text>
+                  )}
+                  <TouchableOpacity style={s.nextBtn} onPress={()=>setStep(3)}>
+                    <Text style={s.nextBtnText}>下一步 →</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </>}
 
+            {/* Step 3: 选 emoji */}
             {step===3 && <>
               <View style={s.sheetHeader}>
-                <TouchableOpacity onPress={()=>setStep(2)}><Text style={s.backBtn}>← {customCity||selectedCity}</Text></TouchableOpacity>
+                <TouchableOpacity onPress={()=>setStep(2)}>
+                  <Text style={s.backBtn}>← {customCity || selectedCities.join('、')}</Text>
+                </TouchableOpacity>
                 <TouchableOpacity onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
 
-              <View style={s.datePreview}>
-                <Text style={s.datePreviewText}>{selectedYear}年 {parseInt(selectedMonth)}月</Text>
-                <Text style={s.datePreviewSub}>旅行时间（默认当前月份）</Text>
+              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                <Text style={{fontSize:16,color:'#F0EDE8',fontWeight:'500'}}>✈️ 设置出发倒计时</Text>
+                <TouchableOpacity
+                  onPress={()=>setEnableCountdown(!enableCountdown)}
+                  style={{backgroundColor:enableCountdown?'#4ECDC4':'#D4AF3730',borderRadius:14,paddingHorizontal:16,paddingVertical:6,borderWidth:1,borderColor:enableCountdown?'#4ECDC4':'#D4AF37'}}>
+                  <Text style={{color:enableCountdown?'#0D0D0D':'#D4AF37',fontSize:13,fontWeight:'600'}}>
+                    {enableCountdown?'✓ 已开启':'开启'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-
-              <Text style={s.inputLabel}>年份</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:14}}>
-                <View style={{flexDirection:'row',gap:8}}>
-                  {YEARS.map(y=>(
-                    <TouchableOpacity key={y} style={[s.chip,selectedYear===y&&s.chipActive]} onPress={()=>{
-                      setSelectedYear(y);
-                      const n = new Date();
-                      if(y===String(n.getFullYear()) && parseInt(selectedMonth)>n.getMonth()+1) {
-                        setSelectedMonth(String(n.getMonth()+1).padStart(2,'0'));
-                      }
-                    }}>
-                      <Text style={[s.chipText,selectedYear===y&&s.chipTextActive]}>{y}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-
-              <Text style={s.inputLabel}>月份</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:16}}>
-                <View style={{flexDirection:'row',gap:8}}>
-                  {availableMonths.map(m=>(
-                    <TouchableOpacity key={m} style={[s.chip,selectedMonth===m&&s.chipActive]} onPress={()=>setSelectedMonth(m)}>
-                      <Text style={[s.chipText,selectedMonth===m&&s.chipTextActive]}>{parseInt(m)}月</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </ScrollView>
-
+              {enableCountdown && <View style={{backgroundColor:'#1A1A1A',borderRadius:14,marginBottom:16,overflow:'hidden',borderWidth:1,borderColor:'#2A2A2A'}}>
+                <DateTimePicker
+                  value={plannedDateObj}
+                  mode="date"
+                  display="spinner"
+                  maximumDate={new Date(2035,11,31)}
+                  onChange={(_,date)=>{ if(date) setPlannedDateObj(date); }}
+                  locale="zh-CN"
+                  style={{height:130}}
+                  textColor="#F0EDE8"
+                />
+              </View>}
               <Text style={s.inputLabel}>
-                选择图标 <Text style={{color:'#333',fontSize:10}}>（可选，不选默认🌍）</Text>
+                选择图标 <Text style={{color:'#444',fontSize:10}}>（可选，不选默认🌍）</Text>
               </Text>
-              <ScrollView style={{maxHeight:160}} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+              <ScrollView style={{maxHeight:260}} nestedScrollEnabled showsVerticalScrollIndicator={false}>
                 <View style={s.emojiRow}>
                   {EMOJIS.map((e,i)=>(
                     <TouchableOpacity key={`${e}_${i}`} style={[s.emojiBtn,selectedEmoji===e&&s.emojiBtnActive]} onPress={()=>setSelectedEmoji(selectedEmoji===e?null:e)}>
@@ -418,11 +483,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 </View>
               </ScrollView>
 
-              <View style={{flexDirection:'row',gap:12,marginTop:12}}>
-                <TouchableOpacity style={s.cancelBtn} onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.cancelText}>取消</Text></TouchableOpacity>
-                <TouchableOpacity style={s.confirmBtn} onPress={addTrip}><Text style={s.confirmText}>开始记录 →</Text></TouchableOpacity>
+              <View style={{flexDirection:'row',gap:12,marginTop:16}}>
+                <TouchableOpacity style={s.cancelBtn} onPress={()=>{resetForm();setShowAdd(false);}}>
+                  <Text style={s.cancelText}>取消</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.confirmBtn} onPress={addTrip}>
+                  <Text style={s.confirmText}>开始记录 →</Text>
+                </TouchableOpacity>
               </View>
             </>}
+
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -472,15 +542,9 @@ const s = StyleSheet.create({
   cityChipText:{fontSize:14,color:'#666'},
   cityChipTextActive:{color:'#D4AF37'},
   input:{backgroundColor:'#1A1A1A',borderRadius:12,padding:14,color:'#F0EDE8',fontSize:15,marginBottom:16,borderWidth:1,borderColor:'#2A2A2A'},
+  selectedHint:{color:'#D4AF37',fontSize:12,marginBottom:10,textAlign:'center'},
   nextBtn:{backgroundColor:'#D4AF37',borderRadius:14,padding:16,alignItems:'center'},
   nextBtnText:{color:'#0D0D0D',fontSize:15,fontWeight:'700'},
-  datePreview:{backgroundColor:'#D4AF3715',borderWidth:1,borderColor:'#D4AF3740',borderRadius:12,padding:14,alignItems:'center',marginBottom:16},
-  datePreviewText:{fontSize:20,color:'#D4AF37',fontWeight:'300'},
-  datePreviewSub:{fontSize:11,color:'#666',marginTop:4},
-  chip:{paddingHorizontal:14,paddingVertical:10,borderRadius:20,backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A'},
-  chipActive:{backgroundColor:'#D4AF3720',borderColor:'#D4AF37'},
-  chipText:{fontSize:14,color:'#666'},
-  chipTextActive:{color:'#D4AF37'},
   emojiRow:{flexDirection:'row',flexWrap:'wrap',gap:8,paddingBottom:8},
   emojiBtn:{width:44,height:44,borderRadius:10,backgroundColor:'#1A1A1A',alignItems:'center',justifyContent:'center',borderWidth:1,borderColor:'#2A2A2A'},
   emojiBtnActive:{borderColor:'#D4AF37',backgroundColor:'#D4AF3720'},

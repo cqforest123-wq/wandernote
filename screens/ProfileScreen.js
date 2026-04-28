@@ -10,6 +10,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade }) {
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
   const totalMemos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0);
   const totalPhotos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0);
+  const totalVideos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0);
 
   const handleLogout = () => {
     Alert.alert('退出登录','确定要退出吗？',[
@@ -39,6 +40,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade }) {
             [String(totalDays),'天数',''],
             [String(totalMemos),'备忘',''],
             [String(totalPhotos),'照片',''],
+            [String(totalVideos),'视频',''],
           ].map(([n,l,limit])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}{limit?<Text style={s.statLimit}>/{limit}</Text>:null}</Text>

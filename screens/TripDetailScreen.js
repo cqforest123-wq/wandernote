@@ -15,6 +15,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   // 编辑旅程名
   const [showEditTrip, setShowEditTrip] = useState(false);
   const [editCity, setEditCity] = useState('');
+  const [showEditDate, setShowEditDate] = useState(false);
+  const [editDateObj, setEditDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
 
   if (!trip) return null;
 
@@ -83,15 +85,30 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               <Text style={s.tripCity}>{trip.city}</Text>
               <Text style={s.editHint}>✏️</Text>
             </View>
-            <Text style={s.tripMeta}>{trip.country} · {trip.date}</Text>
+            <Text style={s.tripMeta}>{trip.country}</Text>
           </View>
         </TouchableOpacity>
 
+        {trip.plannedDate ? (
+          <TouchableOpacity onPress={()=>{
+            const parts = trip.plannedDate.split('.');
+            setEditDateObj(new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])));
+            setShowEditDate(true);
+          }} style={{marginBottom:16,flexDirection:'row',alignItems:'center',gap:8}}>
+            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ 出发：{trip.plannedDate}</Text>
+            <Text style={{fontSize:12,color:'#4ECDC4'}}>点击修改</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={()=>setShowEditDate(true)} style={{marginBottom:16}}>
+            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ 设置出发倒计时</Text>
+          </TouchableOpacity>
+        )}
         <View style={s.statsRow}>
           {[
             [String(trip.days.length),'天'],
             [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'备忘'],
             [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),'照片'],
+            [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'],
           ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}</Text>
@@ -222,6 +239,42 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             </View>
           </View>
         </KeyboardAvoidingView>
+      </Modal>
+      <Modal visible={showEditDate} animationType="slide" transparent>
+        <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'#000000BB'}}>
+          <View style={{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:24,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A'}}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <Text style={{fontSize:20,color:'#F0EDE8',fontWeight:'300'}}>设置出发日期</Text>
+              <TouchableOpacity onPress={()=>setShowEditDate(false)}><Text style={{fontSize:18,color:'#555'}}>✕</Text></TouchableOpacity>
+            </View>
+            <View style={{backgroundColor:'#1A1A1A',borderRadius:14,overflow:'hidden',marginBottom:20}}>
+              <DateTimePicker
+                value={editDateObj}
+                mode="date"
+                display="spinner"
+                maximumDate={new Date(2035,11,31)}
+                onChange={(_,date)=>{ if(date) setEditDateObj(date); }}
+                locale="zh-CN"
+                style={{height:160}}
+                textColor="#F0EDE8"
+              />
+            </View>
+            <View style={{flexDirection:'row',gap:12}}>
+              <TouchableOpacity style={{flex:1,padding:16,borderRadius:14,backgroundColor:'#1A1A1A',alignItems:'center'}} onPress={()=>setShowEditDate(false)}>
+                <Text style={{color:'#555',fontSize:15}}>取消</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{flex:1,padding:16,borderRadius:14,backgroundColor:'#4ECDC4',alignItems:'center'}}
+                onPress={()=>{
+                  const d = editDateObj;
+                  const pd = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+                  setTrips(trips.map(t=>t.id===tripId?{...t,plannedDate:pd}:t));
+                  setShowEditDate(false);
+                }}>
+                <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>保存</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );

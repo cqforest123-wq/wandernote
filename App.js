@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -12,6 +13,7 @@ import AIScreen from './screens/AIScreen';
 
 const Stack = createNativeStackNavigator();
 const FREE_TRIP_LIMIT = 3;
+const STORAGE_KEY = '@wandernote_trips';
 
 const INITIAL_TRIPS = [
   { id:1, city:'京都', country:'日本', date:'2026.03', emoji:'🗼', days:[
@@ -22,11 +24,35 @@ const INITIAL_TRIPS = [
 ];
 
 function MainApp({ session }) {
-  const [trips, setTrips] = useState(INITIAL_TRIPS);
+  const [trips, setTripsState] = useState([]);
+  const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const isPro = false;
 
-  const handleSetTrips = (newTripsOrFn) => {
+  // 启动时从本地读取数据
+  useEffect(() => {
+    const loadTrips = async () => {
+      try {
+        const saved = await AsyncStorage.getItem(STORAGE_KEY);
+        if (saved !== null) {
+          setTripsState(JSON.parse(saved));
+        } else {
+          // 第一次启动，用初始数据
+          setTripsState(INITIAL_TRIPS);
+          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_TRIPS));
+        }
+      } catch (e) {
+        console.log('读取数据失败:', e);
+        setTripsState(INITIAL_TRIPS);
+      } finally {
+        setLoaded(true);
+      }
+    };
+    loadTrips();
+  }, []);
+
+  // 每次 trips 变化自动保存
+  const setTrips = async (newTripsOrFn) => {
     const newTrips = typeof newTripsOrFn === 'function' ? newTripsOrFn(trips) : newTripsOrFn;
     if (!isPro && newTrips.length > trips.length && trips.length >= FREE_TRIP_LIMIT) {
       Alert.alert('已达免费版上限',
@@ -35,7 +61,12 @@ function MainApp({ session }) {
       );
       return;
     }
-    setTrips(newTrips);
+    setTripsState(newTrips);
+    try {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTrips));
+    } catch (e) {
+      console.log('保存数据失败:', e);
+    }
   };
 
   const tabs = [
@@ -44,12 +75,19 @@ function MainApp({ session }) {
     {key:'profile', icon:'👤', label:'我的'},
   ];
 
+  if (!loaded) return (
+    <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
+      <ActivityIndicator color="#D4AF37" size="large"/>
+      <Text style={{color:'#555',marginTop:12,fontSize:13}}>加载中...</Text>
+    </View>
+  );
+
   return (
     <View style={{flex:1,backgroundColor:'#0D0D0D'}}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
-            <Stack.Screen name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={handleSetTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
+            <Stack.Screen name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
             <Stack.Screen name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
           </>}

@@ -149,8 +149,8 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
               <>
                 <Text style={s.sectionTitle}>照片 ({photos.length})</Text>
                 <View style={s.photoGrid}>
-                  {photos.map(photo=>(
-                    <TouchableOpacity key={String(photo.id)} onPress={()=>setPreviewPhoto(photo)} onLongPress={()=>deletePhoto(photo.id)}>
+                  {photos.map((photo,index)=>(
+                    <TouchableOpacity key={`photo_${photo.id}_${index}`} onPress={()=>setPreviewPhoto(photo)} onLongPress={()=>deletePhoto(photo.id)}>
                       <Image source={{uri:photo.uri}} style={s.photoThumb} resizeMode="cover"/>
                     </TouchableOpacity>
                   ))}

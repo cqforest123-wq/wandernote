@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 
+
+
 export default function AuthScreen({ onAuth }) {
-  const [mode, setMode] = useState('login'); // login | register | reset
+  const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -42,17 +44,17 @@ export default function AuthScreen({ onAuth }) {
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
       <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.inner}>
 
-        {/* Logo */}
         <View style={s.logoArea}>
-          <Text style={s.logoEmoji}>🌍</Text>
+          <View style={s.logoIcon}>
+            <Text style={{fontSize:52}}>🌊</Text>
+          </View>
           <Text style={s.logoTitle}>WanderNote</Text>
           <Text style={s.logoSub}>记录每一次远行</Text>
         </View>
 
-        {/* 表单 */}
         <View style={s.form}>
           <Text style={s.formTitle}>
-            {mode==='login'?'登录':mode==='register'?'创建账号':'重置密码'}
+            {mode==='login'?'欢迎回来':mode==='register'?'创建账号':'重置密码'}
           </Text>
 
           <Text style={s.label}>邮箱</Text>
@@ -83,11 +85,10 @@ export default function AuthScreen({ onAuth }) {
             onPress={mode==='login'?handleLogin:mode==='register'?handleRegister:handleReset}
             disabled={loading}>
             <Text style={s.mainBtnText}>
-              {loading?'处理中...':mode==='login'?'登录':mode==='register'?'注册':'发送重置邮件'}
+              {loading?'处理中...':mode==='login'?'登录 →':mode==='register'?'注册':'发送重置邮件'}
             </Text>
           </TouchableOpacity>
 
-          {/* 切换模式 */}
           <View style={s.switchRow}>
             {mode==='login' && <>
               <TouchableOpacity onPress={()=>setMode('register')}>
@@ -114,10 +115,10 @@ export default function AuthScreen({ onAuth }) {
 const s = StyleSheet.create({
   container:{flex:1,backgroundColor:'#0D0D0D'},
   inner:{flex:1,padding:32,justifyContent:'space-between'},
-  logoArea:{alignItems:'center',paddingTop:40},
-  logoEmoji:{fontSize:64,marginBottom:12},
-  logoTitle:{fontSize:36,color:'#F0EDE8',fontWeight:'300',letterSpacing:-1},
-  logoSub:{fontSize:14,color:'#555',marginTop:6},
+  logoArea:{alignItems:'center',paddingTop:20},
+  logoIcon:{width:100,height:100,borderRadius:24,backgroundColor:'#006994',alignItems:'center',justifyContent:'center',marginBottom:4},
+  logoTitle:{fontSize:32,color:'#F0EDE8',fontWeight:'300',letterSpacing:2,marginTop:14},
+  logoSub:{fontSize:13,color:'#555',marginTop:6},
   form:{backgroundColor:'#161616',borderRadius:20,padding:24,borderWidth:1,borderColor:'#242424'},
   formTitle:{fontSize:20,color:'#F0EDE8',fontWeight:'300',marginBottom:24},
   label:{fontSize:11,color:'#555',letterSpacing:2,textTransform:'uppercase',marginBottom:8},
