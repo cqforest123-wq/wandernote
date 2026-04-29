@@ -23,9 +23,9 @@ export default function AIScreen({ trips }) {
 
 旅行地点：${trip.city}，${trip.country}
 旅行时间：${trip.date}
-共${trip.days.length}天，${allMemos.length}条备忘
+共${trip.days.length}天，${allMemos.length}条感言
 
-备忘记录：
+感言记录：
 ${allMemos.length > 0 ? allMemos.join('\n') : '（无文字记录）'}
 
 要求：
@@ -41,7 +41,7 @@ ${allMemos.length > 0 ? allMemos.join('\n') : '（无文字记录）'}
 
 地点：${selectedTrip.city}，${selectedTrip.country}
 日期：${day.date} ${day.weekDay}
-备忘记录：${memos || '无文字记录，请根据地点发挥'}
+感言记录：${memos || '无文字记录，请根据地点发挥'}
 照片数量：${(day.photos||[]).length}张
 
 要求：
@@ -58,7 +58,7 @@ ${allMemos.length > 0 ? allMemos.join('\n') : '（无文字记录）'}
 地点：${selectedTrip.city}，${selectedTrip.country}
 日期：${day.date} ${day.weekDay}
 照片数量：${(day.photos||[]).length}张
-备忘记录：
+感言记录：
 ${memos || '无文字记录，请根据地点和日期发挥想象'}
 
 要求：

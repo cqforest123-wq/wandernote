@@ -106,7 +106,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={s.statsRow}>
           {[
             [String(trip.days.length),'天'],
-            [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'备忘'],
+            [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'感言'],
             [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),'照片'],
             [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'],
           ].map(([n,l])=>(

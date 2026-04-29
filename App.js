@@ -10,6 +10,9 @@ import TripDetailScreen from './screens/TripDetailScreen';
 import DayDetailScreen from './screens/DayDetailScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AIScreen from './screens/AIScreen';
+import MapScreen from './screens/MapScreen';
+import YearReportScreen from './screens/YearReportScreen';
+import PhotoFilterScreen from './screens/PhotoFilterScreen';
 
 const Stack = createNativeStackNavigator();
 const FREE_TRIP_LIMIT = 3;
@@ -71,6 +74,7 @@ function MainApp({ session }) {
 
   const tabs = [
     {key:'home', icon:'🗺', label:'旅程'},
+    {key:'map', icon:'📍', label:'足迹'},
     {key:'ai', icon:'✦', label:'AI'},
     {key:'profile', icon:'👤', label:'我的'},
   ];
@@ -91,12 +95,17 @@ function MainApp({ session }) {
             <Stack.Screen name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
           </>}
+          {activeTab==='map' && (
+            <Stack.Screen name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
+          )}
           {activeTab==='ai' && (
             <Stack.Screen name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
-          {activeTab==='profile' && (
-            <Stack.Screen name="Profile">{()=><ProfileScreen session={session} trips={trips} isPro={isPro}/>}</Stack.Screen>
-          )}
+          {activeTab==='profile' && <>
+            <Stack.Screen name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro}/>}</Stack.Screen>
+            <Stack.Screen name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
+          </>}
         </Stack.Navigator>
       </NavigationContainer>
 

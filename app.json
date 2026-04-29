@@ -16,8 +16,10 @@
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "WanderNote需要访问您的相册来上传旅行照片",
         "NSCameraUsageDescription": "WanderNote需要访问相机来拍摄旅行照片",
-        "NSPhotoLibraryAddUsageDescription": "WanderNote需要保存照片到您的相册"
-      }
+        "NSPhotoLibraryAddUsageDescription": "WanderNote需要保存照片到您的相册",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.litao0729.wandernote"
     },
     "android": {
       "adaptiveIcon": {
@@ -36,6 +38,12 @@
     "plugins": [
       "expo-secure-store",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "33b05c70-91bb-4234-872a-e8665ce39510"
+      }
+    },
+    "owner": "litao0729"
   }
 }

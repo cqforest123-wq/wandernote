@@ -55,13 +55,35 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   };
 
   const deleteMemo = (memoId) => {
-    Alert.alert('删除备忘','确定删除这条备忘？',[
+    Alert.alert('删除感言','确定删除这条感言？',[
       {text:'取消',style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,memos:d.memos.filter(m=>m.id!==memoId)}));
         setShowMemoModal(false);
       }},
     ]);
+  };
+
+  const SERVER = 'http://137.184.6.106:3000';
+
+  const uploadToServer = async (uri, tripId) => {
+    try {
+      const formData = new FormData();
+      const filename = uri.split('/').pop();
+      const ext = filename.split('.').pop().toLowerCase();
+      const type = ext === 'mp4' || ext === 'mov' ? `video/${ext}` : `image/${ext}`;
+      formData.append('file', { uri, name: filename, type });
+      const res = await fetch(`${SERVER}/upload/${tripId}`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const data = await res.json();
+      return data.url;
+    } catch (e) {
+      console.log('上传失败，使用本地:', e.message);
+      return null;
+    }
   };
 
   const pickPhotos = async () => {
@@ -74,7 +96,10 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       selectionLimit: 20,
     });
     if (!result.canceled) {
-      const newPhotos = result.assets.map(a=>({id:Date.now()+Math.random(),uri:a.uri}));
+      const newPhotos = await Promise.all(result.assets.map(async a => {
+        const serverUrl = await uploadToServer(a.uri, tripId);
+        return { id: Date.now()+Math.random(), uri: a.uri, serverUrl };
+      }));
       updateDay(d=>({...d,photos:[...(d.photos||[]),...newPhotos]}));
     }
   };
@@ -84,7 +109,9 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
     if (status!=='granted') { Alert.alert('需要权限','请允许访问相机'); return; }
     const result = await ImagePicker.launchCameraAsync({quality:0.8});
     if (!result.canceled) {
-      updateDay(d=>({...d,photos:[...(d.photos||[]),{id:Date.now(),uri:result.assets[0].uri}]}));
+      const uri = result.assets[0].uri;
+      const serverUrl = await uploadToServer(uri, tripId);
+      updateDay(d=>({...d,photos:[...(d.photos||[]),{id:Date.now(),uri,serverUrl}]}));
     }
   };
 
@@ -94,6 +121,30 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,photos:d.photos.filter(p=>p.id!==photoId)}));
         setPreviewPhoto(null);
+      }},
+    ]);
+  };
+
+  const pickVideos = async () => {
+    const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status!=='granted') { Alert.alert('需要权限','请允许访问相册'); return; }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['videos'],
+      allowsMultipleSelection: true,
+      quality: 1,
+      selectionLimit: 5,
+    });
+    if (!result.canceled) {
+      const newVideos = result.assets.map(a=>({id:Date.now()+Math.random(), uri:a.uri, duration:a.duration}));
+      updateDay(d=>({...d, videos:[...(d.videos||[]),...newVideos]}));
+    }
+  };
+
+  const deleteVideo = (videoId) => {
+    Alert.alert('删除视频','确定删除这段视频？',[
+      {text:'取消',style:'cancel'},
+      {text:'删除',style:'destructive',onPress:()=>{
+        updateDay(d=>({...d,videos:(d.videos||[]).filter(v=>v.id!==videoId)}));
       }},
     ]);
   };
@@ -123,12 +174,12 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
           </View>
           <View style={s.dayActions}>
             <TouchableOpacity style={s.actionBtn} onPress={openNewMemo}>
-              <Text style={s.actionBtnText}>📝 备忘</Text>
+              <Text style={s.actionBtnText}>📝 感言</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.actionBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}>
               <Text style={[s.actionBtnText,{color:'#4ECDC4'}]}>📸 照片</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.actionBtn,{borderColor:'#FF6B6B50',backgroundColor:'#FF6B6B15'}]}>
+            <TouchableOpacity style={[s.actionBtn,{borderColor:'#FF6B6B50',backgroundColor:'#FF6B6B15'}]} onPress={pickVideos}>
               <Text style={[s.actionBtnText,{color:'#FF6B6B'}]}>🎬 视频</Text>
             </TouchableOpacity>
           </View>
@@ -139,7 +190,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
             <Text style={s.emptyEmoji}>✏️</Text>
             <Text style={s.emptyText}>今天还没有记录</Text>
             <View style={s.emptyBtns}>
-              <TouchableOpacity style={s.emptyBtn} onPress={openNewMemo}><Text style={s.emptyBtnText}>📝 写备忘</Text></TouchableOpacity>
+              <TouchableOpacity style={s.emptyBtn} onPress={openNewMemo}><Text style={s.emptyBtnText}>📝 写感言</Text></TouchableOpacity>
               <TouchableOpacity style={[s.emptyBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}><Text style={[s.emptyBtnText,{color:'#4ECDC4'}]}>📸 传照片</Text></TouchableOpacity>
             </View>
           </View>
@@ -161,9 +212,31 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
               </>
             )}
 
+            {(day.videos||[]).length>0 && (
+              <>
+                <Text style={s.sectionTitle}>视频 ({(day.videos||[]).length})</Text>
+                <View style={{marginBottom:24,gap:8}}>
+                  {(day.videos||[]).map((video,index)=>(
+                    <TouchableOpacity key={`video_${video.id}_${index}`}
+                      style={s.videoCard}
+                      onLongPress={()=>deleteVideo(video.id)}>
+                      <View style={s.videoThumb}>
+                        <Text style={{fontSize:32}}>🎬</Text>
+                      </View>
+                      <View style={{flex:1}}>
+                        <Text style={s.videoName}>视频 {index+1}</Text>
+                        {video.duration && <Text style={s.videoDuration}>{Math.round(video.duration)}秒</Text>}
+                      </View>
+                      <Text style={{color:'#333',fontSize:12}}>长按删除</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
+
             {day.memos.length>0 && (
               <>
-                <Text style={s.sectionTitle}>备忘录 ({day.memos.length})</Text>
+                <Text style={s.sectionTitle}>旅行感言 ({day.memos.length})</Text>
                 {day.memos.map(memo=>(
                   <TouchableOpacity key={String(memo.id)} style={s.memoCard} onPress={()=>openEditMemo(memo)} activeOpacity={0.8}>
                     <View style={s.memoTop}>
@@ -197,12 +270,12 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
         </View>
       </Modal>
 
-      {/* 新增/编辑备忘弹窗 */}
+      {/* 新增/编辑感言弹窗 */}
       <Modal visible={showMemoModal} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>{editingMemo?'编辑备忘':'添加备忘'}</Text>
+              <Text style={s.sheetTitle}>{editingMemo?'编辑感言':'添加感言'}</Text>
               <View style={{flexDirection:'row',gap:16}}>
                 {editingMemo && (
                   <TouchableOpacity onPress={()=>deleteMemo(editingMemo.id)}>
@@ -280,6 +353,10 @@ const s = StyleSheet.create({
   tagChip:{paddingHorizontal:14,paddingVertical:8,borderRadius:20,backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A'},
   tagChipText:{fontSize:14,color:'#666'},
   input:{backgroundColor:'#1A1A1A',borderRadius:12,padding:14,color:'#F0EDE8',fontSize:15,marginBottom:20,borderWidth:1,borderColor:'#2A2A2A'},
+  videoCard:{backgroundColor:'#161616',borderRadius:12,padding:12,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:'#2A2A2A'},
+  videoThumb:{width:56,height:56,borderRadius:10,backgroundColor:'#1A1A1A',alignItems:'center',justifyContent:'center'},
+  videoName:{fontSize:14,color:'#F0EDE8'},
+  videoDuration:{fontSize:12,color:'#555',marginTop:4},
   cancelBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#1A1A1A',alignItems:'center'},
   cancelText:{color:'#555',fontSize:15},
   confirmBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#D4AF37',alignItems:'center'},

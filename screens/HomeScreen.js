@@ -318,7 +318,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         <View style={s.statsRow}>
           {[
             [String(trips.length),'旅程'],
-            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),'备忘'],
+            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),'感言'],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0)),'照片'],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0)),'视频'],
             [String(trips.reduce((a,t)=>a+t.days.length,0)),'天数'],
@@ -345,7 +345,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
             <View style={{flex:1}}>
               <Text style={s.cityName}>{trip.city}</Text>
-              <Text style={s.countryName}>{trip.country} · {trip.days.length}天 · {trip.days.reduce((a,d)=>a+d.memos.length,0)}条备忘</Text>
+              <Text style={s.countryName}>{trip.country} · {trip.days.length}天 · {trip.days.reduce((a,d)=>a+d.memos.length,0)}条感言</Text>
             </View>
             <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
           </TouchableOpacity>
