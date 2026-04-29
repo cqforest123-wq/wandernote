@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,6 +19,7 @@ const CITY_COORDS = {
   '蓝湖': { lat: 63.8803, lng: -22.4489 },
   '南岸': { lat: 63.5310, lng: -19.5151 },
   // 美国
+  '费尔班克斯': { lat: 64.8378, lng: -147.7164 },
   '夏威夷': { lat: 21.3069, lng: -157.8583 },
   '纽约': { lat: 40.7128, lng: -74.0060 },
   '洛杉矶': { lat: 34.0522, lng: -118.2437 },
@@ -29,6 +30,7 @@ const CITY_COORDS = {
   // 英国
   '伦敦': { lat: 51.5074, lng: -0.1278 },
   // 中国
+  '重庆': { lat: 29.5630, lng: 106.5516 },
   '北京': { lat: 39.9042, lng: 116.4074 },
   '上海': { lat: 31.2304, lng: 121.4737 },
   '成都': { lat: 30.5728, lng: 104.0668 },
@@ -131,18 +133,14 @@ export default function MapScreen({ trips }) {
             mapType={mapType}
             initialRegion={getInitialRegion()}
             showsUserLocation={true}
-            showsCompass={true}>
+            showsCompass={false}>
             {mappedTrips.map(trip => (
               <Marker
                 key={trip.id}
                 coordinate={{ latitude: trip.coords.lat, longitude: trip.coords.lng }}
-                onPress={() => setSelectedTrip(trip)}>
-                <View style={s.markerContainer}>
-                  <View style={[s.marker, selectedTrip?.id === trip.id && s.markerSelected]}>
-                    <Text style={s.markerEmoji}>{trip.emoji}</Text>
-                  </View>
-                  <View style={s.markerTail}/>
-                </View>
+                onPress={() => setSelectedTrip(trip)}
+                title={trip.city}
+                description={trip.country}>
               </Marker>
             ))}
           </MapView>

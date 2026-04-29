@@ -297,7 +297,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     resetForm(); setShowAdd(true);
   };
 
+  const [tripSearch, setTripSearch] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // date | name
+
   const searchResults = search ? ALL_COUNTRIES.filter(c => c.name.includes(search)) : null;
+
+  const filteredTrips = trips
+    .filter(t => tripSearch ? t.city.includes(tripSearch) || t.country.includes(tripSearch) : true)
+    .sort((a,b) => sortBy === 'name' ? a.city.localeCompare(b.city) : b.date.localeCompare(a.date));
   const hasSelection = selectedCities.length > 0 || customCity.trim().length > 0;
 
   return (
@@ -331,6 +338,20 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         </View>
 
         <Text style={s.sectionTitle}>最近旅程</Text>
+        <View style={{flexDirection:'row',gap:10,marginBottom:14}}>
+          <TextInput
+            style={{flex:1,backgroundColor:'#161616',borderRadius:12,padding:10,color:'#F0EDE8',fontSize:14,borderWidth:1,borderColor:'#242424'}}
+            placeholder="搜索旅程..."
+            placeholderTextColor="#444"
+            value={tripSearch}
+            onChangeText={setTripSearch}
+          />
+          <TouchableOpacity
+            onPress={()=>setSortBy(sortBy==='date'?'name':'date')}
+            style={{backgroundColor:'#161616',borderRadius:12,padding:10,borderWidth:1,borderColor:'#242424',justifyContent:'center'}}>
+            <Text style={{color:'#D4AF37',fontSize:12}}>{sortBy==='date'?'按时间':'按名称'}</Text>
+          </TouchableOpacity>
+        </View>
         {trips.length === 0 && (
           <View style={s.emptyBox}>
             <Text style={s.emptyEmoji}>🌍</Text>
@@ -338,13 +359,13 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             <Text style={s.emptyHint}>点击「+ 新旅程」开始记录</Text>
           </View>
         )}
-        {trips.map(trip => (
+        {filteredTrips.map(trip => (
           <TouchableOpacity key={trip.id} style={s.card}
             onPress={() => navigation.navigate('TripDetail', { tripId: trip.id })}
             onLongPress={() => deleteTrip(trip.id, trip.city)}>
             <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
             <View style={{flex:1}}>
-              <Text style={s.cityName}>{trip.city}</Text>
+              <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
               <Text style={s.countryName}>{trip.country} · {trip.days.length}天 · {trip.days.reduce((a,d)=>a+d.memos.length,0)}条感言</Text>
             </View>
             <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>

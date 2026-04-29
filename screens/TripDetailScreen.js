@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
@@ -15,6 +15,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   // 编辑旅程名
   const [showEditTrip, setShowEditTrip] = useState(false);
   const [editCity, setEditCity] = useState('');
+  const [editEmoji, setEditEmoji] = useState('');
   const [showEditDate, setShowEditDate] = useState(false);
   const [editDateObj, setEditDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
 
@@ -50,8 +51,22 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 
   const saveEditTrip = () => {
     if (!editCity.trim()) return;
-    setTrips(trips.map(t=>t.id===tripId?{...t,city:editCity.trim()}:t));
+    setTrips(trips.map(t=>t.id===tripId?{...t,city:editCity.trim(),emoji:editEmoji||t.emoji}:t));
     setShowEditTrip(false);
+  };
+
+  const shareTrip = async () => {
+    const totalMemos = trip.days.reduce((a,d)=>a+d.memos.length,0);
+    const totalPhotos = trip.days.reduce((a,d)=>a+(d.photos||[]).length,0);
+    const highlights = trip.days.flatMap(d=>d.memos).slice(0,3).map(m=>m.text).join(' | ');
+    const lines = [
+      trip.emoji + ' ' + trip.city + ' · ' + trip.country,
+      '📅 ' + trip.days.length + '天旅程 · ' + trip.date,
+      '📝 ' + totalMemos + '条感言 · 📸 ' + totalPhotos + '张照片',
+      highlights ? '旅行亮点：' + highlights : '',
+      '— 来自 WanderNote 旅行笔记',
+    ].filter(Boolean);
+    await Share.share({ message: lines.join('\n') });
   };
 
   const deleteTrip = () => {
@@ -74,7 +89,10 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.topRow}>
           <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← 返回</Text></TouchableOpacity>
-          <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>删除旅程</Text></TouchableOpacity>
+          <View style={{flexDirection:'row',gap:12}}>
+            <TouchableOpacity onPress={shareTrip}><Text style={{color:'#4ECDC4',fontSize:13}}>分享 ↗</Text></TouchableOpacity>
+            <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>删除旅程</Text></TouchableOpacity>
+          </View>
         </View>
 
         {/* 旅程标题 — 点击可编辑 */}
@@ -82,7 +100,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           <Text style={s.tripEmoji}>{trip.emoji}</Text>
           <View style={{flex:1}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-              <Text style={s.tripCity}>{trip.city}</Text>
+              <Text style={s.tripCity} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
               <Text style={s.editHint}>✏️</Text>
             </View>
             <Text style={s.tripMeta}>{trip.country}</Text>
@@ -233,6 +251,18 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               onChangeText={setEditCity}
               autoFocus
             />
+            <Text style={s.inputLabel}>图标</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:16}}>
+              <View style={{flexDirection:'row',gap:8}}>
+                {['🌍','🗼','🏯','🌋','🏔','🌊','🏝','✈️','🌺','🐢','🦁','🐘','🌅','🎭','🍜','🍣','🏕','🎿','🧗','🗺'].map((e,i)=>(
+                  <TouchableOpacity key={i}
+                    style={{width:44,height:44,borderRadius:10,backgroundColor:editEmoji===e?'#D4AF3720':'#1A1A1A',borderWidth:1,borderColor:editEmoji===e?'#D4AF37':'#2A2A2A',alignItems:'center',justifyContent:'center'}}
+                    onPress={()=>setEditEmoji(e)}>
+                    <Text style={{fontSize:22}}>{e}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
             <View style={{flexDirection:'row',gap:12}}>
               <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowEditTrip(false)}><Text style={s.cancelText}>取消</Text></TouchableOpacity>
               <TouchableOpacity style={s.confirmBtn} onPress={saveEditTrip}><Text style={s.confirmText}>保存</Text></TouchableOpacity>

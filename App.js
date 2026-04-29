@@ -95,6 +95,7 @@ function MainApp({ session }) {
             <Stack.Screen name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
           </>}
+
           {activeTab==='map' && (
             <Stack.Screen name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
@@ -105,6 +106,7 @@ function MainApp({ session }) {
             <Stack.Screen name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro}/>}</Stack.Screen>
             <Stack.Screen name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
             <Stack.Screen name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
+
           </>}
         </Stack.Navigator>
       </NavigationContainer>

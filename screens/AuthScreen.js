@@ -46,7 +46,7 @@ export default function AuthScreen({ onAuth }) {
 
         <View style={s.logoArea}>
           <View style={s.logoIcon}>
-            <Text style={{fontSize:52}}>🌊</Text>
+            <Text style={{fontSize:52}}>🌺</Text>
           </View>
           <Text style={s.logoTitle}>WanderNote</Text>
           <Text style={s.logoSub}>记录每一次远行</Text>
@@ -116,7 +116,7 @@ const s = StyleSheet.create({
   container:{flex:1,backgroundColor:'#0D0D0D'},
   inner:{flex:1,padding:32,justifyContent:'space-between'},
   logoArea:{alignItems:'center',paddingTop:20},
-  logoIcon:{width:100,height:100,borderRadius:24,backgroundColor:'#006994',alignItems:'center',justifyContent:'center',marginBottom:4},
+  logoIcon:{width:100,height:100,borderRadius:24,backgroundColor:'#0D1B2A',borderWidth:2,borderColor:'#FF8C5A40',alignItems:'center',justifyContent:'center',marginBottom:4},
   logoTitle:{fontSize:32,color:'#F0EDE8',fontWeight:'300',letterSpacing:2,marginTop:14},
   logoSub:{fontSize:13,color:'#555',marginTop:6},
   form:{backgroundColor:'#161616',borderRadius:20,padding:24,borderWidth:1,borderColor:'#242424'},

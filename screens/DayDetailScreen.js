@@ -225,7 +225,14 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
                       </View>
                       <View style={{flex:1}}>
                         <Text style={s.videoName}>视频 {index+1}</Text>
-                        {video.duration && <Text style={s.videoDuration}>{Math.round(video.duration)}秒</Text>}
+                        {video.duration && <Text style={s.videoDuration}>
+                          {(() => {
+                            const secs = Math.round(video.duration / 1000);
+                            return secs > 60
+                              ? `${Math.floor(secs/60)}分${secs%60}秒`
+                              : `${secs}秒`;
+                          })()}
+                        </Text>}
                       </View>
                       <Text style={{color:'#333',fontSize:12}}>长按删除</Text>
                     </TouchableOpacity>
