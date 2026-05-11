@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Alert, Share } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { callClaude } from '../lib/claude';
 
 export default function AIScreen({ trips }) {
+  const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -10,9 +12,9 @@ export default function AIScreen({ trips }) {
   const [mode, setMode] = useState('diary');
 
   const MODES = [
-    { key:'diary', label:'📖 旅行日记', desc:'完整叙事风格，适合珍藏' },
-    { key:'social', label:'📱 社交文案', desc:'适合发朋友圈/小红书' },
-    { key:'summary', label:'✨ 旅程总结', desc:'整趟旅程的精华回顾' },
+    { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
+    { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
+    { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
   ];
 
   const buildPrompt = () => {

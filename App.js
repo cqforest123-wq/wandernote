@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import './i18n';
+import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
@@ -11,6 +13,7 @@ import DayDetailScreen from './screens/DayDetailScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AIScreen from './screens/AIScreen';
 import MapScreen from './screens/MapScreen';
+import MemoScreen from './screens/MemoScreen';
 import YearReportScreen from './screens/YearReportScreen';
 import PhotoFilterScreen from './screens/PhotoFilterScreen';
 
@@ -27,6 +30,14 @@ const INITIAL_TRIPS = [
 ];
 
 function MainApp({ session }) {
+  const { i18n } = useTranslation();
+  const [langKey, setLangKey] = useState(i18n.language);
+
+  useEffect(() => {
+    const handleLangChange = (lng) => setLangKey(lng);
+    i18n.on('languageChanged', handleLangChange);
+    return () => i18n.off('languageChanged', handleLangChange);
+  }, []);
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
@@ -75,6 +86,7 @@ function MainApp({ session }) {
   const tabs = [
     {key:'home', icon:'🗺', label:'旅程'},
     {key:'map', icon:'📍', label:'足迹'},
+    {key:'memo', icon:'📋', label:'清单'},
     {key:'ai', icon:'✦', label:'AI'},
     {key:'profile', icon:'👤', label:'我的'},
   ];
@@ -88,7 +100,7 @@ function MainApp({ session }) {
 
   return (
     <View style={{flex:1,backgroundColor:'#0D0D0D'}}>
-      <NavigationContainer>
+      <NavigationContainer key={langKey}>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
             <Stack.Screen name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
@@ -96,6 +108,9 @@ function MainApp({ session }) {
             <Stack.Screen name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
           </>}
 
+          {activeTab==='memo' && (
+            <Stack.Screen name="Memo">{()=><MemoScreen/>}</Stack.Screen>
+          )}
           {activeTab==='map' && (
             <Stack.Screen name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
@@ -128,9 +143,22 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({data:{session}})=>{ setSession(session); setLoading(false); });
+    // 加超时保护，国内网络 Supabase 可能慢
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000);
+
+    supabase.auth.getSession().then(({data:{session}})=>{
+      clearTimeout(timeout);
+      setSession(session);
+      setLoading(false);
+    }).catch(() => {
+      clearTimeout(timeout);
+      setLoading(false);
+    });
+
     const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session)=>setSession(session));
-    return ()=>subscription.unsubscribe();
+    return ()=>{ subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
 
   if (loading) return (

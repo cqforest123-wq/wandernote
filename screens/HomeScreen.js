@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 const CONTINENTS = [
@@ -239,6 +240,7 @@ const cd = StyleSheet.create({
 });
 
 export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
+  const { t } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedContinent, setSelectedContinent] = useState(null);
@@ -281,7 +283,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
   const deleteTrip = (tripId, cityName) => {
     Alert.alert('删除旅程', `确定删除「${cityName}」？`, [
-      {text:'取消', style:'cancel'},
+      {text:t('cancel'), style:'cancel'},
       {text:'删除', style:'destructive', onPress:()=>setTrips(trips.filter(t=>t.id!==tripId))},
     ]);
   };
@@ -324,11 +326,11 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         <CountdownCard trips={trips} />
         <View style={s.statsRow}>
           {[
-            [String(trips.length),'旅程'],
-            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),'感言'],
-            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0)),'照片'],
-            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0)),'视频'],
-            [String(trips.reduce((a,t)=>a+t.days.length,0)),'天数'],
+            [String(trips.length),t('stat_trips')],
+            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),t('stat_memos')],
+            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0)),t('stat_photos')],
+            [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0)),t('stat_videos')],
+            [String(trips.reduce((a,t)=>a+t.days.length,0)),t('stat_days')],
           ].map(([n,l]) => (
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}</Text>
@@ -349,7 +351,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
           <TouchableOpacity
             onPress={()=>setSortBy(sortBy==='date'?'name':'date')}
             style={{backgroundColor:'#161616',borderRadius:12,padding:10,borderWidth:1,borderColor:'#242424',justifyContent:'center'}}>
-            <Text style={{color:'#D4AF37',fontSize:12}}>{sortBy==='date'?'按时间':'按名称'}</Text>
+            <Text style={{color:'#D4AF37',fontSize:12}}>{sortBy==='date'?t('home_sort_date'):t('home_sort_name')}</Text>
           </TouchableOpacity>
         </View>
         {trips.length === 0 && (
@@ -475,7 +477,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                   onPress={()=>setEnableCountdown(!enableCountdown)}
                   style={{backgroundColor:enableCountdown?'#4ECDC4':'#D4AF3730',borderRadius:14,paddingHorizontal:16,paddingVertical:6,borderWidth:1,borderColor:enableCountdown?'#4ECDC4':'#D4AF37'}}>
                   <Text style={{color:enableCountdown?'#0D0D0D':'#D4AF37',fontSize:13,fontWeight:'600'}}>
-                    {enableCountdown?'✓ 已开启':'开启'}
+                    {enableCountdown?t('new_trip_enabled'):t('new_trip_enable')}
                   </Text>
                 </TouchableOpacity>
               </View>

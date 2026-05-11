@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
 
 
 
@@ -8,6 +9,7 @@ export default function AuthScreen({ onAuth }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -54,7 +56,7 @@ export default function AuthScreen({ onAuth }) {
 
         <View style={s.form}>
           <Text style={s.formTitle}>
-            {mode==='login'?'欢迎回来':mode==='register'?'创建账号':'重置密码'}
+            {mode==='login'?t('auth_welcome'):mode==='register'?t('auth_register'):t('auth_reset')}
           </Text>
 
           <Text style={s.label}>邮箱</Text>

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
 
 export default function TripDetailScreen({ route, navigation, trips, setTrips }) {
+  const { t } = useTranslation();
   const { tripId } = route.params;
   const trip = trips.find(t => t.id === tripId);
 
@@ -70,15 +72,15 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const deleteTrip = () => {
-    Alert.alert('删除旅程',`确定删除「${trip.city}」的全部记录？此操作不可恢复。`,[
-      {text:'取消',style:'cancel'},
+    Alert.alert(t('trip_delete'),`确定删除「${trip.city}」的全部记录？此操作不可恢复。`,[
+      {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{ setTrips(trips.filter(t=>t.id!==tripId)); navigation.goBack(); }},
     ]);
   };
 
   const deleteDay = (dayDate) => {
     Alert.alert('删除这天',`确定删除 ${dayDate} 的全部记录？`,[
-      {text:'取消',style:'cancel'},
+      {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>setTrips(trips.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
     ]);
   };
@@ -123,7 +125,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         )}
         <View style={s.statsRow}>
           {[
-            [String(trip.days.length),'天'],
+            [String(trip.days.length),t('stat_days')],
             [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'感言'],
             [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),'照片'],
             [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'],

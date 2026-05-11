@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
@@ -13,6 +14,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const trip = trips.find(t=>t.id===tripId);
   const day = trip?.days.find(d=>d.date===dayDate);
 
+  const { t } = useTranslation();
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [editingMemo, setEditingMemo] = useState(null); // null=新增, object=编辑
   const [memoText, setMemoText] = useState('');
@@ -55,8 +57,8 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   };
 
   const deleteMemo = (memoId) => {
-    Alert.alert('删除感言','确定删除这条感言？',[
-      {text:'取消',style:'cancel'},
+    Alert.alert(t('day_delete_memo'),'确定删除这条感言？',[
+      {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,memos:d.memos.filter(m=>m.id!==memoId)}));
         setShowMemoModal(false);
@@ -117,7 +119,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const deletePhoto = (photoId) => {
     Alert.alert('删除照片','确定删除这张照片？',[
-      {text:'取消',style:'cancel'},
+      {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,photos:d.photos.filter(p=>p.id!==photoId)}));
         setPreviewPhoto(null);
@@ -142,17 +144,17 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const deleteVideo = (videoId) => {
     Alert.alert('删除视频','确定删除这段视频？',[
-      {text:'取消',style:'cancel'},
+      {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,videos:(d.videos||[]).filter(v=>v.id!==videoId)}));
       }},
     ]);
   };
 
-  const showPhotoOptions = () => Alert.alert('添加照片','选择来源',[
-    {text:'从相册选择',onPress:pickPhotos},
-    {text:'立即拍照',onPress:takePhoto},
-    {text:'取消',style:'cancel'},
+  const showPhotoOptions = () => Alert.alert(t('day_photo_source'),'选择来源',[
+    {text:t('day_photo_album'),onPress:pickPhotos},
+    {text:t('day_photo_camera'),onPress:takePhoto},
+    {text:t('cancel'),style:'cancel'},
   ]);
 
   const photos = day.photos||[];
@@ -282,7 +284,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>{editingMemo?'编辑感言':'添加感言'}</Text>
+              <Text style={s.sheetTitle}>{editingMemo?t('day_edit_memo'):t('day_add_memo')}</Text>
               <View style={{flexDirection:'row',gap:16}}>
                 {editingMemo && (
                   <TouchableOpacity onPress={()=>deleteMemo(editingMemo.id)}>
@@ -306,7 +308,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
             <TextInput style={[s.input,{height:140,textAlignVertical:'top'}]} placeholder="此刻的感受、看到的风景、尝到的美食..." placeholderTextColor="#444" multiline value={memoText} onChangeText={setMemoText} autoFocus/>
             <View style={{flexDirection:'row',gap:12}}>
               <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowMemoModal(false)}><Text style={s.cancelText}>取消</Text></TouchableOpacity>
-              <TouchableOpacity style={s.confirmBtn} onPress={saveMemo}><Text style={s.confirmText}>{editingMemo?'保存修改':'保存'}</Text></TouchableOpacity>
+              <TouchableOpacity style={s.confirmBtn} onPress={saveMemo}><Text style={s.confirmText}>{editingMemo?t('save'):t('save')}</Text></TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>

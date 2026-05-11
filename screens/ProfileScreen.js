@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput } from 'react-native';
 import { supabase } from '../lib/supabase';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ session, trips, isPro, onUpgrade, navigation }) {
+  const { t } = useTranslation();
   const [showPricing, setShowPricing] = useState(false);
+  const [currentLang, setCurrentLang] = useState(i18n.language);
+
+  const toggleLanguage = async () => {
+    const newLang = currentLang.startsWith('zh') ? 'en' : 'zh';
+    await i18n.changeLanguage(newLang);
+    setCurrentLang(newLang);
+  };
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
@@ -115,10 +125,10 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
             {icon:'🤖',label:'AI生成日记',free:'❌',pro:'✅'},
             {icon:'🖼',label:'图集生成',free:'❌',pro:'✅'},
             {icon:'📸',label:'照片存储',free:'本地',pro:'无限云端'},
-            {icon:'🎬',label:'视频存储',free:'❌',pro:'✅'},
+            {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'},
             {icon:'📊',label:'年度报告',free:'✅',pro:'✅'},
             {icon:'🎨',label:'照片滤镜',free:'✅',pro:'✅'},
-            {icon:'🌐',label:'多语言翻译',free:'❌',pro:'✅'},
+            {icon:'🌐',label:'多语言翻译',free:'✅',pro:'✅'},
           ].map(f=>(
             <View key={f.label} style={s.featureRow}>
               <Text style={s.featureIcon}>{f.icon}</Text>
@@ -131,6 +141,12 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
 
         <Text style={s.sectionTitle}>账号设置</Text>
         <View style={s.settingList}>
+          <TouchableOpacity style={s.settingRow} onPress={toggleLanguage}>
+            <Text style={s.settingIcon}>🌐</Text>
+            <Text style={s.settingLabel}>{currentLang.startsWith('zh') ? '切换英文 / Switch to English' : '切换中文 / Switch to Chinese'}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
           {[
             {icon:'🔔',label:'通知设置'},
             {icon:'🔒',label:'修改密码'},
