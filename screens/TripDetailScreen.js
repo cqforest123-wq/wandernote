@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
+import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityCoords';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -29,27 +30,12 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') return;
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-        // 优先用旅程自带坐标，没有则用geocode查
-        let dest = trip?.coords;
-        if (!dest && trip?.city) {
-          try {
-            const q = encodeURIComponent(`${trip.city} ${trip.country||''}`);
-            const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
-              { headers: { 'User-Agent': 'WanderNote/1.0' } });
-            const d = await r.json();
-            if (d?.length > 0) dest = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
-          } catch(e) {}
-        }
+        const userCoords = { lat: loc.coords.latitude, lng: loc.coords.longitude };
+        const dest = trip?.coords || getCityCoords(trip?.city);
         if (!dest) return;
-        const R = 6371;
-        const lat1 = loc.coords.latitude * Math.PI / 180;
-        const lat2 = dest.lat * Math.PI / 180;
-        const dLat = (dest.lat - loc.coords.latitude) * Math.PI / 180;
-        const dLng = (dest.lng - loc.coords.longitude) * Math.PI / 180;
-        const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
-        const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        setDistance(km < 1 ? `${Math.round(km*1000)}m` : km < 10 ? `${km.toFixed(1)}km` : `${Math.round(km)}km`);
-      } catch(e) {}
+        const km = haversineDistanceKm(userCoords, dest);
+        setDistance(formatDistance(km));
+      } catch (e) {}
     })();
   }, []);
 
@@ -137,7 +123,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               <Text style={s.tripCity} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
               <Text style={s.editHint}>✏️</Text>
             </View>
-            <Text style={s.tripMeta}>{trip.country}{distance ? ` · 📍 距离 ${distance}` : ''}</Text>
+            <Text style={s.tripMeta}>{trip.country}</Text>
           </View>
         </TouchableOpacity>
 
@@ -154,6 +140,15 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           <TouchableOpacity onPress={()=>setShowEditDate(true)} style={{marginBottom:16}}>
             <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ 设置出发倒计时</Text>
           </TouchableOpacity>
+        )}
+        {distance && (
+          <View style={s.distanceCard}>
+            <Text style={s.distanceIcon}>📍</Text>
+            <View>
+              <Text style={s.distanceLabel}>距离目的地</Text>
+              <Text style={s.distanceValue}>{distance}</Text>
+            </View>
+          </View>
         )}
         <View style={s.statsRow}>
           {[
@@ -369,6 +364,10 @@ const s = StyleSheet.create({
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},
+  distanceCard: { flexDirection:'row', alignItems:'center', gap:14, backgroundColor:'#4ECDC415', borderWidth:1, borderColor:'#4ECDC430', borderRadius:14, padding:14, marginBottom:16 },
+  distanceIcon: { fontSize:28 },
+  distanceLabel: { fontSize:11, color:'#4ECDC490', marginBottom:2 },
+  distanceValue: { fontSize:22, color:'#4ECDC4', fontWeight:'300' },
   emptyBox: { alignItems:"center", paddingVertical:40 },
   emptyText: { fontSize:16, color:"#555", marginTop:12 },
   emptyHint: { fontSize:13, color:"#333", marginTop:6 },
@@ -380,6 +379,10 @@ const s = StyleSheet.create({
   addDayIcon:{fontSize:28,color:'#D4AF37'},
   addDayText:{fontSize:16,color:'#D4AF37'},
   addDayHint:{fontSize:12,color:'#666',marginTop:3},
+  distanceCard: { flexDirection:'row', alignItems:'center', gap:14, backgroundColor:'#4ECDC415', borderWidth:1, borderColor:'#4ECDC430', borderRadius:14, padding:14, marginBottom:16 },
+  distanceIcon: { fontSize:28 },
+  distanceLabel: { fontSize:11, color:'#4ECDC490', marginBottom:2 },
+  distanceValue: { fontSize:22, color:'#4ECDC4', fontWeight:'300' },
   emptyBox:{alignItems:'center',paddingVertical:48},
   emptyEmoji:{fontSize:48,marginBottom:12},
   dayCard:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'flex-start',gap:14,borderWidth:1,borderColor:'#242424'},

@@ -5,9 +5,10 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
-import { syncMemosUp, syncMemosDown } from '../lib/sync';
+import { syncMemosUp, syncMemosDown, syncMemosUpWithTripId } from '../lib/sync';
+import { STORAGE_KEYS } from '../lib/storageKeys';
 
-const STORAGE_KEY = '@wandernote_memos';
+const STORAGE_KEY = STORAGE_KEYS.memos;
 
 const CATEGORIES = [
   { key: 'travel',  label: '✈️ 旅行',  color: '#D4AF37' },
@@ -271,7 +272,12 @@ export default function MemoScreen({ route, navigation, isPro }) {
   };
 
   const deleteMemo = (id, titleText) => {
-    Alert.alert('删除', `确定删除「${titleText}」？`, [
+    const memo = memos.find(m => m.id === id);
+    const isBound = memo?.tripId;
+    const msg = isBound
+      ? `确定删除「${titleText}」？\n\n⚠️ 此清单已绑定旅程，删除后无法恢复。`
+      : `确定删除「${titleText}」？`;
+    Alert.alert('删除', msg, [
       { text: '取消', style: 'cancel' },
       { text: '删除', style: 'destructive', onPress: async () => saveMemos(memos.filter(m => m.id !== id)) },
     ]);
