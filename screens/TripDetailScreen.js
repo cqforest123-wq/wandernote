@@ -137,6 +137,16 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           ))}
         </View>
 
+        {/* 打包清单入口 */}
+        <TouchableOpacity style={s.packingBtn}
+          onPress={()=>navigation.navigate('TripMemo',{tripId:trip.id, tripName:trip.city})}>
+          <View style={{flex:1}}>
+            <Text style={s.packingBtnTitle}>🧳 行前打包清单</Text>
+            <Text style={s.packingBtnSub}>查看或创建该旅程的打包清单</Text>
+          </View>
+          <Text style={{color:'#4ECDC4',fontSize:18}}>→</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={s.addDayBtn} onPress={openAddDay}>
           <Text style={s.addDayIcon}>+</Text>
           <View>
@@ -327,15 +337,19 @@ const s = StyleSheet.create({
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},
+  emptyBox: { alignItems:"center", paddingVertical:40 },
+  emptyText: { fontSize:16, color:"#555", marginTop:12 },
+  emptyHint: { fontSize:13, color:"#333", marginTop:6 },
+  sectionTitle: { fontSize:13, color:"#555", letterSpacing:2, marginBottom:12, marginTop:8 },
+  packingBtn: { flexDirection:'row', alignItems:'center', backgroundColor:'#4ECDC410', borderWidth:1, borderColor:'#4ECDC430', borderRadius:16, padding:16, marginBottom:12 },
+  packingBtnTitle: { fontSize:15, color:'#4ECDC4', fontWeight:'400', marginBottom:3 },
+  packingBtnSub: { fontSize:12, color:'#4ECDC460' },
   addDayBtn:{backgroundColor:'#D4AF3715',borderWidth:1,borderColor:'#D4AF3740',borderRadius:14,padding:18,flexDirection:'row',alignItems:'center',gap:14,marginBottom:28},
   addDayIcon:{fontSize:28,color:'#D4AF37'},
   addDayText:{fontSize:16,color:'#D4AF37'},
   addDayHint:{fontSize:12,color:'#666',marginTop:3},
   emptyBox:{alignItems:'center',paddingVertical:48},
   emptyEmoji:{fontSize:48,marginBottom:12},
-  emptyText:{fontSize:16,color:'#555'},
-  emptyHint:{fontSize:13,color:'#333',marginTop:6},
-  sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:14},
   dayCard:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'flex-start',gap:14,borderWidth:1,borderColor:'#242424'},
   dayLeft:{width:48,alignItems:'center',paddingTop:2},
   dayNumLabel:{fontSize:9,color:'#D4AF37',letterSpacing:2},

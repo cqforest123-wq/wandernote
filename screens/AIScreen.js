@@ -14,6 +14,7 @@ export default function AIScreen({ trips }) {
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
     { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
+    { key:'packing', label:'🧳 AI Packing List', desc:'Generate a smart packing list for your trip' },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
   ];
 
@@ -71,15 +72,51 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
   };
 
   const generate = async () => {
-    if (mode !== 'summary' && !selectedDay) { Alert.alert('提示','请先选择要生成的那一天'); return; }
-    if (!selectedTrip) { Alert.alert('提示','请先选择旅程'); return; }
+    if (mode === 'packing') {
+      if (!selectedTrip) { Alert.alert('Notice','Please select a trip first'); return; }
+      setGenerating(true);
+      setResult('');
+      try {
+        const text = await callClaude(buildPrompt(), 1200);
+        // 解析 JSON 并存为打包清单
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
+        const STORAGE_KEY = '@wandernote_memos';
+        const existing = await AsyncStorage.getItem(STORAGE_KEY);
+        const memos = existing ? JSON.parse(existing) : [];
+        const now = new Date();
+        const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+        const allItems = Object.entries(parsed.groups).flatMap(([groupName, list]) =>
+          list.map((text, i) => ({ id: Date.now() + Math.random() * 1000 + i, text, checked: false, groupKey: groupName }))
+        );
+        const newMemo = {
+          id: Date.now(),
+          title: parsed.title || `${selectedTrip.city} Packing List`,
+          items: allItems,
+          category: 'packing',
+          tripId: selectedTrip.id,
+          createdAt: timeStr,
+          updatedAt: timeStr,
+        };
+        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([newMemo, ...memos]));
+        setResult('✅ Packing list generated and saved!\n\nGo to the Checklist tab to view your AI-generated packing list for ' + selectedTrip.city + '.');
+      } catch (e) {
+        Alert.alert('Generation Failed', e.message || 'Please check your network and try again');
+      } finally {
+        setGenerating(false);
+      }
+      return;
+    }
+    if (mode !== 'summary' && !selectedDay) { Alert.alert('Notice','Please select a day first'); return; }
+    if (!selectedTrip) { Alert.alert('Notice','Please select a trip first'); return; }
     setGenerating(true);
     setResult('');
     try {
       const text = await callClaude(buildPrompt(), 1200);
       setResult(text);
     } catch (e) {
-      Alert.alert('生成失败', e.message || '请检查网络后重试');
+      Alert.alert('Generation Failed', e.message || 'Please check your network and try again');
     } finally {
       setGenerating(false);
     }
@@ -160,7 +197,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
                 <Text style={s.generateBtnText}>AI 正在创作中...</Text>
               </View>
             ) : (
-              <Text style={s.generateBtnText}>✦ 开始生成</Text>
+              <Text style={s.generateBtnText}>✦ Generate</Text>
             )}
           </TouchableOpacity>
         )}
@@ -168,14 +205,14 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
         {result !== '' && (
           <View style={s.resultCard}>
             <View style={s.resultHeader}>
-              <Text style={s.resultTitle}>✦ 生成结果</Text>
+              <Text style={s.resultTitle}>✦ Result</Text>
               <TouchableOpacity style={s.shareBtn} onPress={shareResult}>
-                <Text style={s.shareBtnText}>分享 →</Text>
+                <Text style={s.shareBtnText}>Share →</Text>
               </TouchableOpacity>
             </View>
             <Text style={s.resultText}>{result}</Text>
             <TouchableOpacity style={s.regenerateBtn} onPress={generate}>
-              <Text style={s.regenerateBtnText}>重新生成</Text>
+              <Text style={s.regenerateBtnText}>Regenerate</Text>
             </TouchableOpacity>
           </View>
         )}

@@ -5,6 +5,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { initSync, syncTripsUp, syncMemosUp } from './lib/sync';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -31,10 +32,10 @@ const INITIAL_TRIPS = [
 
 function MainApp({ session }) {
   const { i18n } = useTranslation();
-  const [langKey, setLangKey] = useState(i18n.language);
+  const [langKey, setLangKey] = useState(Date.now());
 
   useEffect(() => {
-    const handleLangChange = (lng) => setLangKey(lng);
+    const handleLangChange = (lng) => setLangKey(Date.now());
     i18n.on('languageChanged', handleLangChange);
     return () => i18n.off('languageChanged', handleLangChange);
   }, []);
@@ -47,11 +48,21 @@ function MainApp({ session }) {
   useEffect(() => {
     const loadTrips = async () => {
       try {
+        // 先尝试从云端同步
+        const userId = session?.user?.id;
+        if (userId) {
+          const { trips: cloudTrips } = await initSync(userId);
+          if (cloudTrips?.length) {
+            setTripsState(cloudTrips);
+            setLoaded(true);
+            return;
+          }
+        }
+        // 云端无数据，用本地
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved !== null) {
           setTripsState(JSON.parse(saved));
         } else {
-          // 第一次启动，用初始数据
           setTripsState(INITIAL_TRIPS);
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_TRIPS));
         }
@@ -78,6 +89,9 @@ function MainApp({ session }) {
     setTripsState(newTrips);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTrips));
+      // 同步到云端
+      const userId = session?.user?.id;
+      if (userId) syncTripsUp(userId, newTrips);
     } catch (e) {
       console.log('保存数据失败:', e);
     }
@@ -99,28 +113,29 @@ function MainApp({ session }) {
   );
 
   return (
-    <View style={{flex:1,backgroundColor:'#0D0D0D'}}>
-      <NavigationContainer key={langKey}>
+    <View key={langKey} style={{flex:1,backgroundColor:'#0D0D0D'}}>
+      <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
-            <Stack.Screen name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
-            <Stack.Screen name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Home"} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "TripDetail"} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "DayDetail"} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "TripMemo"} name="TripMemo">{props=><MemoScreen {...props}/>}</Stack.Screen>
           </>}
 
           {activeTab==='memo' && (
-            <Stack.Screen name="Memo">{()=><MemoScreen/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Memo"} name="Memo">{props=><MemoScreen {...props}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
-            <Stack.Screen name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Map"} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='ai' && (
-            <Stack.Screen name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "AI"} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
-            <Stack.Screen name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro}/>}</Stack.Screen>
-            <Stack.Screen name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
-            <Stack.Screen name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Profile"} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "YearReport"} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "PhotoFilter"} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
 
           </>}
         </Stack.Navigator>
