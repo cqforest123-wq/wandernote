@@ -311,7 +311,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const deleteTrip = (tripId, cityName) => {
     Alert.alert('删除旅程', `确定删除「${cityName}」？`, [
       {text:t('cancel'), style:'cancel'},
-      {text:'删除', style:'destructive', onPress:()=>setTrips(trips.filter(t=>t.id!==tripId))},
+      {text:'删除', style:'destructive', onPress: async () => {
+        const newTrips = trips.filter(t=>t.id!==tripId);
+        setTrips(newTrips);
+        // 同步删除云端
+        try {
+          const { supabase } = require('../lib/supabase');
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user?.id) await supabase.from('trips').delete().eq('id', tripId).eq('user_id', user.id);
+        } catch(e) {}
+      }},
     ]);
   };
 
