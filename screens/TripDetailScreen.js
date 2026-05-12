@@ -24,23 +24,34 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [distance, setDistance] = useState(null);
 
   useEffect(() => {
-    if (!trip?.coords) return;
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') return;
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        // 优先用旅程自带坐标，没有则用geocode查
+        let dest = trip?.coords;
+        if (!dest && trip?.city) {
+          try {
+            const q = encodeURIComponent(`${trip.city} ${trip.country||''}`);
+            const r = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`,
+              { headers: { 'User-Agent': 'WanderNote/1.0' } });
+            const d = await r.json();
+            if (d?.length > 0) dest = { lat: parseFloat(d[0].lat), lng: parseFloat(d[0].lon) };
+          } catch(e) {}
+        }
+        if (!dest) return;
         const R = 6371;
         const lat1 = loc.coords.latitude * Math.PI / 180;
-        const lat2 = trip.coords.lat * Math.PI / 180;
-        const dLat = (trip.coords.lat - loc.coords.latitude) * Math.PI / 180;
-        const dLng = (trip.coords.lng - loc.coords.longitude) * Math.PI / 180;
+        const lat2 = dest.lat * Math.PI / 180;
+        const dLat = (dest.lat - loc.coords.latitude) * Math.PI / 180;
+        const dLng = (dest.lng - loc.coords.longitude) * Math.PI / 180;
         const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
         const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         setDistance(km < 1 ? `${Math.round(km*1000)}m` : km < 10 ? `${km.toFixed(1)}km` : `${Math.round(km)}km`);
       } catch(e) {}
     })();
-  }, [trip?.coords]);
+  }, []);
 
   if (!trip) return null;
 
