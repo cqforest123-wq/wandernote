@@ -424,6 +424,7 @@ export default function MapScreen({ trips }) {
           </View>
         ) : (
           <MapView
+            ref={mapRef}
             style={s.map}
             mapType={mapType}
             initialRegion={getInitialRegion()}
@@ -450,7 +451,17 @@ export default function MapScreen({ trips }) {
               <TouchableOpacity
                 key={trip.id}
                 style={[s.tripChip, selectedTrip?.id === trip.id && s.tripChipActive]}
-                onPress={() => setSelectedTrip(selectedTrip?.id === trip.id ? null : trip)}>
+                onPress={() => {
+                  setSelectedTrip(selectedTrip?.id === trip.id ? null : trip);
+                  if (trip.coords) {
+                    mapRef.current?.animateToRegion({
+                      latitude: trip.coords.lat,
+                      longitude: trip.coords.lng,
+                      latitudeDelta: 8,
+                      longitudeDelta: 8,
+                    }, 800);
+                  }
+                }}>
                 <Text style={s.tripChipEmoji}>{trip.emoji}</Text>
                 <Text style={[s.tripChipCity, selectedTrip?.id === trip.id && {color:'#D4AF37'}]}>
                   {trip.city}

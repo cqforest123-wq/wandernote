@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
@@ -316,7 +317,6 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         setTrips(newTrips);
         // 同步删除云端
         try {
-          const { supabase } = require('../lib/supabase');
           const { data: { user } } = await supabase.auth.getUser();
           if (user?.id) await supabase.from('trips').delete().eq('id', tripId).eq('user_id', user.id);
         } catch(e) {}
