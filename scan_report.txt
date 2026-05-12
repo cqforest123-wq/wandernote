@@ -1,0 +1,88 @@
+# Nmap 7.99 scan initiated Tue May 12 20:11:24 2026 as: nmap -sV -F --open -T4 -oN scan_report.txt 172.16.16.0/24
+Nmap scan report for 172.16.16.1
+Host is up (0.015s latency).
+Not shown: 98 closed tcp ports (reset)
+PORT   STATE SERVICE VERSION
+23/tcp open  telnet  Foxgate S9816 switch telnetd
+80/tcp open  http    GoAhead WebServer
+MAC Address: 00:03:0F:2A:9F:2C (Digital China (Shanghai) Networks)
+Service Info: Device: switch; CPE: cpe:/h:foxgate:s9816
+
+Nmap scan report for 172.16.16.23
+Host is up (0.027s latency).
+Not shown: 99 closed tcp ports (reset)
+PORT      STATE SERVICE    VERSION
+49152/tcp open  tcpwrapped
+MAC Address: C2:A6:4B:47:88:E2 (Unknown)
+
+Nmap scan report for 172.16.16.26
+Host is up (0.033s latency).
+Not shown: 99 closed tcp ports (reset)
+PORT      STATE SERVICE VERSION
+49152/tcp open  unknown
+MAC Address: 5E:62:45:55:D2:A3 (Unknown)
+
+Nmap scan report for 172.16.16.32
+Host is up (0.00011s latency).
+Not shown: 95 closed tcp ports (reset)
+PORT     STATE SERVICE          VERSION
+22/tcp   open  ssh              OpenSSH 10.2 (protocol 2.0)
+88/tcp   open  kerberos-sec     Heimdal Kerberos (server time: 2026-05-12 12:12:12Z)
+5000/tcp open  rtsp
+5900/tcp open  vnc              Apple remote desktop vnc
+8081/tcp open  blackice-icecap?
+2 services unrecognized despite returning data. If you know the service/version, please submit the following fingerprints at https://nmap.org/cgi-bin/submit.cgi?new-service :
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port5000-TCP:V=7.99%I=7%D=5/12%Time=6A03191C%P=arm-apple-darwin25.3.0%r
+SF:(GetRequest,8F,"HTTP/1\.1\x20403\x20Forbidden\r\nContent-Length:\x200\r
+SF:\nServer:\x20AirTunes/940\.23\.1\r\nX-Apple-ProcessingTime:\x201\r\nX-A
+SF:pple-RequestReceivedTimestamp:\x2054857693\r\n\r\n")%r(RTSPRequest,8F,"
+SF:RTSP/1\.0\x20403\x20Forbidden\r\nContent-Length:\x200\r\nServer:\x20Air
+SF:Tunes/940\.23\.1\r\nX-Apple-ProcessingTime:\x201\r\nX-Apple-RequestRece
+SF:ivedTimestamp:\x2054857710\r\n\r\n")%r(HTTPOptions,8F,"HTTP/1\.1\x20403
+SF:\x20Forbidden\r\nContent-Length:\x200\r\nServer:\x20AirTunes/940\.23\.1
+SF:\r\nX-Apple-ProcessingTime:\x201\r\nX-Apple-RequestReceivedTimestamp:\x
+SF:2054862713\r\n\r\n")%r(FourOhFourRequest,8F,"HTTP/1\.1\x20403\x20Forbid
+SF:den\r\nContent-Length:\x200\r\nServer:\x20AirTunes/940\.23\.1\r\nX-Appl
+SF:e-ProcessingTime:\x202\r\nX-Apple-RequestReceivedTimestamp:\x2054862718
+SF:\r\n\r\n")%r(SIPOptions,A1,"RTSP/1\.0\x20403\x20Forbidden\r\nContent-Le
+SF:ngth:\x200\r\nServer:\x20AirTunes/940\.23\.1\r\nCSeq:\x2042\x20OPTIONS\
+SF:r\nX-Apple-ProcessingTime:\x201\r\nX-Apple-RequestReceivedTimestamp:\x2
+SF:054862723\r\n\r\n");
+==============NEXT SERVICE FINGERPRINT (SUBMIT INDIVIDUALLY)==============
+SF-Port8081-TCP:V=7.99%I=7%D=5/12%Time=6A03191D%P=arm-apple-darwin25.3.0%r
+SF:(GetRequest,9C9,"HTTP/1\.1\x20200\x20OK\r\nexpo-protocol-version:\x200\
+SF:r\nexpo-sfv-version:\x200\r\ncache-control:\x20private,\x20max-age=0\r\
+SF:ncontent-type:\x20text/plain\r\nDate:\x20Tue,\x2012\x20May\x202026\x201
+SF:2:12:13\x20GMT\r\nConnection:\x20close\r\n\r\n{\"id\":\"42eaf315-e940-4
+SF:301-8a03-70d9c9fb5ea7\",\"createdAt\":\"2026-05-12T12:12:13\.542Z\",\"r
+SF:untimeVersion\":\"exposdk:54\.0\.0\",\"launchAsset\":{\"key\":\"bundle\
+SF:",\"contentType\":\"application/javascript\",\"url\":\"http://172\.16\.
+SF:16\.32:8081/index\.bundle\?platform=ios&dev=true&hot=false&lazy=true&tr
+SF:ansform\.engine=hermes&transform\.bytecode=1&transform\.routerRoot=app&
+SF:unstable_transformProfile=hermes-stable\"},\"assets\":\[\],\"metadata\"
+SF::{},\"extra\":{\"eas\":{\"projectId\":\"33b05c70-91bb-4234-872a-e8665ce
+SF:39510\"},\"expoClient\":{\"name\":\"WanderNote\",\"slug\":\"wandernote\
+SF:",\"version\":\"1\.0\.0\",\"orientation\":\"portrait\",\"icon\":\"\./as
+SF:sets/icon\.png\",\"userInterfaceStyle\":\"dark\",\"splash\":{\"image\":
+SF:\"\./assets/splash-icon\.png\",\"resizeMode\":\"contain\",\"backgroundC
+SF:olor\"")%r(FourOhFourRequest,42E,"HTTP/1\.1\x20500\x20Internal\x20Serve
+SF:r\x20Error\r\nX-Content-Type-Options:\x20nosniff\r\nSurrogate-Control:\
+SF:x20no-store\r\nCache-Control:\x20no-store,\x20no-cache,\x20must-revalid
+SF:ate,\x20proxy-revalidate\r\nPragma:\x20no-cache\r\nExpires:\x200\r\nCon
+SF:tent-Security-Policy:\x20default-src\x20'none'\r\nContent-Type:\x20text
+SF:/html;\x20charset=utf-8\r\nContent-Length:\x20708\r\nDate:\x20Tue,\x201
+SF:2\x20May\x202026\x2012:12:13\x20GMT\r\nConnection:\x20close\r\n\r\n<!DO
+SF:CTYPE\x20html>\n<html\x20lang=\"en\">\n<head>\n<meta\x20charset=\"utf-8
+SF:\">\n<title>Error</title>\n</head>\n<body>\n<pre>Error:\x20No\x20host\x
+SF:20header\x20was\x20found\.<br>\x20&nbsp;\x20&nbsp;at\x20Server\._proces
+SF:sRequest\x20\(/Users/litao/wandernote/node_modules/metro/src/Server\.js
+SF::485:13\)<br>\x20&nbsp;\x20&nbsp;at\x20processRequest\x20\(/Users/litao
+SF:/wandernote/node_modules/metro/src/Server\.js:461:10\)<br>\x20&nbsp;\x2
+SF:0&nbsp;at\x20call\x20\(/Users/litao/wandernote/node_modules/connect/ind
+SF:ex\.js:239:7\)<br>\x20&nbsp;\x20&nbsp;at\x20next\x20\(/Users/litao/wand
+SF:ernote/node_modules/connect/index\.js:183:5\)<br>\x20&nbsp;\x20&nbsp;");
+Service Info: OS: Mac OS X; CPE: cpe:/o:apple:mac_os_x
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Tue May 12 20:12:25 2026 -- 256 IP addresses (14 hosts up) scanned in 61.12 seconds

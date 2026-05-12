@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import * as Location from 'expo-location';
+import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityCoords';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
@@ -20,9 +22,29 @@ function getCoords(cityName) {
 export default function MapScreen({ trips }) {
   const [selectedTrip, setSelectedTrip] = useState(null);
   const mapRef = useRef(null);
+  const [userCoords, setUserCoords] = useState(null);
   const [mapType, setMapType] = useState('standard');
 
   // 获取所有有坐标的旅程
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        setUserCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
+      } catch (e) {}
+    })();
+  }, []);
+
+  const getDistance = (trip) => {
+    if (!userCoords) return null;
+    const dest = trip.coords;
+    if (!dest) return null;
+    const km = haversineDistanceKm(userCoords, dest);
+    return formatDistance(km);
+  };
+
   const mappedTrips = trips.map(t => ({
     ...t,
     coords: t.coords || getCoords(t.city),
@@ -81,9 +103,16 @@ export default function MapScreen({ trips }) {
               <Marker
                 key={trip.id}
                 coordinate={{ latitude: trip.coords.lat, longitude: trip.coords.lng }}
-                onPress={() => setSelectedTrip(trip)}
-                title={trip.city}
-                description={trip.country}>
+                onPress={() => setSelectedTrip(trip)}>
+                <View style={s.markerWrap}>
+                  <View style={[s.markerBubble, selectedTrip?.id === trip.id && s.markerSelected]}>
+                    <Text style={s.markerEmoji}>{trip.emoji}</Text>
+                    {getDistance(trip) && (
+                      <Text style={s.markerDist}>{getDistance(trip)}</Text>
+                    )}
+                  </View>
+                  <View style={s.markerTail}/>
+                </View>
               </Marker>
             ))}
           </MapView>

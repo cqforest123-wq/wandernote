@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
 import { useTranslation } from 'react-i18next';

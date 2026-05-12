@@ -146,7 +146,7 @@ const pg = StyleSheet.create({
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
-export default function MemoScreen({ route, navigation, isPro }) {
+export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
   const [memos,        setMemos]        = useState([]);
@@ -377,7 +377,11 @@ export default function MemoScreen({ route, navigation, isPro }) {
         {/* 底部：绑定旅程（占位） */}
         <View style={s.packCardFoot}>
           <TouchableOpacity style={[s.bindTripBtn, memo.tripId && {backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]} onPress={() => Alert.alert(memo.tripId ? '已绑定旅程' : '绑定旅程', memo.tripId ? `当前已绑定到该旅程的打包清单` : '从旅程页面进入可自动绑定')}>
-            <Text style={[s.bindTripText, memo.tripId && {color:'#D4AF37'}]}>{memo.tripId ? '✓ 已绑定旅程' : '🗺️ 绑定旅程'}</Text>
+            <Text style={[s.bindTripText, memo.tripId && {color:'#D4AF37'}]}>
+              {memo.tripId
+                ? `✓ ${trips.find(t => String(t.id) === String(memo.tripId))?.city || '已绑定旅程'}`
+                : '🗺️ 绑定旅程'}
+            </Text>
           </TouchableOpacity>
           {done === total && total > 0 && (
             <Text style={s.allDoneBadge}>✅ 已备齐</Text>
