@@ -39,7 +39,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         setDistance(formatDistance(km));
       } catch (e) {}
     })();
-  }, []);
+  }, [trip?.coords, trip?.city]);
 
   if (!trip) return null;
 
@@ -172,7 +172,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             [String(trip.days.length),t('stat_days')],
             [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'感言'],
             [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),'照片'],
-            [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'],
+            // [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'], // v2.0
           ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}</Text>

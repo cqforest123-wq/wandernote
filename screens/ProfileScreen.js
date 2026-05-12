@@ -125,7 +125,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
             {icon:'🤖',label:'AI生成日记',free:'❌',pro:'✅'},
             {icon:'🖼',label:'图集生成',free:'❌',pro:'✅'},
             {icon:'📸',label:'照片存储',free:'本地',pro:'无限云端'},
-            {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'},
+            // {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'}, // v2.0
             {icon:'📊',label:'年度报告',free:'✅',pro:'✅'},
             {icon:'🎨',label:'照片滤镜',free:'✅',pro:'✅'},
             {icon:'🌐',label:'多语言翻译',free:'✅',pro:'✅'},

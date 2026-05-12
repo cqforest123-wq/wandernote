@@ -211,34 +211,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
               </>
             )}
 
-            {(day.videos||[]).length>0 && (
-              <>
-                <Text style={s.sectionTitle}>视频 ({(day.videos||[]).length})</Text>
-                <View style={{marginBottom:24,gap:8}}>
-                  {(day.videos||[]).map((video,index)=>(
-                    <TouchableOpacity key={`video_${video.id}_${index}`}
-                      style={s.videoCard}
-                      onLongPress={()=>deleteVideo(video.id)}>
-                      <View style={s.videoThumb}>
-                        <Text style={{fontSize:32}}>🎬</Text>
-                      </View>
-                      <View style={{flex:1}}>
-                        <Text style={s.videoName}>视频 {index+1}</Text>
-                        {video.duration && <Text style={s.videoDuration}>
-                          {(() => {
-                            const secs = Math.round(video.duration / 1000);
-                            return secs > 60
-                              ? `${Math.floor(secs/60)}分${secs%60}秒`
-                              : `${secs}秒`;
-                          })()}
-                        </Text>}
-                      </View>
-                      <Text style={{color:'#333',fontSize:12}}>长按删除</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </>
-            )}
+            {/* 视频功能 v2.0 上线，代码保留暂时隐藏 */}
 
             {day.memos.length>0 && (
               <>

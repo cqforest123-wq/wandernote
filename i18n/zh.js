@@ -137,4 +137,33 @@ export default {
 
   // 倒计时
   countdown_days: '天后出发',
+
+  // 通用提示
+  alert_need_permission: '需要权限',
+  alert_permission_album: '请允许访问相册',
+  alert_permission_camera: '请允许访问相机',
+  alert_permission_save: '请允许保存到相册',
+  alert_save_success: '照片已保存到相册 📸',
+  alert_save_fail: '保存失败',
+  alert_delete_failed: '删除失败',
+  alert_network_retry: '请检查网络后重试',
+  alert_future_date: '不能记录未来的日期',
+  alert_not_logged_in: '未登录',
+  alert_fill_fields: '请填写邮箱和密码',
+  alert_delete_day: '删除这天',
+  alert_delete_day_confirm: '确定删除 %s 的全部记录？',
+  alert_delete_photo: '删除照片',
+  alert_delete_photo_confirm: '确定删除这张照片？',
+  alert_delete_video: '删除视频',
+  alert_delete_video_confirm: '确定删除这段视频？',
+  alert_delete_memo_confirm: '确定删除这条感言？',
+  alert_coming_soon: '即将推出',
+  alert_coming_soon_desc: '功能开发中',
+  alert_subscribe_soon: '订阅功能开发中，敬请期待 🚀',
+  alert_pro_limit: '已达免费版上限',
+  alert_pro_limit_desc: '免费版最多记录 %d 个旅程
+升级 Pro 即可无限记录',
+  alert_upgrade: '去升级',
+  alert_logout_confirm: '确定要退出吗？',
+  alert_trip_future_date: '不能记录未来的日期',
 };

@@ -137,4 +137,33 @@ export default {
 
   // Countdown
   countdown_days: 'days to go',
+
+  // Alerts
+  alert_need_permission: 'Permission Required',
+  alert_permission_album: 'Please allow access to your photo library',
+  alert_permission_camera: 'Please allow access to your camera',
+  alert_permission_save: 'Please allow saving to your photo library',
+  alert_save_success: 'Photo saved to library 📸',
+  alert_save_fail: 'Save failed',
+  alert_delete_failed: 'Delete failed',
+  alert_network_retry: 'Please check your network and try again',
+  alert_future_date: 'Cannot record a future date',
+  alert_not_logged_in: 'Not logged in',
+  alert_fill_fields: 'Please enter your email and password',
+  alert_delete_day: 'Delete this day',
+  alert_delete_day_confirm: 'Delete all records for %s?',
+  alert_delete_photo: 'Delete photo',
+  alert_delete_photo_confirm: 'Are you sure you want to delete this photo?',
+  alert_delete_video: 'Delete video',
+  alert_delete_video_confirm: 'Are you sure you want to delete this video?',
+  alert_delete_memo_confirm: 'Are you sure you want to delete this memo?',
+  alert_coming_soon: 'Coming Soon',
+  alert_coming_soon_desc: 'This feature is under development',
+  alert_subscribe_soon: 'Subscription coming soon, stay tuned 🚀',
+  alert_pro_limit: 'Free Plan Limit Reached',
+  alert_pro_limit_desc: 'Free plan supports up to %d trips
+Upgrade to Pro for unlimited trips',
+  alert_upgrade: 'Upgrade',
+  alert_logout_confirm: 'Are you sure you want to sign out?',
+  alert_trip_future_date: 'Cannot record a future date',
 };
