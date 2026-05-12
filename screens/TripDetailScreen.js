@@ -57,7 +57,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const addDay = () => {
-    if (selectedDate > today) { Alert.alert('提示','不能记录未来的日期'); return; }
+    if (selectedDate > today) { Alert.alert(t('confirm'), t('alert_future_date')); return; }
     if (existsAlready) { setShowAddDay(false); navigation.navigate('DayDetail',{tripId,dayDate:dateStr}); return; }
     const pad = n=>String(n).padStart(2,'0');
     const now = new Date();
@@ -92,7 +92,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const deleteTrip = () => {
-    Alert.alert(t('trip_delete'), `确定删除「${trip.city}」的全部记录？此操作不可恢复。`, [
+    Alert.alert(t('trip_delete'), `${t('trip_delete_confirm').replace('%s', trip.city)}`, [
       { text: t('cancel'), style: 'cancel' },
       {
         text: '删除',
@@ -106,7 +106,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             navigation.goBack();
           } catch (e) {
             console.error('deleteTrip error:', e.message);
-            Alert.alert('删除失败', e.message || '请检查网络后重试');
+            Alert.alert(t('alert_delete_failed'), e.message || t('alert_network_retry'));
           }
         },
       },
@@ -114,7 +114,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const deleteDay = (dayDate) => {
-    Alert.alert('删除这天',`确定删除 ${dayDate} 的全部记录？`,[
+    Alert.alert(t('alert_delete_day'), t('alert_delete_day_confirm').replace('%s', dayDate),[
       {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>setTrips(trips.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
     ]);

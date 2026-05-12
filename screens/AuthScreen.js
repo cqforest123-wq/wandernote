@@ -13,7 +13,7 @@ export default function AuthScreen({ onAuth }) {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) { Alert.alert('提示','请填写邮箱和密码'); return; }
+    if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
@@ -21,7 +21,7 @@ export default function AuthScreen({ onAuth }) {
   };
 
   const handleRegister = async () => {
-    if (!email || !password) { Alert.alert('提示','请填写邮箱和密码'); return; }
+    if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     if (password.length < 6) { Alert.alert('提示','密码至少6位'); return; }
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });

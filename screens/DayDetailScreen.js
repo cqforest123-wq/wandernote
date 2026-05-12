@@ -57,7 +57,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   };
 
   const deleteMemo = (memoId) => {
-    Alert.alert(t('day_delete_memo'),'确定删除这条感言？',[
+    Alert.alert(t('day_delete_memo'), t('alert_delete_memo_confirm'),[
       {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,memos:d.memos.filter(m=>m.id!==memoId)}));
@@ -90,7 +90,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const pickPhotos = async () => {
     const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status!=='granted') { Alert.alert('需要权限','请允许访问相册'); return; }
+    if (status!=='granted') { Alert.alert(t('alert_need_permission'), t('alert_permission_album')); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
@@ -108,7 +108,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const takePhoto = async () => {
     const {status} = await ImagePicker.requestCameraPermissionsAsync();
-    if (status!=='granted') { Alert.alert('需要权限','请允许访问相机'); return; }
+    if (status!=='granted') { Alert.alert(t('alert_need_permission'), t('alert_permission_camera')); return; }
     const result = await ImagePicker.launchCameraAsync({quality:0.8});
     if (!result.canceled) {
       const uri = result.assets[0].uri;
@@ -118,7 +118,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   };
 
   const deletePhoto = (photoId) => {
-    Alert.alert('删除照片','确定删除这张照片？',[
+    Alert.alert(t('alert_delete_photo'), t('alert_delete_photo_confirm'),[
       {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,photos:d.photos.filter(p=>p.id!==photoId)}));
@@ -129,7 +129,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const pickVideos = async () => {
     const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status!=='granted') { Alert.alert('需要权限','请允许访问相册'); return; }
+    if (status!=='granted') { Alert.alert(t('alert_need_permission'), t('alert_permission_album')); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['videos'],
       allowsMultipleSelection: true,
@@ -143,7 +143,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   };
 
   const deleteVideo = (videoId) => {
-    Alert.alert('删除视频','确定删除这段视频？',[
+    Alert.alert(t('alert_delete_video'), t('alert_delete_video_confirm'),[
       {text:t('cancel'),style:'cancel'},
       {text:'删除',style:'destructive',onPress:()=>{
         updateDay(d=>({...d,videos:(d.videos||[]).filter(v=>v.id!==videoId)}));

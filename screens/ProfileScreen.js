@@ -45,7 +45,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
   const totalVideos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0);
 
   const handleLogout = () => {
-    Alert.alert('退出登录','确定要退出吗？',[
+    Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
       {text:'取消',style:'cancel'},
       {text:'退出',style:'destructive',onPress:async()=>{ await supabase.auth.signOut(); }},
     ]);
@@ -153,7 +153,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
             {icon:'📧',label:'联系我们'},
             {icon:'⭐',label:'给App评分'},
           ].map(item=>(
-            <TouchableOpacity key={item.label} style={s.settingRow} onPress={()=>Alert.alert('即将推出','功能开发中')}>
+            <TouchableOpacity key={item.label} style={s.settingRow} onPress={()=>Alert.alert(t('alert_coming_soon'), t('alert_coming_soon_desc'))}>
               <Text style={s.settingIcon}>{item.icon}</Text>
               <Text style={s.settingLabel}>{item.label}</Text>
               <Text style={s.settingArrow}>→</Text>
@@ -220,7 +220,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
                 <Text style={s.pricingFeatureText}>{f}</Text>
               </View>
             ))}
-            <TouchableOpacity style={s.subscribeBtn} onPress={()=>Alert.alert('即将推出','订阅功能开发中，敬请期待 🚀')}>
+            <TouchableOpacity style={s.subscribeBtn} onPress={()=>Alert.alert(t('alert_coming_soon'), t('alert_subscribe_soon'))}>
               <Text style={s.subscribeBtnText}>开始 7 天免费试用</Text>
             </TouchableOpacity>
             <Text style={s.pricingNote}>随时取消 · 无隐藏费用</Text>

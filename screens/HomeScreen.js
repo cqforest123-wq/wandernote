@@ -347,7 +347,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             setTrips(prev => prev.filter(t => t.id !== tripId));
           } catch (e) {
             console.error('deleteTrip error:', e.message);
-            Alert.alert('删除失败', e.message || '请检查网络后重试');
+            Alert.alert(t('alert_delete_failed'), e.message || t('alert_network_retry'));
           }
         },
       },
@@ -356,9 +356,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
   const handleNewTrip = () => {
     if (!isPro && trips.length >= (freeTripLimit||3)) {
-      Alert.alert('已达免费版上限',
-        `免费版最多记录 ${freeTripLimit||3} 个旅程\n升级 Pro 即可无限记录`,
-        [{text:'暂不', style:'cancel'},{text:'去升级', onPress:()=>{}}]
+      Alert.alert(t('alert_pro_limit'), t('alert_pro_limit_desc').replace('%d', freeTripLimit||3), [{text:t('cancel'), style:'cancel'},{text:t('alert_upgrade'), onPress:()=>{}}]
       );
       return;
     }
