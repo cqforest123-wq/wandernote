@@ -83,7 +83,7 @@ export default function MapScreen({ trips }) {
   // 获取所有有坐标的旅程
   const mappedTrips = trips.map(t => ({
     ...t,
-    coords: getCoords(t.city),
+    coords: t.coords || getCoords(t.city),
   })).filter(t => t.coords);
 
   const unmappedTrips = trips.filter(t => !getCoords(t.city));

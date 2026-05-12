@@ -240,6 +240,21 @@ const cd = StyleSheet.create({
   glow:{position:'absolute',right:-20,top:-20,width:80,height:80,borderRadius:40,backgroundColor:'#4ECDC4',opacity:0.08},
 });
 
+async function geocodeCity(cityName, countryName) {
+  try {
+    const query = encodeURIComponent(`${cityName} ${countryName}`);
+    const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'WanderNote/1.0' }
+    });
+    const data = await res.json();
+    if (data?.length > 0) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    }
+  } catch (e) {}
+  return null;
+}
+
 export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
   const { t } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
@@ -269,9 +284,11 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     const emoji = selectedEmoji || '🌍';
     const cityName = customCity.trim() || selectedCities.join(' · ');
     if (!cityName) return;
+    const coords = await geocodeCity(cityName, selectedCountry?.name || '');
     const newTrip = {
       id: Date.now(), city: cityName,
       country: selectedCountry.name, date: dateStr, emoji, days: [],
+      coords,
       plannedDate: enableCountdown ? (() => {
         const d = plannedDateObj;
         return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
@@ -289,7 +306,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     ]);
   };
 
-  const handleNewTrip = () => {
+  const handleNewTrip = async () => {
     if (!isPro && trips.length >= (freeTripLimit||3)) {
       Alert.alert('已达免费版上限',
         `免费版最多记录 ${freeTripLimit||3} 个旅程\n升级 Pro 即可无限记录`,
