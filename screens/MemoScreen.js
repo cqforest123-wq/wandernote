@@ -4,6 +4,8 @@ import {
   TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '../lib/supabase';
+import { syncMemosUp, syncMemosDown } from '../lib/sync';
 
 const STORAGE_KEY = '@wandernote_memos';
 
@@ -157,26 +159,58 @@ export default function MemoScreen({ route, navigation }) {
   const [filterCat,    setFilterCat]    = useState('all');
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(v => {
-      const loaded = v ? JSON.parse(v) : [];
-      setMemos(loaded);
-      // 从旅程进入且该旅程没有打包清单时，自动弹出新建
-      if (tripId) {
-        const hasTripMemo = loaded.some(m => m.category === 'packing' && m.tripId === tripId);
-        if (!hasTripMemo) {
-          setCategory('packing');
-          setTitle('');
-          setItems([{ id: Date.now(), text: '', checked: false }]);
-          setEditingMemo(null);
-          setTimeout(() => setShowTemplate(true), 300);
+    const loadMemos = async () => {
+      try {
+        // 先尝试云端
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) {
+          const cloudMemos = await syncMemosDown(user.id);
+          if (cloudMemos?.length) {
+            setMemos(cloudMemos);
+            if (tripId) {
+              const has = cloudMemos.some(m => m.category === 'packing' && m.tripId === tripId);
+              if (!has) {
+                setCategory('packing');
+                setTitle('');
+                setItems([{ id: Date.now(), text: '', checked: false }]);
+                setEditingMemo(null);
+                setTimeout(() => setShowTemplate(true), 300);
+              }
+            }
+            return;
+          }
         }
+        // 云端无数据，用本地
+        const v = await AsyncStorage.getItem(STORAGE_KEY);
+        const loaded = v ? JSON.parse(v) : [];
+        setMemos(loaded);
+        if (tripId) {
+          const has = loaded.some(m => m.category === 'packing' && m.tripId === tripId);
+          if (!has) {
+            setCategory('packing');
+            setTitle('');
+            setItems([{ id: Date.now(), text: '', checked: false }]);
+            setEditingMemo(null);
+            setTimeout(() => setShowTemplate(true), 300);
+          }
+        }
+      } catch (e) {
+        const v = await AsyncStorage.getItem(STORAGE_KEY);
+        const loaded = v ? JSON.parse(v) : [];
+        setMemos(loaded);
       }
-    });
+    };
+    loadMemos();
   }, []);
 
   const saveMemos = async (next) => {
     setMemos(next);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    // 同步到云端
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) syncMemosUp(user.id, next);
+    } catch (e) {}
   };
 
   const openNew = (defaultCat = 'note') => {
