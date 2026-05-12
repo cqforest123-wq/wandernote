@@ -441,7 +441,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
       <View style={s.header}>
         <View>
           <Text style={s.pageTitle}>{tripName ? `${tripName} · 打包` : '行前准备'}</Text>
-          <Text style={s.pageSubtitle}>{tripName ? '该旅程的打包清单' : '打包清单 · 备忘录'}</Text>
+          <Text style={s.pageSubtitle}>{tripName ? '该旅程的打包清单' : '打包清单 · 旅行感言'}</Text>
         </View>
         <TouchableOpacity style={s.newBtn}
           onPress={() => openNew(tab === 'packing' ? 'packing' : 'note')}>
@@ -462,7 +462,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
         </TouchableOpacity>
         <TouchableOpacity style={[s.tabBtn, tab === 'memo' && s.tabBtnActive]}
           onPress={() => setTab('memo')}>
-          <Text style={[s.tabText, tab === 'memo' && s.tabTextActive]}>📝 备忘录</Text>
+          <Text style={[s.tabText, tab === 'memo' && s.tabTextActive]}>📝 旅行感言</Text>
           {otherMemos.length > 0 && (
             <View style={[s.tabBadge, tab === 'memo' && { backgroundColor: '#D4AF37' }]}>
               <Text style={s.tabBadgeText}>{otherMemos.length}</Text>
@@ -518,7 +518,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
             {otherMemos.length === 0 ? (
               <View style={s.emptyBox}>
                 <Text style={s.emptyEmoji}>📝</Text>
-                <Text style={s.emptyText}>还没有备忘录</Text>
+                <Text style={s.emptyText}>还没有旅行感言</Text>
                 <Text style={s.emptyHint}>点击「＋ 新建」开始记录</Text>
               </View>
             ) : (
