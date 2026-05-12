@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import * as Location from 'expo-location';
-import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityCoords';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 
@@ -9,61 +7,67 @@ const { width, height } = Dimensions.get('window');
 // 城市坐标数据库
 import { CITY_COORDS } from '../lib/cityCoords';
 
+function normalizeCoords(coords) {
+  if (!coords) return null;
+  const lat = Number(coords.lat);
+  const lng = Number(coords.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (lat < -90 || lat > 90) return null;
+  if (lng < -180 || lng > 180) return null;
+  return { lat, lng };
+}
+
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max);
+}
+
 function getCoords(cityName) {
-  // 精确匹配
-  if (CITY_COORDS[cityName]) return CITY_COORDS[cityName];
-  // 模糊匹配
-  const key = Object.keys(CITY_COORDS).find(k => 
-    cityName.includes(k) || k.includes(cityName)
+  const name = String(cityName || '').trim();
+  if (!name) return null;
+  const exact = normalizeCoords(CITY_COORDS[name]);
+  if (exact) return exact;
+  const key = Object.keys(CITY_COORDS).find(k =>
+    name.includes(k) || k.includes(name)
   );
-  return key ? CITY_COORDS[key] : null;
+  return key ? normalizeCoords(CITY_COORDS[key]) : null;
 }
 
 export default function MapScreen({ trips }) {
   const [selectedTrip, setSelectedTrip] = useState(null);
   const mapRef = useRef(null);
-  const [userCoords, setUserCoords] = useState(null);
   const [mapType, setMapType] = useState('standard');
 
   // 获取所有有坐标的旅程
-  useEffect(() => {
-    (async () => {
-      try {
-        const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') return;
-        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
-        setUserCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      } catch (e) {}
-    })();
-  }, []);
-
-  const getDistance = (trip) => {
-    if (!userCoords) return null;
-    const dest = trip.coords;
-    if (!dest) return null;
-    const km = haversineDistanceKm(userCoords, dest);
-    return formatDistance(km);
-  };
-
-  const mappedTrips = trips.map(t => ({
-    ...t,
-    coords: t.coords || getCoords(t.city),
-  })).filter(t => t.coords);
-
-  const unmappedTrips = trips.filter(t => !getCoords(t.city));
+  const safeTrips = Array.isArray(trips) ? trips : [];
+  const mappedTrips = safeTrips
+    .map(t => {
+      const coords = normalizeCoords(t.coords) || getCoords(t.city);
+      return coords ? { ...t, coords } : null;
+    })
+    .filter(Boolean);
+  const unmappedTrips = safeTrips.filter(t => !getCoords(t.city));
 
   // 计算地图中心
   const getInitialRegion = () => {
     if (mappedTrips.length === 0) {
-      return { latitude: 25, longitude: 15, latitudeDelta: 120, longitudeDelta: 120 };
+      return { latitude: 25, longitude: 15, latitudeDelta: 80, longitudeDelta: 160 };
     }
     const lats = mappedTrips.map(t => t.coords.lat);
     const lngs = mappedTrips.map(t => t.coords.lng);
-    const midLat = (Math.max(...lats) + Math.min(...lats)) / 2;
-    const midLng = (Math.max(...lngs) + Math.min(...lngs)) / 2;
-    const deltaLat = Math.max(Math.max(...lats) - Math.min(...lats), 20) * 1.5;
-    const deltaLng = Math.max(Math.max(...lngs) - Math.min(...lngs), 20) * 1.5;
-    return { latitude: midLat, longitude: midLng, latitudeDelta: deltaLat, longitudeDelta: deltaLng };
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const midLat = (maxLat + minLat) / 2;
+    const midLng = (maxLng + minLng) / 2;
+    const deltaLat = clamp((maxLat - minLat) * 1.5, 4, 80);
+    const deltaLng = clamp((maxLng - minLng) * 1.5, 4, 160);
+    return {
+      latitude: Number.isFinite(midLat) ? midLat : 25,
+      longitude: Number.isFinite(midLng) ? midLng : 15,
+      latitudeDelta: deltaLat,
+      longitudeDelta: deltaLng,
+    };
   };
 
   return (
@@ -97,19 +101,16 @@ export default function MapScreen({ trips }) {
             style={s.map}
             mapType={mapType}
             initialRegion={getInitialRegion()}
-            showsUserLocation={true}
+            showsUserLocation={false}
             showsCompass={false}>
             {mappedTrips.map(trip => (
               <Marker
                 key={trip.id}
                 coordinate={{ latitude: trip.coords.lat, longitude: trip.coords.lng }}
                 onPress={() => setSelectedTrip(trip)}>
-                <View style={s.markerWrap}>
-                  <View style={[s.markerBubble, selectedTrip?.id === trip.id && s.markerSelected]}>
+                <View style={s.markerContainer}>
+                  <View style={[s.marker, selectedTrip?.id === trip.id && s.markerSelected]}>
                     <Text style={s.markerEmoji}>{trip.emoji}</Text>
-                    {getDistance(trip) && (
-                      <Text style={s.markerDist}>{getDistance(trip)}</Text>
-                    )}
                   </View>
                   <View style={s.markerTail}/>
                 </View>
@@ -142,7 +143,7 @@ export default function MapScreen({ trips }) {
                 <Text style={[s.tripChipCity, selectedTrip?.id === trip.id && {color:'#D4AF37'}]}>
                   {trip.city}
                 </Text>
-                <Text style={s.tripChipMeta}>{trip.days.length}天</Text>
+                <Text style={s.tripChipMeta}>{trip.days?.length || 0}天</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -167,9 +168,9 @@ export default function MapScreen({ trips }) {
               </View>
               <View style={s.modalStats}>
                 {[
-                  [String(selectedTrip.days.length), '天'],
-                  [String(selectedTrip.days.reduce((a,d)=>a+d.memos.length,0)), '感言'],
-                  [String(selectedTrip.days.reduce((a,d)=>a+(d.photos||[]).length,0)), '照片'],
+                  [String(selectedTrip.days?.length || 0), '天'],
+                  [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.memos||[]).length,0)), '感言'],
+                  [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.photos||[]).length,0)), '照片'],
                 ].map(([n,l]) => (
                   <View key={l} style={s.modalStat}>
                     <Text style={s.modalStatNum}>{n}</Text>
