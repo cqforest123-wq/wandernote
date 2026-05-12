@@ -25,6 +25,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [showEditDate, setShowEditDate] = useState(false);
   const [editDateObj, setEditDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
   const [distance, setDistance] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -92,12 +93,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const deleteTrip = () => {
+    if (isDeleting) return; // 正在删除中，忽略重复触发
     Alert.alert(t('trip_delete'), `${t('trip_delete_confirm').replace('%s', trip.city)}`, [
       { text: t('cancel'), style: 'cancel' },
       {
         text: '删除',
         style: 'destructive',
         onPress: async () => {
+          setIsDeleting(true);
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user?.id) throw new Error('未登录');
@@ -107,6 +110,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           } catch (e) {
             console.error('deleteTrip error:', e.message);
             Alert.alert(t('alert_delete_failed'), e.message || t('alert_network_retry'));
+          } finally {
+            setIsDeleting(false);
           }
         },
       },

@@ -393,12 +393,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const deleteTrip = (tripId, cityName) => {
+    if (deletingId) return; // 正在删除中，忽略重复触发
     Alert.alert('删除旅程', `确定删除「${cityName}」？`, [
       { text: t('cancel'), style: 'cancel' },
       {
         text: '删除',
         style: 'destructive',
         onPress: async () => {
+          setDeletingId(tripId);
           try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user?.id) throw new Error('未登录');
@@ -407,6 +409,8 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
           } catch (e) {
             console.error('deleteTrip error:', e.message);
             Alert.alert(t('alert_delete_failed'), e.message || t('alert_network_retry'));
+          } finally {
+            setDeletingId(null);
           }
         },
       },
@@ -424,6 +428,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
   const [tripSearch, setTripSearch] = useState('');
   const [sortBy, setSortBy] = useState('date'); // date | name
+  const [deletingId, setDeletingId] = useState(null);
 
   // 搜索同时匹配国家名和城市名
   const searchResults = search ? ALL_COUNTRIES.flatMap(c => {
@@ -492,7 +497,8 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         {filteredTrips.map(trip => (
           <TouchableOpacity key={trip.id} style={s.card}
             onPress={() => navigation.navigate('TripDetail', { tripId: trip.id })}
-            onLongPress={() => deleteTrip(trip.id, trip.city)}>
+            onLongPress={() => deleteTrip(trip.id, trip.city)}
+            disabled={deletingId === trip.id}>
             <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
             <View style={{flex:1}}>
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
