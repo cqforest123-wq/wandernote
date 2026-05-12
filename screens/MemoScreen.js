@@ -145,7 +145,7 @@ const pg = StyleSheet.create({
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
-export default function MemoScreen({ route, navigation }) {
+export default function MemoScreen({ route, navigation, isPro }) {
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
   const [memos,        setMemos]        = useState([]);
@@ -206,11 +206,13 @@ export default function MemoScreen({ route, navigation }) {
   const saveMemos = async (next) => {
     setMemos(next);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 同步到云端
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.id) syncMemosUp(user.id, next);
-    } catch (e) {}
+    // 同步到云端（仅 Pro 用户）
+    if (isPro) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.id) syncMemosUp(user.id, next);
+      } catch (e) {}
+    }
   };
 
   const openNew = (defaultCat = 'note') => {
@@ -229,8 +231,21 @@ export default function MemoScreen({ route, navigation }) {
     setShowAdd(true);
   };
 
+  const FREE_PACKING_LIMIT = 3;
   const saveMemo = async () => {
     if (!title.trim() && items.every(i => !i.text.trim())) return;
+    // 非会员打包清单限制
+    if (!isPro && category === 'packing' && !editingMemo) {
+      const packCount = memos.filter(m => m.category === 'packing').length;
+      if (packCount >= FREE_PACKING_LIMIT) {
+        Alert.alert(
+          '已达免费版上限',
+          `免费版最多创建 ${FREE_PACKING_LIMIT} 个打包清单\n升级 Pro 即可无限创建`,
+          [{ text: '知道了', style: 'cancel' }]
+        );
+        return;
+      }
+    }
     const validItems = items.filter(i => i.text.trim());
     const now = new Date();
     const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;

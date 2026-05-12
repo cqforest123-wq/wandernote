@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import * as Location from 'expo-location';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -20,6 +21,26 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [editEmoji, setEditEmoji] = useState('');
   const [showEditDate, setShowEditDate] = useState(false);
   const [editDateObj, setEditDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
+  const [distance, setDistance] = useState(null);
+
+  useEffect(() => {
+    if (!trip?.coords) return;
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low });
+        const R = 6371;
+        const lat1 = loc.coords.latitude * Math.PI / 180;
+        const lat2 = trip.coords.lat * Math.PI / 180;
+        const dLat = (trip.coords.lat - loc.coords.latitude) * Math.PI / 180;
+        const dLng = (trip.coords.lng - loc.coords.longitude) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLng/2)**2;
+        const km = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        setDistance(km < 1 ? `${Math.round(km*1000)}m` : km < 10 ? `${km.toFixed(1)}km` : `${Math.round(km)}km`);
+      } catch(e) {}
+    })();
+  }, [trip?.coords]);
 
   if (!trip) return null;
 
@@ -105,7 +126,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               <Text style={s.tripCity} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
               <Text style={s.editHint}>✏️</Text>
             </View>
-            <Text style={s.tripMeta}>{trip.country}</Text>
+            <Text style={s.tripMeta}>{trip.country}{distance ? ` · 📍 距离 ${distance}` : ''}</Text>
           </View>
         </TouchableOpacity>
 

@@ -181,9 +181,6 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
             <TouchableOpacity style={[s.actionBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}>
               <Text style={[s.actionBtnText,{color:'#4ECDC4'}]}>📸 照片</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[s.actionBtn,{borderColor:'#FF6B6B50',backgroundColor:'#FF6B6B15'}]} onPress={pickVideos}>
-              <Text style={[s.actionBtnText,{color:'#FF6B6B'}]}>🎬 视频</Text>
-            </TouchableOpacity>
           </View>
         </View>
 
