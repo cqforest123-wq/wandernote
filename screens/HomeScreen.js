@@ -243,23 +243,45 @@ const cd = StyleSheet.create({
   glow:{position:'absolute',right:-20,top:-20,width:80,height:80,borderRadius:40,backgroundColor:'#4ECDC4',opacity:0.08},
 });
 
-async function geocodeCity(cityName, countryName) {
+async function nominatimSearch(query) {
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
   try {
-    const query = encodeURIComponent(`${cityName} ${countryName}`);
-    const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(url, {
       headers: { 'User-Agent': 'WanderNote/1.0' },
       signal: controller.signal,
     });
     clearTimeout(timer);
     const data = await res.json();
-    if (data?.length > 0) {
-      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-    }
-  } catch (e) {}
+    if (data?.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  } catch (e) {
+    clearTimeout(timer);
+  }
   return null;
+}
+
+// 中英文双重geocode，提升小地名识别率
+const ZH_TO_EN = {
+  '哈尔施塔特': 'Hallstatt', '因特拉肯': 'Interlaken', '少女峰': 'Jungfrau',
+  '采尔马特': 'Zermatt', '卡帕多奇亚': 'Cappadocia', '棉花堡': 'Pamukkale',
+  '圣托里尼': 'Santorini', '杜布罗夫尼克': 'Dubrovnik', '普利特维采': 'Plitvice',
+  '马丘比丘': 'Machu Picchu', '乌尤尼盐湖': 'Uyuni Salt Flat', '吴哥窟': 'Angkor Wat',
+  '琅勃拉邦': 'Luang Prabang', '蒲甘': 'Bagan', '茵莱湖': 'Inle Lake',
+};
+
+async function geocodeCity(cityName, countryName) {
+  // 先用中文搜
+  const result = await nominatimSearch(`${cityName} ${countryName}`);
+  if (result) return result;
+  // 中文失败，尝试英文映射
+  const enName = ZH_TO_EN[cityName];
+  if (enName) {
+    const result2 = await nominatimSearch(enName);
+    if (result2) return result2;
+  }
+  // 最后只用城市名再试一次
+  return await nominatimSearch(cityName);
 }
 
 export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
@@ -313,16 +335,22 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
   const deleteTrip = (tripId, cityName) => {
     Alert.alert('删除旅程', `确定删除「${cityName}」？`, [
-      {text:t('cancel'), style:'cancel'},
-      {text:'删除', style:'destructive', onPress: async () => {
-        const newTrips = trips.filter(t=>t.id!==tripId);
-        setTrips(newTrips);
-        // 同步删除云端
-        try {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user?.id) await supabase.from('trips').delete().eq('id', tripId).eq('user_id', user.id);
-        } catch(e) {}
-      }},
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user?.id) throw new Error('未登录');
+            await deleteTripAndRelated(user.id, tripId);
+            setTrips(prev => prev.filter(t => t.id !== tripId));
+          } catch (e) {
+            console.error('deleteTrip error:', e.message);
+            Alert.alert('删除失败', e.message || '请检查网络后重试');
+          }
+        },
+      },
     ]);
   };
 
@@ -340,7 +368,12 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [tripSearch, setTripSearch] = useState('');
   const [sortBy, setSortBy] = useState('date'); // date | name
 
-  const searchResults = search ? ALL_COUNTRIES.filter(c => c.name.includes(search)) : null;
+  // 搜索同时匹配国家名和城市名
+  const searchResults = search ? ALL_COUNTRIES.flatMap(c => {
+    if (c.name.includes(search)) return [{ type: 'country', country: c }];
+    const matchedCities = c.cities.filter(city => city.includes(search));
+    return matchedCities.map(city => ({ type: 'city', country: c, city }));
+  }) : null;
 
   const filteredTrips = trips
     .filter(t => tripSearch ? t.city.includes(tripSearch) || t.country.includes(tripSearch) : true)
@@ -426,9 +459,19 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
               </View>
               <TextInput style={s.searchBox} placeholder="搜索国家/地区..." placeholderTextColor="#444" value={search} onChangeText={t=>{setSearch(t);setSelectedContinent(null);}} />
               <ScrollView style={{maxHeight:420}} nestedScrollEnabled>
-                {searchResults && searchResults.map(c=>(
-                  <TouchableOpacity key={c.name} style={s.listItem} onPress={()=>{setSelectedCountry(c);setStep(2);}}>
-                    <Text style={s.listItemText}>{c.name}</Text>
+                {searchResults && searchResults.map((item, idx)=>(
+                  <TouchableOpacity key={idx} style={s.listItem} onPress={()=>{
+                    setSelectedCountry(item.country);
+                    if (item.type === 'city') {
+                      setSelectedCities([item.city]);
+                      setStep(3);
+                    } else {
+                      setStep(2);
+                    }
+                  }}>
+                    <Text style={s.listItemText}>
+                      {item.type === 'city' ? `${item.city}（${item.country.name}）` : item.country.name}
+                    </Text>
                   </TouchableOpacity>
                 ))}
                 {!search && !selectedContinent && CONTINENTS.map(cont=>(

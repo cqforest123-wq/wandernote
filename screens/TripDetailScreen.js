@@ -3,6 +3,8 @@ import * as Location from 'expo-location';
 import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityCoords';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { supabase } from '../lib/supabase';
+import { deleteTripAndRelated } from '../lib/sync';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
@@ -90,9 +92,24 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const deleteTrip = () => {
-    Alert.alert(t('trip_delete'),`确定删除「${trip.city}」的全部记录？此操作不可恢复。`,[
-      {text:t('cancel'),style:'cancel'},
-      {text:'删除',style:'destructive',onPress:()=>{ setTrips(trips.filter(t=>t.id!==tripId)); navigation.goBack(); }},
+    Alert.alert(t('trip_delete'), `确定删除「${trip.city}」的全部记录？此操作不可恢复。`, [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: '删除',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user?.id) throw new Error('未登录');
+            await deleteTripAndRelated(user.id, trip.id);
+            setTrips(prev => prev.filter(t => t.id !== trip.id));
+            navigation.goBack();
+          } catch (e) {
+            console.error('deleteTrip error:', e.message);
+            Alert.alert('删除失败', e.message || '请检查网络后重试');
+          }
+        },
+      },
     ]);
   };
 

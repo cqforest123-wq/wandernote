@@ -61,7 +61,12 @@ function MainApp({ session }) {
         // 云端无数据，用本地
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved !== null) {
-          setTripsState(JSON.parse(saved));
+          try {
+            setTripsState(JSON.parse(saved));
+          } catch (e) {
+            console.warn('本地旅程数据损坏，已重置:', e.message);
+            setTripsState(INITIAL_TRIPS);
+          }
         } else {
           setTripsState(INITIAL_TRIPS);
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_TRIPS));

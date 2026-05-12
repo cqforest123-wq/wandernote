@@ -183,7 +183,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
         }
         // 云端无数据，用本地
         const v = await AsyncStorage.getItem(STORAGE_KEY);
-        const loaded = v ? JSON.parse(v) : [];
+        const loaded = v ? (() => { try { return JSON.parse(v); } catch(e) { console.warn("MemoScreen: 本地数据损坏，已重置"); return []; } })() : [];
         setMemos(loaded);
         if (tripId) {
           const has = loaded.some(m => m.category === 'packing' && m.tripId === tripId);
@@ -197,7 +197,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
         }
       } catch (e) {
         const v = await AsyncStorage.getItem(STORAGE_KEY);
-        const loaded = v ? JSON.parse(v) : [];
+        const loaded = v ? (() => { try { return JSON.parse(v); } catch(e) { console.warn("MemoScreen: 本地数据损坏，已重置"); return []; } })() : [];
         setMemos(loaded);
       }
     };
@@ -211,7 +211,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
     if (isPro) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) syncMemosUp(user.id, next);
+        if (user?.id) syncMemosUpWithTripId(user.id, next);
       } catch (e) {}
     }
   };
