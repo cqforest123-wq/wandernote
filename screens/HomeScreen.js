@@ -361,6 +361,19 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [forecast, setForecast] = useState(null);
   const [forecastLoading, setForecastLoading] = useState(false);
 
+  // 监听城市名变化自动获取天气，不依赖步骤
+  React.useEffect(() => {
+    const cityName = customCity.trim() || selectedCities[0];
+    if (!cityName) { setForecast(null); return; }
+    const coords = getCityCoords(cityName);
+    if (!coords) { setForecast(null); return; }
+    setForecastLoading(true);
+    fetchWeatherForecast(coords.lat, coords.lng)
+      .then(f => setForecast(f))
+      .catch(() => setForecast(null))
+      .finally(() => setForecastLoading(false));
+  }, [customCity, selectedCities]);
+
   const resetForm = () => {
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
     setSelectedCities([]); setCustomCity(''); setSelectedEmoji(null);
@@ -538,14 +551,6 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                     if (item.type === 'city') {
                       setSelectedCities([item.city]);
                       setStep(3);
-                      const coords = getCityCoords(item.city);
-                      if (coords) {
-                        setForecastLoading(true);
-                        fetchWeatherForecast(coords.lat, coords.lng)
-                          .then(f => setForecast(f))
-                          .catch(() => {})
-                          .finally(() => setForecastLoading(false));
-                      }
                     } else {
                       setStep(2);
                     }
@@ -617,18 +622,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                       已选 {selectedCities.length} 个：{selectedCities.join(' · ')}
                     </Text>
                   )}
-                  <TouchableOpacity style={s.nextBtn} onPress={()=>{
-                    setStep(3);
-                    const cityName = customCity.trim() || selectedCities[0];
-                    const coords = getCityCoords(cityName);
-                    if (coords) {
-                      setForecastLoading(true);
-                      fetchWeatherForecast(coords.lat, coords.lng)
-                        .then(f => setForecast(f))
-                        .catch(() => {})
-                        .finally(() => setForecastLoading(false));
-                    }
-                  }}>
+                  <TouchableOpacity style={s.nextBtn} onPress={()=>setStep(3)}>
                     <Text style={s.nextBtnText}>下一步 →</Text>
                   </TouchableOpacity>
                 </View>
