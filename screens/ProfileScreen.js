@@ -6,7 +6,7 @@ import i18n from '../i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
-export default function ProfileScreen({ session, trips, isPro, onUpgrade, navigation }) {
+export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPaywall, navigation }) {
   const { t } = useTranslation();
   const [showPricing, setShowPricing] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
@@ -108,7 +108,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
         </TouchableOpacity>
 
         {!isPro && (
-          <TouchableOpacity style={s.upgradeCard} onPress={()=>setShowPricing(true)}>
+          <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall('Pro会员') : setShowPricing(true)}>
             <View>
               <Text style={s.upgradeTitle}>✦ 升级到 Pro</Text>
               <Text style={s.upgradeDesc}>无限旅程 · 云端备份 · AI生成图集</Text>
@@ -223,10 +223,10 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
                 <Text style={s.pricingFeatureText}>{f}</Text>
               </View>
             ))}
-            <View style={s.subscribeBtn}>
-              <Text style={s.subscribeBtnText}>✦ Pro 订阅即将推出</Text>
-            </View>
-            <Text style={s.pricingNote}>敬请期待 · 感谢你的支持 🙏</Text>
+            <TouchableOpacity style={s.subscribeBtn} onPress={()=>{ setShowPricing(false); openPaywall && openPaywall('Pro会员'); }}>
+              <Text style={s.subscribeBtnText}>立即订阅 →</Text>
+            </TouchableOpacity>
+            <Text style={s.pricingNote}>随时取消 · 无隐藏费用</Text>
           </View>
         </View>
       </Modal>

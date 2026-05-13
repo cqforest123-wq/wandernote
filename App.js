@@ -9,6 +9,8 @@ import * as SplashScreen from 'expo-splash-screen';
 
 SplashScreen.preventAutoHideAsync();
 import { initSync, syncTripsUp, syncMemosUp } from './lib/sync';
+import { initPurchases, checkProStatus } from './lib/purchases';
+import PaywallScreen from './screens/PaywallScreen';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -46,7 +48,14 @@ function MainApp({ session }) {
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const isPro = false;
+  const [isPro, setIsPro] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState(null);
+
+  const openPaywall = (featureName) => {
+    setPaywallFeature(featureName);
+    setShowPaywall(true);
+  };
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null); // null=未知，false=未看，true=已看
 
   useEffect(() => {
@@ -54,6 +63,17 @@ function MainApp({ session }) {
       setHasSeenOnboarding(val === 'true');
     });
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.id) {
+      // 初始化RevenueCat并检查Pro状态
+      initPurchases(session.user.id).then(() => {
+        checkProStatus().then(status => setIsPro(status));
+      });
+    } else {
+      setIsPro(false);
+    }
+  }, [session?.user?.id]);
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
@@ -154,7 +174,7 @@ function MainApp({ session }) {
             <Stack.Screen key={langKey + "AI"} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
-            <Stack.Screen key={langKey + "Profile"} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Profile"} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
             <Stack.Screen key={langKey + "YearReport"} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
             <Stack.Screen key={langKey + "PhotoFilter"} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
 
@@ -215,6 +235,11 @@ export default function App() {
     </View>
   );
   if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
+  if (showPaywall) return <PaywallScreen
+    featureName={paywallFeature}
+    onSuccess={() => { setIsPro(true); setShowPaywall(false); }}
+    onClose={() => setShowPaywall(false)}
+  />;
   if (!session) return <AuthScreen/>;
   return <MainApp session={session}/>;
 }
