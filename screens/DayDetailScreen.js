@@ -26,7 +26,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const sortedDays = [...trip.days].sort((a,b)=>a.date.localeCompare(b.date));
   const dayIndex = sortedDays.findIndex(d=>d.date===dayDate)+1;
 
-  const updateDay = (updater) => setTrips(trips.map(t=>t.id===tripId?{...t,days:t.days.map(d=>d.date===dayDate?updater(d):d)}:t));
+  const updateDay = (updater) => setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:t.days.map(d=>d.date===dayDate?updater(d):d)}:t));
 
   const openNewMemo = () => {
     setEditingMemo(null);

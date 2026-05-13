@@ -381,7 +381,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
       })() : null
     };
-    setTrips([newTrip, ...trips]);
+    setTrips(prev => [newTrip, ...prev]);
     resetForm(); setShowAdd(false);
     navigation.navigate('TripDetail', { tripId: newTrip.id });
     // 异步获取坐标，不阻塞UI

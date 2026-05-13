@@ -78,14 +78,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
       memos: dayNote.trim()?[{id:Date.now(),text:dayNote.trim(),tag:'感受',time:`${pad(now.getHours())}:${pad(now.getMinutes())}`}]:[],
       photos:[], videos:[],
     };
-    setTrips(trips.map(t=>t.id===tripId?{...t,days:[...t.days,newDay].sort((a,b)=>a.date.localeCompare(b.date))}:t));
+    setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:[...t.days,newDay].sort((a,b)=>a.date.localeCompare(b.date))}:t));
     setDayNote(''); setShowAddDay(false);
     navigation.navigate('DayDetail',{tripId,dayDate:dateStr});
   };
 
   const saveEditTrip = () => {
     if (!editCity.trim()) return;
-    setTrips(trips.map(t=>t.id===tripId?{...t,city:editCity.trim(),emoji:editEmoji||t.emoji}:t));
+    setTrips(prev=>prev.map(t=>t.id===tripId?{...t,city:editCity.trim(),emoji:editEmoji||t.emoji}:t));
     setShowEditTrip(false);
   };
 
@@ -132,7 +132,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const deleteDay = (dayDate) => {
     Alert.alert(t('alert_delete_day'), t('alert_delete_day_confirm').replace('%s', dayDate),[
       {text:t('cancel'),style:'cancel'},
-      {text:'删除',style:'destructive',onPress:()=>setTrips(trips.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
+      {text:'删除',style:'destructive',onPress:()=>setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
     ]);
   };
 
@@ -390,7 +390,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                 onPress={()=>{
                   const d = editDateObj;
                   const pd = `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
-                  setTrips(trips.map(t=>t.id===tripId?{...t,plannedDate:pd}:t));
+                  setTrips(prev=>prev.map(t=>t.id===tripId?{...t,plannedDate:pd}:t));
                   setShowEditDate(false);
                 }}>
                 <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>保存</Text>
