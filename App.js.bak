@@ -3,12 +3,14 @@ import './i18n';
 import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
-import { initSync, syncTripsUp } from './lib/sync';
+
+SplashScreen.preventAutoHideAsync();
+import { initSync, syncTripsUp, syncMemosUp } from './lib/sync';
 import { initPurchases, checkProStatus } from './lib/purchases';
+import PaywallScreen from './screens/PaywallScreen';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -21,26 +23,28 @@ import MapScreen from './screens/MapScreen';
 import MemoScreen from './screens/MemoScreen';
 import YearReportScreen from './screens/YearReportScreen';
 import PhotoFilterScreen from './screens/PhotoFilterScreen';
-import PaywallScreen from './screens/PaywallScreen';
-
-SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
 const FREE_TRIP_LIMIT = 3;
-const STORAGE_KEY = STORAGE_KEYS.trips;
+const STORAGE_KEY = '@wandernote_trips';
 
 const INITIAL_TRIPS = [
-  { id:1, city:'京都', country:'日本', date:'2026.03', emoji:'🗼', coords:null, days:[
+  { id:1, city:'京都', country:'日本', date:'2026.03', emoji:'🗼', days:[
     { date:'2026.03.15', weekDay:'周日', memos:[{id:1,text:'清晨的岚山竹林，只有风声',tag:'风景',time:'07:30'},{id:2,text:'嵯峨野的豆腐料理，入口即化',tag:'美食',time:'12:15'}], photos:[], videos:[] },
     { date:'2026.03.16', weekDay:'周一', memos:[{id:3,text:'伏见稻荷大社，千本鸟居在晨雾中若隐若现',tag:'探险',time:'09:00'}], photos:[], videos:[] },
   ]},
-  { id:2, city:'雷克雅未克', country:'冰岛', date:'2025.11', emoji:'🌋', coords:null, days:[] },
+  { id:2, city:'雷克雅未克', country:'冰岛', date:'2025.11', emoji:'🌋', days:[] },
 ];
 
-// MainApp：已登录用户的业务逻辑和导航
 function MainApp({ session }) {
   const { i18n } = useTranslation();
   const [langKey, setLangKey] = useState(Date.now());
+
+  useEffect(() => {
+    const handleLangChange = (lng) => setLangKey(Date.now());
+    i18n.on('languageChanged', handleLangChange);
+    return () => i18n.off('languageChanged', handleLangChange);
+  }, []);
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
@@ -48,26 +52,39 @@ function MainApp({ session }) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState(null);
 
+  const openPaywall = (featureName) => {
+    setPaywallFeature(featureName);
+    setShowPaywall(true);
+  };
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null); // null=未知，false=未看，true=已看
+
   useEffect(() => {
-    const handleLangChange = () => setLangKey(Date.now());
-    i18n.on('languageChanged', handleLangChange);
-    return () => i18n.off('languageChanged', handleLangChange);
+    AsyncStorage.getItem('@wandernote_onboarding_done').then(val => {
+      setHasSeenOnboarding(val === 'true');
+    });
   }, []);
 
   useEffect(() => {
-    if (!session?.user?.id) return;
-    initPurchases(session.user.id)
-      .then(() => checkProStatus())
-      .then(status => setIsPro(Boolean(status)))
-      .catch(e => {
-        console.warn('RevenueCat初始化失败:', e.message);
-        setIsPro(false);
+    if (session?.user?.id) {
+      // 初始化RevenueCat并检查Pro状态
+      initPurchases(session.user.id).then(() => {
+        checkProStatus().then(status => setIsPro(status));
       });
+    } else {
+      setIsPro(false);
+    }
   }, [session?.user?.id]);
 
+  const finishOnboarding = async () => {
+    await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
+    setHasSeenOnboarding(true);
+  };
+
+  // 启动时从本地读取数据
   useEffect(() => {
     const loadTrips = async () => {
       try {
+        // 先尝试从云端同步
         const userId = session?.user?.id;
         if (userId) {
           const { trips: cloudTrips } = await initSync(userId);
@@ -77,6 +94,7 @@ function MainApp({ session }) {
             return;
           }
         }
+        // 云端无数据，用本地
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved !== null) {
           try {
@@ -90,7 +108,7 @@ function MainApp({ session }) {
           await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_TRIPS));
         }
       } catch (e) {
-        console.warn('读取数据失败:', e.message);
+        console.log('读取数据失败:', e);
         setTripsState(INITIAL_TRIPS);
       } finally {
         setLoaded(true);
@@ -99,28 +117,25 @@ function MainApp({ session }) {
     loadTrips();
   }, []);
 
+  // 每次 trips 变化自动保存
   const setTrips = async (newTripsOrFn) => {
     const newTrips = typeof newTripsOrFn === 'function' ? newTripsOrFn(trips) : newTripsOrFn;
     if (!isPro && newTrips.length > trips.length && trips.length >= FREE_TRIP_LIMIT) {
       Alert.alert('已达免费版上限',
         `免费版最多记录 ${FREE_TRIP_LIMIT} 个旅程\n升级 Pro 即可无限记录`,
-        [{text:'暂不',style:'cancel'},{text:'去升级',onPress:()=>openPaywall('无限旅程')}]
+        [{text:'暂不',style:'cancel'},{text:'去升级',onPress:()=>setActiveTab('profile')}]
       );
       return;
     }
     setTripsState(newTrips);
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTrips));
+      // 同步到云端
       const userId = session?.user?.id;
       if (userId) syncTripsUp(userId, newTrips);
     } catch (e) {
-      console.warn('保存数据失败:', e.message);
+      console.log('保存数据失败:', e);
     }
-  };
-
-  const openPaywall = (featureName) => {
-    setPaywallFeature(featureName);
-    setShowPaywall(true);
   };
 
   const tabs = [
@@ -143,27 +158,30 @@ function MainApp({ session }) {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
-            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Home"} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "TripDetail"} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "DayDetail"} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "TripMemo"} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
           </>}
+
           {activeTab==='memo' && (
-            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Memo"} name="Memo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
-            <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Map"} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='ai' && (
-            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "AI"} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'YearReport'} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'PhotoFilter'} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "Profile"} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "YearReport"} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey + "PhotoFilter"} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
+
           </>}
         </Stack.Navigator>
       </NavigationContainer>
+
       <View style={st.navbar}>
         {tabs.map(tab=>(
           <TouchableOpacity key={tab.key} style={st.navItem} onPress={()=>setActiveTab(tab.key)}>
@@ -172,72 +190,56 @@ function MainApp({ session }) {
           </TouchableOpacity>
         ))}
       </View>
-      <Modal visible={showPaywall} animationType="slide" presentationStyle="pageSheet">
-        <PaywallScreen
-          featureName={paywallFeature}
-          onSuccess={() => { setIsPro(true); setShowPaywall(false); }}
-          onClose={() => setShowPaywall(false)}
-        />
-      </Modal>
     </View>
   );
 }
 
-// App：auth gate + onboarding gate + splash
 export default function App() {
   const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  const [onboardingLoaded, setOnboardingLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setAuthLoading(false), 10000);
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // 加超时保护，国内网络 Supabase 可能慢
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 10000);
+
+    supabase.auth.getSession().then(({data:{session}})=>{
       clearTimeout(timeout);
       setSession(session);
-      setAuthLoading(false);
+      setLoading(false);
     }).catch(() => {
       clearTimeout(timeout);
-      setAuthLoading(false);
+      setLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setSession(session);
-    });
-    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
+
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_,session)=>setSession(session));
+    return ()=>{ subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
 
-  useEffect(() => {
-    AsyncStorage.getItem('@wandernote_onboarding_done')
-      .then(val => {
-        setHasSeenOnboarding(val === 'true');
-      })
-      .catch(e => {
-        console.warn('读取onboarding状态失败:', e.message);
-        setHasSeenOnboarding(false);
-      })
-      .finally(() => {
-        setOnboardingLoaded(true);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading && onboardingLoaded) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [authLoading, onboardingLoaded]);
-
-  const finishOnboarding = async () => {
-    await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
-    setHasSeenOnboarding(true);
-  };
-
-  if (authLoading || !onboardingLoaded) return (
+  if (loading) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
       <ActivityIndicator color="#D4AF37" size="large"/>
     </View>
   );
 
+  useEffect(() => {
+    if (hasSeenOnboarding !== null && loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [hasSeenOnboarding, loaded]);
+
+  if (loading || hasSeenOnboarding === null || !loaded) return (
+    <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
+      <ActivityIndicator color="#D4AF37" size="large"/>
+    </View>
+  );
   if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
+  if (showPaywall) return <PaywallScreen
+    featureName={paywallFeature}
+    onSuccess={() => { setIsPro(true); setShowPaywall(false); }}
+    onClose={() => setShowPaywall(false)}
+  />;
   if (!session) return <AuthScreen/>;
   return <MainApp session={session}/>;
 }
