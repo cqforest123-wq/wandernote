@@ -5,6 +5,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SplashScreen from 'expo-splash-screen';
+
+SplashScreen.preventAutoHideAsync();
 import { initSync, syncTripsUp, syncMemosUp } from './lib/sync';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
@@ -200,7 +203,13 @@ export default function App() {
     </View>
   );
 
-  if (hasSeenOnboarding === null) return (
+  useEffect(() => {
+    if (hasSeenOnboarding !== null && loaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [hasSeenOnboarding, loaded]);
+
+  if (hasSeenOnboarding === null || !loaded) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
       <ActivityIndicator color="#D4AF37" size="large"/>
     </View>
