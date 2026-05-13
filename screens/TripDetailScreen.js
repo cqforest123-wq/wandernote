@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityCoords';
+import { fetchCurrentWeather, formatTemp, getClothingAdvice } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
@@ -26,6 +27,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [editDateObj, setEditDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
   const [distance, setDistance] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [weather, setWeather] = useState(null);
+  const [useFahrenheit, setUseFahrenheit] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -40,6 +43,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         setDistance(formatDistance(km));
       } catch (e) {}
     })();
+  }, [trip?.coords, trip?.city]);
+
+  useEffect(() => {
+    const dest = trip?.coords || getCityCoords(trip?.city);
+    if (!dest) return;
+    fetchCurrentWeather(dest.lat, dest.lng).then(w => {
+      if (w) setWeather(w);
+    });
   }, [trip?.coords, trip?.city]);
 
   if (!trip) return null;
@@ -171,6 +182,24 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               <Text style={s.distanceValue}>{distance}</Text>
             </View>
           </View>
+        )}
+        {weather && (
+          <TouchableOpacity style={s.weatherCard} onPress={() => setUseFahrenheit(f => !f)}>
+            <View style={s.weatherMain}>
+              <Text style={s.weatherEmoji}>{weather.emoji}</Text>
+              <View style={{flex:1}}>
+                <Text style={s.weatherTemp}>{formatTemp(weather.temp, useFahrenheit)}</Text>
+                <Text style={s.weatherDesc}>{weather.desc}</Text>
+              </View>
+              <Text style={s.weatherToggle}>{useFahrenheit ? '°F' : '°C'}</Text>
+            </View>
+            {getClothingAdvice(weather.temp, weather.temp - 5, weather.code).map((item, i) => (
+              <View key={i} style={s.clothingRow}>
+                <Text style={s.clothingIcon}>{item.icon}</Text>
+                <Text style={s.clothingText}>{item.text}</Text>
+              </View>
+            ))}
+          </TouchableOpacity>
         )}
         <View style={s.statsRow}>
           {[
@@ -390,6 +419,15 @@ const s = StyleSheet.create({
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},
   distanceCard: { flexDirection:'row', alignItems:'center', gap:14, backgroundColor:'#4ECDC415', borderWidth:1, borderColor:'#4ECDC430', borderRadius:14, padding:14, marginBottom:16 },
+  weatherCard: { backgroundColor:'#0D2B28', borderWidth:1, borderColor:'#4ECDC430', borderRadius:14, padding:14, marginBottom:16 },
+  weatherMain: { flexDirection:'row', alignItems:'center', gap:12, marginBottom:8 },
+  weatherEmoji: { fontSize:36 },
+  weatherTemp: { fontSize:28, color:'#4ECDC4', fontWeight:'300' },
+  weatherDesc: { fontSize:13, color:'#4ECDC490', marginTop:2 },
+  weatherToggle: { color:'#4ECDC450', fontSize:12, alignSelf:'flex-start' },
+  clothingRow: { flexDirection:'row', alignItems:'center', gap:8, paddingVertical:4 },
+  clothingIcon: { fontSize:16, width:24 },
+  clothingText: { fontSize:13, color:'#888' },
   distanceIcon: { fontSize:28 },
   distanceLabel: { fontSize:11, color:'#4ECDC490', marginBottom:2 },
   distanceValue: { fontSize:22, color:'#4ECDC4', fontWeight:'300' },
@@ -407,6 +445,15 @@ const s = StyleSheet.create({
   addDayText:{fontSize:16,color:'#D4AF37'},
   addDayHint:{fontSize:12,color:'#666',marginTop:3},
   distanceCard: { flexDirection:'row', alignItems:'center', gap:14, backgroundColor:'#4ECDC415', borderWidth:1, borderColor:'#4ECDC430', borderRadius:14, padding:14, marginBottom:16 },
+  weatherCard: { backgroundColor:'#0D2B28', borderWidth:1, borderColor:'#4ECDC430', borderRadius:14, padding:14, marginBottom:16 },
+  weatherMain: { flexDirection:'row', alignItems:'center', gap:12, marginBottom:8 },
+  weatherEmoji: { fontSize:36 },
+  weatherTemp: { fontSize:28, color:'#4ECDC4', fontWeight:'300' },
+  weatherDesc: { fontSize:13, color:'#4ECDC490', marginTop:2 },
+  weatherToggle: { color:'#4ECDC450', fontSize:12, alignSelf:'flex-start' },
+  clothingRow: { flexDirection:'row', alignItems:'center', gap:8, paddingVertical:4 },
+  clothingIcon: { fontSize:16, width:24 },
+  clothingText: { fontSize:13, color:'#888' },
   distanceIcon: { fontSize:28 },
   distanceLabel: { fontSize:11, color:'#4ECDC490', marginBottom:2 },
   distanceValue: { fontSize:22, color:'#4ECDC4', fontWeight:'300' },
