@@ -66,27 +66,6 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
     ]);
   };
 
-  const SERVER = 'http://137.184.6.106:3000';
-
-  const uploadToServer = async (uri, tripId) => {
-    try {
-      const formData = new FormData();
-      const filename = uri.split('/').pop();
-      const ext = filename.split('.').pop().toLowerCase();
-      const type = ext === 'mp4' || ext === 'mov' ? `video/${ext}` : `image/${ext}`;
-      formData.append('file', { uri, name: filename, type });
-      const res = await fetch(`${SERVER}/upload/${tripId}`, {
-        method: 'POST',
-        body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      const data = await res.json();
-      return data.url;
-    } catch (e) {
-      console.log('上传失败，使用本地:', e.message);
-      return null;
-    }
-  };
 
   const pickPhotos = async () => {
     const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -98,9 +77,8 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       selectionLimit: 20,
     });
     if (!result.canceled) {
-      const newPhotos = await Promise.all(result.assets.map(async a => {
-        const serverUrl = await uploadToServer(a.uri, tripId);
-        return { id: Date.now()+Math.random(), uri: a.uri, serverUrl };
+      const newPhotos = result.assets.map(a => ({
+        id: Date.now()+Math.random(), uri: a.uri
       }));
       updateDay(d=>({...d,photos:[...(d.photos||[]),...newPhotos]}));
     }
@@ -112,8 +90,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
     const result = await ImagePicker.launchCameraAsync({quality:0.8});
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      const serverUrl = await uploadToServer(uri, tripId);
-      updateDay(d=>({...d,photos:[...(d.photos||[]),{id:Date.now(),uri,serverUrl}]}));
+      updateDay(d=>({...d,photos:[...(d.photos||[]),{id:Date.now(),uri}]}));
     }
   };
 

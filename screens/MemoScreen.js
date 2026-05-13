@@ -160,6 +160,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
   const [filterCat,    setFilterCat]    = useState('all');
 
   useEffect(() => {
+    let mounted = true;
     const loadMemos = async () => {
       try {
         // 先尝试云端
@@ -175,7 +176,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
                 setTitle('');
                 setItems([{ id: Date.now(), text: '', checked: false }]);
                 setEditingMemo(null);
-                setTimeout(() => setShowTemplate(true), 300);
+                if (mounted) setTimeout(() => setShowTemplate(true), 300);
               }
             }
             return;
@@ -192,7 +193,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
             setTitle('');
             setItems([{ id: Date.now(), text: '', checked: false }]);
             setEditingMemo(null);
-            setTimeout(() => setShowTemplate(true), 300);
+            if (mounted) setTimeout(() => setShowTemplate(true), 300);
           }
         }
       } catch (e) {
@@ -202,6 +203,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
       }
     };
     loadMemos();
+    return () => { mounted = false; };
   }, []);
 
   const saveMemos = async (next) => {

@@ -99,23 +99,31 @@ function MainApp({ session }) {
     loadTrips();
   }, []);
 
-  const setTrips = async (newTripsOrFn) => {
-    const newTrips = typeof newTripsOrFn === 'function' ? newTripsOrFn(trips) : newTripsOrFn;
-    if (!isPro && newTrips.length > trips.length && trips.length >= FREE_TRIP_LIMIT) {
-      Alert.alert('已达免费版上限',
-        `免费版最多记录 ${FREE_TRIP_LIMIT} 个旅程\n升级 Pro 即可无限记录`,
-        [{text:'暂不',style:'cancel'},{text:'去升级',onPress:()=>openPaywall('无限旅程')}]
-      );
-      return;
-    }
-    setTripsState(newTrips);
+  const persistTrips = async (next) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newTrips));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       const userId = session?.user?.id;
-      if (userId) syncTripsUp(userId, newTrips);
+      if (userId) syncTripsUp(userId, next);
     } catch (e) {
       console.warn('保存数据失败:', e.message);
     }
+  };
+
+  const setTrips = (newTripsOrFn) => {
+    setTripsState(prev => {
+      const next = typeof newTripsOrFn === 'function'
+        ? newTripsOrFn(prev)
+        : newTripsOrFn;
+      if (!isPro && next.length > prev.length && prev.length >= FREE_TRIP_LIMIT) {
+        Alert.alert('已达免费版上限',
+          `免费版最多记录 ${FREE_TRIP_LIMIT} 个旅程\n升级 Pro 即可无限记录`,
+          [{text:'暂不',style:'cancel'},{text:'去升级',onPress:()=>openPaywall('无限旅程')}]
+        );
+        return prev;
+      }
+      persistTrips(next);
+      return next;
+    });
   };
 
   const openPaywall = (featureName) => {

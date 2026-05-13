@@ -14,13 +14,18 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
   const [selectedPkg, setSelectedPkg] = useState(null);
 
   useEffect(() => {
-    getOfferings().then(o => {
-      setOfferings(o);
-      // 默认选年订阅
-      if (o?.annual) setSelectedPkg(o.annual);
-      else if (o?.monthly) setSelectedPkg(o.monthly);
-      setLoading(false);
-    });
+    getOfferings()
+      .then(o => {
+        setOfferings(o);
+        if (o?.annual) setSelectedPkg(o.annual);
+        else if (o?.monthly) setSelectedPkg(o.monthly);
+      })
+      .catch(e => {
+        console.warn('getOfferings error:', e.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const handlePurchase = async () => {
