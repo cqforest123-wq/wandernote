@@ -20,6 +20,54 @@ const CATEGORIES = [
 ];
 
 const SMART_PACKING = {
+  '蜜月旅行': {
+    emoji: '💑',
+    desc: '马尔代夫 / 巴厘岛 / 欧洲浪漫游',
+    groups: {
+      '📋 证件': ['🛂 护照（两人均需有效期6个月以上）','📋 签证/电子签确认单','📋 酒店确认单（蜜月备注）','🎫 回程机票'],
+      '💰 财务': ['💳 信用卡（两张备用）','💵 当地现金','💍 婚戒/珠宝保险单'],
+      '📱 电子': ['🔌 转换插头','🔋 充电宝','📸 相机（留下美好瞬间）','🎥 小型摄影机/无人机'],
+      '👕 衣物': ['👗 正式晚装（高档餐厅用）','👙 泳衣/泳裤','👟 舒适步行鞋','👠 高跟鞋/礼服鞋','🧥 薄外套'],
+      '🧴 日用': ['☀️ 防晒霜SPF50+','🕶️ 太阳镜','💊 常用药品','🌸 香水/护肤品','🌹 小惊喜礼物'],
+      '🎒 特殊': ['🌅 日出/日落观景点攻略','🍷 私人晚餐预约确认','💆 SPA预约确认','📷 专业摄影预约'],
+    },
+  },
+  '亲子旅行': {
+    emoji: '👨‍👩‍👧',
+    desc: '迪士尼 / 亲子乐园 / 自然探索',
+    groups: {
+      '📋 证件': ['🛂 护照（儿童护照有效期确认）','📋 签证/电子签确认单','📋 酒店确认单','🎫 回程机票','👶 儿童出行公证书（单亲/祖父母带行需要）'],
+      '💰 财务': ['💳 信用卡','💵 当地现金','🎟️ 景点门票提前购买'],
+      '📱 电子': ['🔌 转换插头','🔋 充电宝','📱 儿童娱乐平板','📸 相机'],
+      '👕 衣物': ['👕 儿童换洗衣物（天数×2套）','👟 儿童运动鞋','🧥 儿童外套','🩴 凉鞋/拖鞋','🧢 儿童遮阳帽'],
+      '🧴 日用': ['🧴 儿童防晒霜','💊 儿童常用药（退烧/止泻/晕车）','🩹 创可贴','🧻 湿纸巾（大量备用）','🍼 儿童餐具/水杯'],
+      '🎒 特殊': ['🎡 景点预约确认单','🧸 儿童安抚玩具','📚 儿童读物/游戏','🚗 儿童安全座椅确认（租车）','🍬 零食充足备用'],
+    },
+  },
+  '背包穷游': {
+    emoji: '🎒',
+    desc: '东南亚 / 南美 / 背包客路线',
+    groups: {
+      '📋 证件': ['🛂 护照（有效期6个月以上）','📋 签证/落地签信息','📋 青旅/民宿确认单','🎫 灵活机票/大巴票','🪪 国际学生证（有折扣）'],
+      '💰 财务': ['💳 全球免手续费信用卡','💵 小额现金备用','📱 当地SIM卡（便宜流量）'],
+      '📱 电子': ['🔋 充电宝（大容量）','📱 手机（离线地图下载好）','🎧 耳机'],
+      '👕 衣物': ['👕 速干T恤×3件','🩲 速干内裤×4件','👟 轻便徒步鞋','🩴 拖鞋（青旅必备）','🧥 薄冲锋衣'],
+      '🧴 日用': ['🧴 固体洗发皂（省重量）','💊 肠胃药（必备）','🦟 防蚊液（东南亚重要）','🔒 行李锁','🩹 防水创可贴'],
+      '🎒 特殊': ['🔒 防盗腰包','🌐 离线地图（Maps.me）','💤 眼罩+耳塞（青旅必备）','📦 压缩袋','🗺️ 当地交通App'],
+    },
+  },
+  '邮轮旅行': {
+    emoji: '🚢',
+    desc: '地中海 / 加勒比海 / 北欧邮轮',
+    groups: {
+      '📋 证件': ['🛂 护照（有效期6个月以上）','📋 邮轮登船确认单','📋 各港口签证确认','🎫 邮轮船票/舱位确认','💳 邮轮消费账户绑定'],
+      '💰 财务': ['💳 信用卡（船上消费用）','💵 港口城市购物现金','🪙 小费准备（建议每天$10-15/人）'],
+      '📱 电子': ['🔌 转换插头（船舱插头类型确认）','🔋 充电宝','📸 相机','📡 邮轮WiFi套餐确认'],
+      '👕 衣物': ['👔 正式晚装（船上正式晚宴必备）','👗 鸡尾酒裙/礼服','👕 日常休闲装','👙 泳衣（船上泳池）','🧥 防风外套（甲板风大）','👟 舒适步行鞋'],
+      '🧴 日用': ['💊 晕船药（提前服用）','☀️ 防晒霜','🕶️ 太阳镜','🧴 洗漱用品（部分船提供）'],
+      '🎒 特殊': ['🗺️ 各港口岸上活动预约','⏰ 返船时间提醒设置','🏊 泳池/SPA预约','🍽️ 特色餐厅预约','🎭 船上表演预约'],
+    },
+  },
   '城市观光': {
     emoji: '🏙️',
     desc: '日本 / 欧洲 / 东南亚城市游',
@@ -146,7 +194,7 @@ const pg = StyleSheet.create({
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
-export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
+export default function MemoScreen({ route, navigation, isPro, openPaywall, trips = [] }) {
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
   const [memos,        setMemos]        = useState([]);
@@ -157,6 +205,10 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
   const [items,        setItems]        = useState([{ id: Date.now(), text: '', checked: false }]);
   const [category,     setCategory]     = useState('note');
   const [showTemplate, setShowTemplate] = useState(false);
+  const [showAIGen, setShowAIGen] = useState(false);
+  const [aiDestination, setAIDestination] = useState('');
+  const [aiDays, setAIDays] = useState('7');
+  const [aiGenerating, setAIGenerating] = useState(false);
   const [filterCat,    setFilterCat]    = useState('all');
 
   useEffect(() => {
@@ -639,6 +691,88 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
+              {/* AI生成入口 */}
+              {!showAIGen ? (
+                <TouchableOpacity
+                  style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16,flexDirection:'row',alignItems:'center',gap:12}}
+                  onPress={()=>{ if(!isPro){ setShowTemplate(false); openPaywall&&openPaywall('AI智能清单'); return; } setShowAIGen(true); }}>
+                  <Text style={{fontSize:28}}>✦</Text>
+                  <View style={{flex:1}}>
+                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>AI 智能生成清单</Text>
+                    <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>输入目的地，AI为你定制专属清单</Text>
+                  </View>
+                  {!isPro && <Text style={{color:'#A78BFA',fontSize:11,backgroundColor:'#A78BFA20',paddingHorizontal:8,paddingVertical:3,borderRadius:8}}>Pro</Text>}
+                </TouchableOpacity>
+              ) : (
+                <View style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16}}>
+                  <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>✦ AI 智能生成清单</Text>
+                    <TouchableOpacity onPress={()=>setShowAIGen(false)}><Text style={{color:'#555',fontSize:14}}>✕</Text></TouchableOpacity>
+                  </View>
+                  <TextInput
+                    style={{backgroundColor:'#0D0D0D',borderRadius:10,padding:12,color:'#F0EDE8',fontSize:14,borderWidth:1,borderColor:'#2A2A2A',marginBottom:10}}
+                    placeholder="目的地（如：京都、冰岛、巴厘岛）"
+                    placeholderTextColor="#444"
+                    value={aiDestination}
+                    onChangeText={setAIDestination}
+                  />
+                  <View style={{flexDirection:'row',gap:8,marginBottom:12}}>
+                    {['3','5','7','10','14'].map(d=>(
+                      <TouchableOpacity key={d}
+                        style={{flex:1,padding:8,borderRadius:8,borderWidth:1,
+                          borderColor:aiDays===d?'#A78BFA':'#2A2A2A',
+                          backgroundColor:aiDays===d?'#A78BFA20':'#1A1A1A',
+                          alignItems:'center'}}
+                        onPress={()=>setAIDays(d)}>
+                        <Text style={{color:aiDays===d?'#A78BFA':'#555',fontSize:13}}>{d}天</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                  <TouchableOpacity
+                    style={{backgroundColor: aiGenerating?'#555':'#A78BFA',borderRadius:12,padding:14,alignItems:'center'}}
+                    disabled={aiGenerating || !aiDestination.trim()}
+                    onPress={async()=>{
+                      if (!aiDestination.trim()) return;
+                      setAIGenerating(true);
+                      try {
+                        const { callClaude } = require('../lib/claude');
+                        const prompt = `你是旅行打包清单专家。请为去${aiDestination}旅行${aiDays}天的用户生成一份详细打包清单。
+要求：
+1. 返回纯JSON格式，不要有任何其他文字
+2. 格式如下：{"title":"${aiDestination}${aiDays}天旅行清单","groups":{"分类名":["物品1","物品2"]}}
+3. 分类包括：证件、财务、电子设备、衣物、日用品、特殊物品
+4. 每个分类5-8个物品，物品前加适合的emoji
+5. 根据目的地特点给出针对性建议`;
+                        const text = await callClaude(prompt, 1500);
+                        const clean = text.replace(/```json|```/g, '').trim();
+                        const parsed = JSON.parse(clean);
+                        const newMemo = {
+                          id: Date.now(),
+                          category: 'packing',
+                          title: parsed.title || `${aiDestination} AI清单`,
+                          items: Object.entries(parsed.groups).flatMap(([group, items]) =>
+                            items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false }))
+                          ),
+                          tripId: tripId || null,
+                          createdAt: new Date().toISOString(),
+                        };
+                        const next = [...memos, newMemo];
+                        await saveMemos(next);
+                        setShowAIGen(false);
+                        setShowTemplate(false);
+                        Alert.alert('✅ 生成成功', `已为${aiDestination}生成专属清单`);
+                      } catch(e) {
+                        Alert.alert('生成失败', e.message || '请稍后重试');
+                      } finally {
+                        setAIGenerating(false);
+                      }
+                    }}>
+                    <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>
+                      {aiGenerating ? 'AI生成中...' : '✦ 开始生成'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
               <View style={s.templateGrid}>
                 {Object.entries(SMART_PACKING).map(([key, tpl]) => {
                   const totalItems = Object.values(tpl.groups).reduce((a, b) => a + b.length, 0);
