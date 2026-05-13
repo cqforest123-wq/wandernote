@@ -94,17 +94,9 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
         const parsed = JSON.parse(clean);
         // 格式化展示
         const formatted = parsed.days.map(d =>
-          `📅 第${d.day}天 · ${d.theme}
-🌅 上午：${d.morning}
-☀️ 下午：${d.afternoon}
-🌙 晚上：${d.evening}
-💡 贴士：${d.tips}`
-        ).join('
-
-');
-        setResult(`🗺 ${parsed.title}
-
-${formatted}`);
+          '📅 第' + d.day + '天 · ' + d.theme + '\n🌅 上午：' + d.morning + '\n☀️ 下午：' + d.afternoon + '\n🌙 晚上：' + d.evening + '\n💡 贴士：' + d.tips
+        ).join('\n\n');
+        setResult('🗺 ' + parsed.title + '\n\n' + formatted);
       } catch (e) {
         Alert.alert('生成失败', e.message || '请检查网络后重试');
       } finally {
