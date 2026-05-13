@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
@@ -147,18 +147,16 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
-          {[
-            {icon:'🔔',label:'通知设置'},
-            {icon:'🔒',label:'修改密码'},
-            {icon:'📧',label:'联系我们'},
-            {icon:'⭐',label:'给App评分'},
-          ].map(item=>(
-            <TouchableOpacity key={item.label} style={s.settingRow} onPress={()=>Alert.alert(t('alert_coming_soon'), t('alert_coming_soon_desc'))}>
-              <Text style={s.settingIcon}>{item.icon}</Text>
-              <Text style={s.settingLabel}>{item.label}</Text>
-              <Text style={s.settingArrow}>→</Text>
-            </TouchableOpacity>
-          ))}
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:support@wandernote.app')}>
+            <Text style={s.settingIcon}>📧</Text>
+            <Text style={s.settingLabel}>联系我们</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/idYOUR_APP_ID?action=write-review')}>
+            <Text style={s.settingIcon}>⭐</Text>
+            <Text style={s.settingLabel}>给App评分</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
@@ -220,10 +218,10 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
                 <Text style={s.pricingFeatureText}>{f}</Text>
               </View>
             ))}
-            <TouchableOpacity style={s.subscribeBtn} onPress={()=>Alert.alert(t('alert_coming_soon'), t('alert_subscribe_soon'))}>
-              <Text style={s.subscribeBtnText}>开始 7 天免费试用</Text>
-            </TouchableOpacity>
-            <Text style={s.pricingNote}>随时取消 · 无隐藏费用</Text>
+            <View style={s.subscribeBtn}>
+              <Text style={s.subscribeBtnText}>✦ Pro 订阅即将推出</Text>
+            </View>
+            <Text style={s.pricingNote}>敬请期待 · 感谢你的支持 🙏</Text>
           </View>
         </View>
       </Modal>
