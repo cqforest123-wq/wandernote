@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { initSync, syncTripsUp, syncMemosUp } from './lib/sync';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
+import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
 import TripDetailScreen from './screens/TripDetailScreen';
 import DayDetailScreen from './screens/DayDetailScreen';
@@ -43,6 +44,18 @@ function MainApp({ session }) {
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const isPro = false;
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(null); // null=未知，false=未看，true=已看
+
+  useEffect(() => {
+    AsyncStorage.getItem('@wandernote_onboarding_done').then(val => {
+      setHasSeenOnboarding(val === 'true');
+    });
+  }, []);
+
+  const finishOnboarding = async () => {
+    await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
+    setHasSeenOnboarding(true);
+  };
 
   // 启动时从本地读取数据
   useEffect(() => {
@@ -187,6 +200,12 @@ export default function App() {
     </View>
   );
 
+  if (hasSeenOnboarding === null) return (
+    <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
+      <ActivityIndicator color="#D4AF37" size="large"/>
+    </View>
+  );
+  if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
   if (!session) return <AuthScreen/>;
   return <MainApp session={session}/>;
 }

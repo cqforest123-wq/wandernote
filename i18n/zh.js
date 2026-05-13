@@ -138,6 +138,27 @@ export default {
   // 倒计时
   countdown_days: '天后出发',
 
+  // Onboarding
+  onboarding_skip: '跳过',
+  onboarding_next: '下一步',
+  onboarding_start: '开始使用 →',
+  onboarding_1_title: 'WanderNote',
+  onboarding_1_sub: '记录每一次远行',
+  onboarding_1_desc: '把旅途中的每个瞬间
+变成永久的记忆',
+  onboarding_2_title: '记录旅程',
+  onboarding_2_sub: '每天、每张照片、每份感言',
+  onboarding_2_desc: '按天记录旅行日志
+照片、感言、心情一次留存',
+  onboarding_3_title: '✦ AI 创作',
+  onboarding_3_sub: '让AI帮你写旅行故事',
+  onboarding_3_desc: '输入记录，AI自动生成
+日记、朋友圈文案、旅程总结',
+  onboarding_4_title: '足迹遍布世界',
+  onboarding_4_sub: '云端同步 · 永不丢失',
+  onboarding_4_desc: '所有旅程安全存储在云端
+换手机也不会丢失记忆',
+
   // 通用提示
   alert_need_permission: '需要权限',
   alert_permission_album: '请允许访问相册',

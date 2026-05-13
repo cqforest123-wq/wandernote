@@ -138,6 +138,27 @@ export default {
   // Countdown
   countdown_days: 'days to go',
 
+  // Onboarding
+  onboarding_skip: 'Skip',
+  onboarding_next: 'Next',
+  onboarding_start: 'Get Started →',
+  onboarding_1_title: 'WanderNote',
+  onboarding_1_sub: 'Capture every journey',
+  onboarding_1_desc: 'Turn every moment of your travels
+into lasting memories',
+  onboarding_2_title: 'Journal Your Trip',
+  onboarding_2_sub: 'Days, photos, and thoughts',
+  onboarding_2_desc: 'Log your journey day by day
+Photos, memos, and feelings all in one place',
+  onboarding_3_title: '✦ AI Writing',
+  onboarding_3_sub: 'Let AI tell your travel story',
+  onboarding_3_desc: 'Add your notes and AI generates
+diaries, captions, and trip summaries',
+  onboarding_4_title: 'Footprints Worldwide',
+  onboarding_4_sub: 'Cloud sync · Never lost',
+  onboarding_4_desc: 'All your trips safely stored in the cloud
+Switch devices without losing a memory',
+
   // Alerts
   alert_need_permission: 'Permission Required',
   alert_permission_album: 'Please allow access to your photo library',
