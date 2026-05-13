@@ -211,8 +211,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                     <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
                       <Text style={{fontSize:10,color:'#555'}}>{i===0?'今':day.date.slice(5).replace('-','/')}</Text>
                       <Text style={{fontSize:14}}>{day.emoji}</Text>
-                      <Text style={{fontSize:10,color:'#4ECDC4'}}>{Math.round(day.maxTemp)}°</Text>
-                      <Text style={{fontSize:10,color:'#555'}}>{Math.round(day.minTemp)}°</Text>
+                      <Text style={{fontSize:10,color:'#4ECDC4'}}>{formatTemp(day.maxTemp, useFahrenheit)}</Text>
+                      <Text style={{fontSize:10,color:'#555'}}>{formatTemp(day.minTemp, useFahrenheit)}</Text>
                     </View>
                   ))}
                 </View>
