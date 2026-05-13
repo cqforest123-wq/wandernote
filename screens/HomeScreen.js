@@ -538,6 +538,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                     if (item.type === 'city') {
                       setSelectedCities([item.city]);
                       setStep(3);
+                      const coords = getCityCoords(item.city);
+                      if (coords) {
+                        setForecastLoading(true);
+                        fetchWeatherForecast(coords.lat, coords.lng)
+                          .then(f => setForecast(f))
+                          .catch(() => {})
+                          .finally(() => setForecastLoading(false));
+                      }
                     } else {
                       setStep(2);
                     }
