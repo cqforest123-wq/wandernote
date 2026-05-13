@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
 import { useTranslation } from 'react-i18next';
+import { getCityCoords } from '../lib/cityCoords';
+import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 const CONTINENTS = [
@@ -356,6 +358,8 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [plannedDate, setPlannedDate] = useState('');
   const [plannedDateObj, setPlannedDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
   const [enableCountdown, setEnableCountdown] = useState(false);
+  const [forecast, setForecast] = useState(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
 
   const resetForm = () => {
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
@@ -364,6 +368,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     setPlannedDate('');
     setPlannedDateObj(new Date(Date.now() + 7*24*60*60*1000));
     setEnableCountdown(false);
+    setForecast(null);
   };
 
   const addTrip = () => {
@@ -604,7 +609,18 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                       已选 {selectedCities.length} 个：{selectedCities.join(' · ')}
                     </Text>
                   )}
-                  <TouchableOpacity style={s.nextBtn} onPress={()=>setStep(3)}>
+                  <TouchableOpacity style={s.nextBtn} onPress={()=>{
+                    setStep(3);
+                    const cityName = customCity.trim() || selectedCities[0];
+                    const coords = getCityCoords(cityName);
+                    if (coords) {
+                      setForecastLoading(true);
+                      fetchWeatherForecast(coords.lat, coords.lng)
+                        .then(f => setForecast(f))
+                        .catch(() => {})
+                        .finally(() => setForecastLoading(false));
+                    }
+                  }}>
                     <Text style={s.nextBtnText}>下一步 →</Text>
                   </TouchableOpacity>
                 </View>
@@ -620,6 +636,27 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 <TouchableOpacity onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
 
+              {/* 目的地天气预报 */}
+              {forecastLoading && (
+                <View style={{backgroundColor:'#0D2B28',borderRadius:12,padding:12,marginBottom:12,alignItems:'center'}}>
+                  <Text style={{color:'#4ECDC490',fontSize:13}}>正在获取目的地天气...</Text>
+                </View>
+              )}
+              {forecast && !forecastLoading && (
+                <View style={{backgroundColor:'#0D2B28',borderRadius:12,padding:12,marginBottom:12,borderWidth:1,borderColor:'#4ECDC430'}}>
+                  <Text style={{color:'#4ECDC4',fontSize:12,marginBottom:8,letterSpacing:1}}>📍 目的地未来7天</Text>
+                  <View style={{flexDirection:'row',gap:6}}>
+                    {forecast.slice(0,7).map((day,i)=>(
+                      <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
+                        <Text style={{fontSize:10,color:'#555'}}>{i===0?'今':day.date.slice(5).replace('-','/')}</Text>
+                        <Text style={{fontSize:16}}>{day.emoji}</Text>
+                        <Text style={{fontSize:10,color:'#4ECDC4'}}>{Math.round(day.maxTemp)}°</Text>
+                        <Text style={{fontSize:10,color:'#555'}}>{Math.round(day.minTemp)}°</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              )}
               <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
                 <Text style={{fontSize:16,color:'#F0EDE8',fontWeight:'500'}}>✈️ 设置出发倒计时</Text>
                 <TouchableOpacity
