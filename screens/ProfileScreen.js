@@ -152,6 +152,11 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, naviga
             <Text style={s.settingLabel}>联系我们</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://cqforest123-wq.github.io/wandernote/privacy-policy.html')}>
+            <Text style={s.settingIcon}>🔐</Text>
+            <Text style={s.settingLabel}>隐私政策</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/idYOUR_APP_ID?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
             <Text style={s.settingLabel}>给App评分</Text>
