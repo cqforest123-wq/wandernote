@@ -206,9 +206,12 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 
         {trip.days.length===0 ? (
           <View style={s.emptyBox}>
-            <Text style={s.emptyEmoji}>📖</Text>
-            <Text style={s.emptyText}>还没有记录</Text>
-            <Text style={s.emptyHint}>点上方按钮开始记录今天</Text>
+            <View style={s.emptyCard}>
+              <Text style={s.emptyEmoji}>📖</Text>
+              <Text style={s.emptyTitle}>旅途才刚刚开始</Text>
+              <Text style={s.emptyText}>点击上方「记录今天」
+把今天的故事留下来</Text>
+            </View>
           </View>
         ) : (
           <>
@@ -390,8 +393,10 @@ const s = StyleSheet.create({
   distanceIcon: { fontSize:28 },
   distanceLabel: { fontSize:11, color:'#4ECDC490', marginBottom:2 },
   distanceValue: { fontSize:22, color:'#4ECDC4', fontWeight:'300' },
-  emptyBox: { alignItems:"center", paddingVertical:40 },
-  emptyText: { fontSize:16, color:"#555", marginTop:12 },
+  emptyBox: { alignItems:'center', paddingVertical:24, paddingHorizontal:8 },
+  emptyCard: { borderWidth:1, borderColor:'#2A2A2A', borderStyle:'dashed', borderRadius:20, padding:32, alignItems:'center', width:'100%' },
+  emptyTitle: { fontSize:18, color:'#F0EDE8', fontWeight:'300', marginBottom:8 },
+  emptyText: { fontSize:14, color:'#444', textAlign:'center', lineHeight:20 },
   emptyHint: { fontSize:13, color:"#333", marginTop:6 },
   sectionTitle: { fontSize:13, color:"#555", letterSpacing:2, marginBottom:12, marginTop:8 },
   packingBtn: { flexDirection:'row', alignItems:'center', backgroundColor:'#4ECDC410', borderWidth:1, borderColor:'#4ECDC430', borderRadius:16, padding:16, marginBottom:12 },

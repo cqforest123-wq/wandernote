@@ -489,9 +489,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         </View>
         {trips.length === 0 && (
           <View style={s.emptyBox}>
-            <Text style={s.emptyEmoji}>🌍</Text>
-            <Text style={s.emptyText}>还没有旅程记录</Text>
-            <Text style={s.emptyHint}>点击「+ 新旅程」开始记录</Text>
+            <View style={s.emptyCard}>
+              <Text style={s.emptyEmoji}>🌍</Text>
+              <Text style={s.emptyTitle}>开始你的第一段旅程</Text>
+              <Text style={s.emptyText}>世界那么大，从记录第一步开始</Text>
+              <TouchableOpacity style={s.emptyBtn} onPress={handleNewTrip}>
+                <Text style={s.emptyBtnText}>+ 新建旅程</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
         {filteredTrips.map(trip => (
@@ -680,10 +685,14 @@ const s = StyleSheet.create({
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},
   sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:14},
-  emptyBox:{alignItems:'center',paddingVertical:48},
-  emptyEmoji:{fontSize:48,marginBottom:12},
-  emptyText:{fontSize:16,color:'#555'},
+  emptyBox:{alignItems:'center',paddingVertical:24,paddingHorizontal:8},
+  emptyCard:{borderWidth:1,borderColor:'#2A2A2A',borderStyle:'dashed',borderRadius:20,padding:32,alignItems:'center',width:'100%'},
+  emptyEmoji:{fontSize:52,marginBottom:16},
+  emptyTitle:{fontSize:18,color:'#F0EDE8',fontWeight:'300',marginBottom:8},
+  emptyText:{fontSize:14,color:'#444',textAlign:'center',lineHeight:20,marginBottom:20},
   emptyHint:{fontSize:13,color:'#333',marginTop:6},
+  emptyBtn:{backgroundColor:'#D4AF3720',borderWidth:1,borderColor:'#D4AF3750',borderRadius:20,paddingHorizontal:20,paddingVertical:10},
+  emptyBtnText:{color:'#D4AF37',fontSize:14},
   card:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:'#242424'},
   cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center'},
   cityName:{fontSize:16,color:'#F0EDE8'},

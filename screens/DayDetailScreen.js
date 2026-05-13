@@ -186,8 +186,12 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
         {!hasContent ? (
           <View style={s.emptyBox}>
+            <View style={s.emptyCard}>
             <Text style={s.emptyEmoji}>✏️</Text>
-            <Text style={s.emptyText}>今天还没有记录</Text>
+            <Text style={s.emptyTitle}>记录今天的故事</Text>
+            <Text style={s.emptyText}>写下感言或上传照片
+把这一天永远留住</Text>
+            </View>
             <View style={s.emptyBtns}>
               <TouchableOpacity style={s.emptyBtn} onPress={openNewMemo}><Text style={s.emptyBtnText}>📝 写感言</Text></TouchableOpacity>
               <TouchableOpacity style={[s.emptyBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}><Text style={[s.emptyBtnText,{color:'#4ECDC4'}]}>📸 传照片</Text></TouchableOpacity>
@@ -299,9 +303,11 @@ const s = StyleSheet.create({
   dayActions:{gap:8,alignItems:'flex-end'},
   actionBtn:{borderWidth:1,borderColor:'#D4AF3750',backgroundColor:'#D4AF3715',borderRadius:20,paddingHorizontal:14,paddingVertical:7},
   actionBtnText:{color:'#D4AF37',fontSize:13},
-  emptyBox:{alignItems:'center',paddingVertical:48},
-  emptyEmoji:{fontSize:48,marginBottom:12},
-  emptyText:{fontSize:16,color:'#555',marginBottom:20},
+  emptyBox:{alignItems:'center',paddingVertical:24,paddingHorizontal:8},
+  emptyCard:{borderWidth:1,borderColor:'#2A2A2A',borderStyle:'dashed',borderRadius:20,padding:32,alignItems:'center',width:'100%',marginBottom:20},
+  emptyEmoji:{fontSize:52,marginBottom:16},
+  emptyTitle:{fontSize:18,color:'#F0EDE8',fontWeight:'300',marginBottom:8},
+  emptyText:{fontSize:14,color:'#444',textAlign:'center',lineHeight:20,marginBottom:20},
   emptyBtns:{flexDirection:'row',gap:10},
   emptyBtn:{borderWidth:1,borderColor:'#D4AF3750',backgroundColor:'#D4AF3715',borderRadius:20,paddingHorizontal:16,paddingVertical:10},
   emptyBtnText:{color:'#D4AF37',fontSize:14},
