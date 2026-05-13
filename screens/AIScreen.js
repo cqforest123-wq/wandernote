@@ -261,7 +261,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
           </>
         )}
 
-        {selectedTrip && (mode==='summary' || selectedDay) && (
+        {(mode==='itinerary' || (selectedTrip && (mode==='summary' || selectedDay))) && (
           <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={generate} disabled={generating}>
             {generating ? (
               <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
