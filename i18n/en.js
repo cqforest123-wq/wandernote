@@ -178,8 +178,7 @@ export default {
   alert_coming_soon_desc: 'This feature is under development',
   alert_subscribe_soon: 'Subscription coming soon, stay tuned 🚀',
   alert_pro_limit: 'Free Plan Limit Reached',
-  alert_pro_limit_desc: 'Free plan supports up to %d trips
-Upgrade to Pro for unlimited trips',
+  alert_pro_limit_desc: 'Free plan supports up to %d trips\nUpgrade to Pro for unlimited trips',
   alert_upgrade: 'Upgrade',
   alert_logout_confirm: 'Are you sure you want to sign out?',
   alert_trip_future_date: 'Cannot record a future date',

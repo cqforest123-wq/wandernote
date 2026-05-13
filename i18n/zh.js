@@ -178,8 +178,7 @@ export default {
   alert_coming_soon_desc: '功能开发中',
   alert_subscribe_soon: '订阅功能开发中，敬请期待 🚀',
   alert_pro_limit: '已达免费版上限',
-  alert_pro_limit_desc: '免费版最多记录 %d 个旅程
-升级 Pro 即可无限记录',
+  alert_pro_limit_desc: '免费版最多记录 %d 个旅程\n升级 Pro 即可无限记录',
   alert_upgrade: '去升级',
   alert_logout_confirm: '确定要退出吗？',
   alert_trip_future_date: '不能记录未来的日期',
