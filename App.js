@@ -163,7 +163,7 @@ function MainApp({ session }) {
             <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='ai' && (
-            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
             <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>

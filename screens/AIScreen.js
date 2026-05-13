@@ -3,12 +3,15 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity
 import { useTranslation } from 'react-i18next';
 import { callClaude } from '../lib/claude';
 
-export default function AIScreen({ trips }) {
+export default function AIScreen({ trips, isPro, openPaywall }) {
   const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState('');
+  const [itineraryDest, setItineraryDest] = useState('');
+  const [itineraryDays, setItineraryDays] = useState('5');
+  const [itineraryStyle, setItineraryStyle] = useState('综合');
   const [mode, setMode] = useState('diary');
 
   const MODES = [
@@ -16,6 +19,7 @@ export default function AIScreen({ trips }) {
     { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
     { key:'packing', label:'🧳 AI Packing List', desc:'Generate a smart packing list for your trip' },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
+    { key:'itinerary', label:'🗺 AI 路书生成', desc:'输入目的地，AI规划完整行程' },
   ];
 
   const buildPrompt = () => {
@@ -72,6 +76,42 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
   };
 
   const generate = async () => {
+    if (mode === 'itinerary') {
+      if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; }
+      if (!itineraryDest.trim()) { Alert.alert('提示', '请输入目的地'); return; }
+      setGenerating(true);
+      setResult('');
+      try {
+        const prompt = `你是专业旅行规划师。请为去${itineraryDest}旅行${itineraryDays}天、风格偏好${itineraryStyle}的用户生成详细路书。
+要求：
+1. 返回纯JSON格式，不要有任何其他文字
+2. 格式：{"title":"标题","days":[{"day":1,"date":"第1天","theme":"主题","morning":"上午行程","afternoon":"下午行程","evening":"晚上行程","tips":"小贴士"}]}
+3. 每天行程具体，包含景点名称、预计时间、交通方式
+4. tips包含当天注意事项、推荐餐厅或特色美食
+5. 根据目的地特点和${itineraryStyle}风格定制`;
+        const text = await callClaude(prompt, 2000);
+        const clean = text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        // 格式化展示
+        const formatted = parsed.days.map(d =>
+          `📅 第${d.day}天 · ${d.theme}
+🌅 上午：${d.morning}
+☀️ 下午：${d.afternoon}
+🌙 晚上：${d.evening}
+💡 贴士：${d.tips}`
+        ).join('
+
+');
+        setResult(`🗺 ${parsed.title}
+
+${formatted}`);
+      } catch (e) {
+        Alert.alert('生成失败', e.message || '请检查网络后重试');
+      } finally {
+        setGenerating(false);
+      }
+      return;
+    }
     if (mode === 'packing') {
       if (!selectedTrip) { Alert.alert('Notice','Please select a trip first'); return; }
       setGenerating(true);
@@ -147,6 +187,45 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
           ))}
         </View>
 
+        {/* 路书生成模式：显示专属输入区，隐藏旅程选择 */}
+        {mode === 'itinerary' ? (
+          <View style={{marginBottom:20}}>
+            <Text style={s.sectionTitle}>目的地</Text>
+            <TextInput
+              style={{backgroundColor:'#161616',borderRadius:12,padding:14,color:'#F0EDE8',fontSize:15,marginBottom:12,borderWidth:1,borderColor:'#242424'}}
+              placeholder="输入目的地（如：京都、冰岛、巴厘岛）"
+              placeholderTextColor="#444"
+              value={itineraryDest}
+              onChangeText={setItineraryDest}
+            />
+            <Text style={s.sectionTitle}>天数</Text>
+            <View style={{flexDirection:'row',gap:8,marginBottom:12}}>
+              {['3','5','7','10','14'].map(d=>(
+                <TouchableOpacity key={d}
+                  style={{flex:1,padding:10,borderRadius:10,borderWidth:1,
+                    borderColor:itineraryDays===d?'#D4AF37':'#242424',
+                    backgroundColor:itineraryDays===d?'#D4AF3720':'#161616',
+                    alignItems:'center'}}
+                  onPress={()=>setItineraryDays(d)}>
+                  <Text style={{color:itineraryDays===d?'#D4AF37':'#555',fontSize:14}}>{d}天</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={s.sectionTitle}>旅行风格</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:4}}>
+              {['综合','文化历史','美食探索','自然户外','购物娱乐','轻松休闲'].map(style=>(
+                <TouchableOpacity key={style}
+                  style={{paddingHorizontal:14,paddingVertical:8,borderRadius:20,borderWidth:1,
+                    borderColor:itineraryStyle===style?'#D4AF37':'#242424',
+                    backgroundColor:itineraryStyle===style?'#D4AF3720':'#161616'}}
+                  onPress={()=>setItineraryStyle(style)}>
+                  <Text style={{color:itineraryStyle===style?'#D4AF37':'#555',fontSize:13}}>{style}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : (
+        <>
         <Text style={s.sectionTitle}>选择旅程</Text>
         {trips.length===0 ? (
           <Text style={{color:'#555',fontSize:13,marginBottom:20}}>还没有旅程记录</Text>
@@ -165,7 +244,8 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
           </ScrollView>
         )}
 
-        {selectedTrip && mode!=='summary' && (
+        </>)}
+        {mode !== 'itinerary' && selectedTrip && mode!=='summary' && (
           <>
             <Text style={s.sectionTitle}>选择哪一天</Text>
             {selectedTrip.days.length===0 ? (
