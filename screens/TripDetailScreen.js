@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import * as Location from 'expo-location';
 import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityCoords';
-import { fetchCurrentWeather, formatTemp, getClothingAdvice } from '../lib/weather';
+import { fetchCurrentWeather, fetchWeatherForecast, formatTemp, getClothingAdvice } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
@@ -29,6 +29,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [isDeleting, setIsDeleting] = useState(false);
   const [weather, setWeather] = useState(null);
   const [useFahrenheit, setUseFahrenheit] = useState(false);
+  const [forecast, setForecast] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -50,6 +51,9 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     if (!dest) return;
     fetchCurrentWeather(dest.lat, dest.lng).then(w => {
       if (w) setWeather(w);
+    });
+    fetchWeatherForecast(dest.lat, dest.lng).then(f => {
+      if (f) setForecast(f);
     });
   }, [trip?.coords, trip?.city]);
 
@@ -199,6 +203,21 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                 <Text style={s.clothingText}>{item.text}</Text>
               </View>
             ))}
+            {forecast && (
+              <View style={{marginTop:10,paddingTop:10,borderTopWidth:1,borderTopColor:'#4ECDC420'}}>
+                <Text style={{color:'#4ECDC490',fontSize:11,marginBottom:8,letterSpacing:1}}>未来7天</Text>
+                <View style={{flexDirection:'row',gap:4}}>
+                  {forecast.slice(0,7).map((day,i)=>(
+                    <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
+                      <Text style={{fontSize:10,color:'#555'}}>{i===0?'今':day.date.slice(5).replace('-','/')}</Text>
+                      <Text style={{fontSize:14}}>{day.emoji}</Text>
+                      <Text style={{fontSize:10,color:'#4ECDC4'}}>{Math.round(day.maxTemp)}°</Text>
+                      <Text style={{fontSize:10,color:'#555'}}>{Math.round(day.minTemp)}°</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
           </TouchableOpacity>
         )}
         <View style={s.statsRow}>
