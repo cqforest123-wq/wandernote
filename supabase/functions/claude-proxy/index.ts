@@ -9,23 +9,27 @@ serve(async (req) => {
   }
 
   const { prompt, maxTokens } = await req.json()
-  
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': Deno.env.get('ANTHROPIC_API_KEY') ?? '',
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: maxTokens ?? 1000,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
+  const apiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
+
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: maxTokens ?? 1000 },
+      }),
+    }
+  )
 
   const data = await res.json()
-  return new Response(JSON.stringify(data), {
+
+  // 转换成claude.js期望的格式：{ content: [{ text: '...' }] }
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+  const result = { content: [{ type: 'text', text }] }
+
+  return new Response(JSON.stringify(result), {
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',

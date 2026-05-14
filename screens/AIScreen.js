@@ -77,7 +77,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
 
   const generate = async () => {
     if (mode === 'itinerary') {
-      if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; }
+      // if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; } // TEST: 暂时跳过付费验证
       if (!itineraryDest.trim()) { Alert.alert('提示', '请输入目的地'); return; }
       setGenerating(true);
       setResult('');
