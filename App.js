@@ -150,10 +150,6 @@ function MainApp({ session }) {
   );
 
   return (
-    <>
-    <Text style={{color:'red',position:'absolute',top:80,left:20,zIndex:9999,fontSize:14}}>
-      {i18n.language} / {t('tab_home')}
-    </Text>
     <View key={langKey} style={{flex:1,backgroundColor:'#0D0D0D'}}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
