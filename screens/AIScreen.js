@@ -91,7 +91,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
 5. tips控制在30字以内
 6. 确保JSON完整，不要截断`;
         const text = await callClaude(prompt, 3000);
-        const clean = text.replace(/```json|```/g, '').trim();
+        const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
         const parsed = JSON.parse(clean);
         // 格式化展示
         const formatted = parsed.days.map(d =>
@@ -112,7 +112,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
       try {
         const text = await callClaude(buildPrompt(), 1200);
         // 解析 JSON 并存为打包清单
-        const clean = text.replace(/```json|```/g, '').trim();
+        const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
         const parsed = JSON.parse(clean);
         const AsyncStorage = require('@react-native-async-storage/async-storage').default;
         const STORAGE_KEY = '@wandernote_memos';
