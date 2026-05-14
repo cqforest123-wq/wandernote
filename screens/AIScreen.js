@@ -86,18 +86,27 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
 严格要求：
 1. 只返回JSON，不要有任何前缀、后缀、解释或markdown代码块
 2. 直接以{开头，以}结尾
-3. 格式：{"title":"标题","days":[{"day":1,"date":"第1天","theme":"主题","morning":"上午行程","afternoon":"下午行程","evening":"晚上行程","tips":"小贴士"}]}
+3. 格式：{"title":"标题","days":[{"day":1,"date":"第1天","theme":"主题","morning":"上午行程","afternoon":"下午行程","evening":"晚上行程","tips":"小贴士","distance":"景点间距离","hours":"建议游览时间","status":"营业提示"}]}
 4. 每天行程简洁，景点+时间+交通，控制在50字以内
-5. tips控制在30字以内
-6. 确保JSON完整，不要截断`;
+5. tips包含实用建议，distance填景点间大概距离，hours填建议游览时长，status填营业注意事项
+6. 每个字段控制在30字以内，确保JSON完整不截断`;
         const text = await callClaude(prompt, 3000);
         const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
         const parsed = JSON.parse(clean);
         // 格式化展示
-        const formatted = parsed.days.map(d =>
-          '📅 第' + d.day + '天 · ' + d.theme + '\n🌅 上午：' + d.morning + '\n☀️ 下午：' + d.afternoon + '\n🌙 晚上：' + d.evening + '\n💡 贴士：' + d.tips
-        ).join('\n\n');
-        setResult('🗺 ' + parsed.title + '\n\n' + formatted);
+        const disclaimer = '⚠️ 以下内容由AI生成，建议出发前核实实际情况，景点开放时间及营业状态可能有变化。';
+        const formatted = parsed.days.map(d => {
+          let dayText = '📅 第' + d.day + '天 · ' + d.theme +
+            '\n🌅 上午：' + d.morning +
+            '\n☀️ 下午：' + d.afternoon +
+            '\n🌙 晚上：' + d.evening;
+          if (d.distance) dayText += '\n📍 距离：' + d.distance;
+          if (d.hours) dayText += '\n⏱ 时长：' + d.hours;
+          if (d.status) dayText += '\n🏪 营业：' + d.status;
+          dayText += '\n💡 贴士：' + d.tips;
+          return dayText;
+        }).join('\n\n');
+        setResult('🗺 ' + parsed.title + '\n\n' + disclaimer + '\n\n' + formatted);
       } catch (e) {
         Alert.alert('生成失败', e.message || '请检查网络后重试');
       } finally {
