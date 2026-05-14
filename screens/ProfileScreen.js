@@ -11,11 +11,22 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
   const [showPricing, setShowPricing] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
+  const LANGS = [
+    { code: 'zh', label: '中文' },
+    { code: 'en', label: 'English' },
+    { code: 'ja', label: '日本語' },
+    { code: 'ko', label: '한국어' },
+    { code: 'fr', label: 'Français' },
+    { code: 'es', label: 'Español' },
+    { code: 'th', label: 'ภาษาไทย' },
+  ];
   const toggleLanguage = async () => {
-    const newLang = currentLang.startsWith('zh') ? 'en' : 'zh';
-    await i18n.changeLanguage(newLang);
-    setCurrentLang(newLang);
+    const idx = LANGS.findIndex(l => currentLang.startsWith(l.code));
+    const next = LANGS[(idx + 1) % LANGS.length];
+    await i18n.changeLanguage(next.code);
+    setCurrentLang(next.code);
   };
+  const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
@@ -143,7 +154,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
         <View style={s.settingList}>
           <TouchableOpacity style={s.settingRow} onPress={toggleLanguage}>
             <Text style={s.settingIcon}>🌐</Text>
-            <Text style={s.settingLabel}>{currentLang.startsWith('zh') ? '切换英文 / Switch to English' : '切换中文 / Switch to Chinese'}</Text>
+            <Text style={s.settingLabel}>{currentLangLabel} · 点击切换语言</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
