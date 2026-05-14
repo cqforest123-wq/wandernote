@@ -44,7 +44,7 @@ function MainApp({ session }) {
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const [isPro, setIsPro] = useState(false);
+  const [isPro, setIsPro] = useState(true); // TODO: 测试完改回false
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState(null);
 
