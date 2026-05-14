@@ -188,4 +188,9 @@ export default {
   alert_upgrade: 'Upgrade',
   alert_logout_confirm: 'Are you sure you want to sign out?',
   alert_trip_future_date: 'Cannot record a future date',
+  tab_home: 'Trips',
+  tab_map: 'Map',
+  tab_memo: 'Lists',
+  tab_ai: 'AI',
+  tab_profile: 'Me',
 };

@@ -74,4 +74,9 @@ export default {
   alert_pro_limit_desc: 'La version gratuite permet %d voyages\nPassez à Pro pour illimité',
   alert_upgrade: 'Mettre à niveau', alert_logout_confirm: 'Se déconnecter ?',
   alert_trip_future_date: 'Impossible de saisir une date future',
+  tab_home: 'Voyages',
+  tab_map: 'Carte',
+  tab_memo: 'Listes',
+  tab_ai: 'AI',
+  tab_profile: 'Moi',
 };

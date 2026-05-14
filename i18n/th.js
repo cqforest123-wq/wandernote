@@ -74,4 +74,9 @@ export default {
   alert_pro_limit_desc: 'เวอร์ชันฟรีบันทึกได้สูงสุด %d ทริป\nอัปเกรดเป็น Pro เพื่อไม่จำกัด',
   alert_upgrade: 'อัปเกรด', alert_logout_confirm: 'ออกจากระบบ?',
   alert_trip_future_date: 'ไม่สามารถบันทึกวันที่ในอนาคต',
+  tab_home: 'ทริป',
+  tab_map: 'แผนที่',
+  tab_memo: 'รายการ',
+  tab_ai: 'AI',
+  tab_profile: 'ฉัน',
 };

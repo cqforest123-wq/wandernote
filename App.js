@@ -39,7 +39,7 @@ const INITIAL_TRIPS = [
 
 // MainApp：已登录用户的业务逻辑和导航
 function MainApp({ session }) {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [langKey, setLangKey] = useState(Date.now());
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -49,10 +49,13 @@ function MainApp({ session }) {
   const [paywallFeature, setPaywallFeature] = useState(null);
 
   useEffect(() => {
-    const handleLangChange = () => setLangKey(Date.now());
+    const handleLangChange = (lng) => {
+      console.log('App languageChanged:', lng);
+      setLangKey(Date.now());
+    };
     i18n.on('languageChanged', handleLangChange);
     return () => i18n.off('languageChanged', handleLangChange);
-  }, []);
+  }, [i18n]);
 
   useEffect(() => {
     if (!session?.user?.id) return;
@@ -132,9 +135,9 @@ function MainApp({ session }) {
   };
 
   const tabs = [
-    {key:'home', icon:'🗺', label:'旅程'},
-    {key:'map', icon:'📍', label:'足迹'},
-    {key:'memo', icon:'📋', label:'清单'},
+    {key:'home', icon:'🗺', label:t('tab_home')||'旅程'},
+    {key:'map', icon:'📍', label:t('tab_map')||'足迹'},
+    {key:'memo', icon:'📋', label:t('tab_memo')||'清单'},
     {key:'ai', icon:'✦', label:'AI'},
     {key:'profile', icon:'👤', label:'我的'},
   ];

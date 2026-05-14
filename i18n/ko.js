@@ -73,4 +73,9 @@ export default {
   alert_pro_limit_desc: '무료 버전은 최대 %d개의 여행을 기록할 수 있습니다\nPro로 업그레이드하면 무제한',
   alert_upgrade: '업그레이드', alert_logout_confirm: '로그아웃하시겠습니까？',
   alert_trip_future_date: '미래 날짜는 기록할 수 없습니다',
+  tab_home: '여행',
+  tab_map: '지도',
+  tab_memo: '목록',
+  tab_ai: 'AI',
+  tab_profile: '내',
 };

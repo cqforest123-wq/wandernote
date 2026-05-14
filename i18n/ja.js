@@ -73,4 +73,9 @@ export default {
   alert_pro_limit_desc: '無料版は最大%d件の旅を記録できます\nProにアップグレードして無制限に',
   alert_upgrade: 'アップグレード', alert_logout_confirm: 'ログアウトしますか？',
   alert_trip_future_date: '未来の日付は記録できません',
+  tab_home: '旅行',
+  tab_map: '足跡',
+  tab_memo: 'リスト',
+  tab_ai: 'AI',
+  tab_profile: 'マイ',
 };

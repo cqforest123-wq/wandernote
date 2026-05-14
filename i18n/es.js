@@ -74,4 +74,9 @@ export default {
   alert_pro_limit_desc: 'La versión gratuita permite %d viajes\nActualiza a Pro para ilimitados',
   alert_upgrade: 'Actualizar', alert_logout_confirm: '¿Cerrar sesión?',
   alert_trip_future_date: 'No se puede registrar una fecha futura',
+  tab_home: 'Viajes',
+  tab_map: 'Mapa',
+  tab_memo: 'Listas',
+  tab_ai: 'AI',
+  tab_profile: 'Yo',
 };

@@ -2,12 +2,11 @@ import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
-import i18n from '../i18n';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPaywall, navigation }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [showPricing, setShowPricing] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
@@ -20,13 +19,18 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
     { code: 'es', label: 'Español' },
     { code: 'th', label: 'ภาษาไทย' },
   ];
-  const toggleLanguage = async () => {
-    const idx = LANGS.findIndex(l => currentLang.startsWith(l.code));
-    const next = LANGS[(idx + 1) % LANGS.length];
-    await i18n.changeLanguage(next.code);
-    setCurrentLang(next.code);
-  };
+  const [showLangModal, setShowLangModal] = useState(false);
   const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
+  const selectLanguage = async (code) => {
+    try {
+      await i18n.changeLanguage(code);
+      await AsyncStorage.setItem('@wandernote_language', code);
+      setCurrentLang(code);
+      setShowLangModal(false);
+    } catch (e) {
+      Alert.alert('切换失败', e.message || '请稍后再试');
+    }
+  };
   const [selectedPlan, setSelectedPlan] = useState('annual');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
@@ -152,9 +156,9 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
 
         <Text style={s.sectionTitle}>账号设置</Text>
         <View style={s.settingList}>
-          <TouchableOpacity style={s.settingRow} onPress={toggleLanguage}>
+          <TouchableOpacity style={s.settingRow} onPress={()=>setShowLangModal(true)}>
             <Text style={s.settingIcon}>🌐</Text>
-            <Text style={s.settingLabel}>{currentLangLabel} · 点击切换语言</Text>
+            <Text style={s.settingLabel}>🌐 {currentLangLabel}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
@@ -238,6 +242,26 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
               <Text style={s.subscribeBtnText}>立即订阅 →</Text>
             </TouchableOpacity>
             <Text style={s.pricingNote}>随时取消 · 无隐藏费用</Text>
+          </View>
+        </View>
+      </Modal>
+      {/* 语言选择弹窗 */}
+      <Modal visible={showLangModal} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowLangModal(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>选择语言 / Select Language</Text>
+            {LANGS.map(lang=>(
+              <TouchableOpacity key={lang.code}
+                style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#222',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                onPress={()=>selectLanguage(lang.code)}>
+                <Text style={{color:'#F0EDE8',fontSize:16}}>{lang.label}</Text>
+                {currentLang.startsWith(lang.code) && <Text style={{color:'#D4AF37',fontSize:16}}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowLangModal(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>取消</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

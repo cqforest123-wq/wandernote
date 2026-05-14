@@ -188,4 +188,9 @@ export default {
   alert_upgrade: '去升级',
   alert_logout_confirm: '确定要退出吗？',
   alert_trip_future_date: '不能记录未来的日期',
+  tab_home: '旅程',
+  tab_map: '足迹',
+  tab_memo: '清单',
+  tab_ai: 'AI',
+  tab_profile: '我的',
 };
