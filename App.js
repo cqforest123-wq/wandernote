@@ -51,7 +51,7 @@ function MainApp({ session }) {
   useEffect(() => {
     const handleLangChange = (lng) => {
       console.log('App languageChanged:', lng);
-      setTimeout(() => setLangKey(Date.now()), 300);
+      setLangKey(lng);
     };
     i18n.on('languageChanged', handleLangChange);
     return () => i18n.off('languageChanged', handleLangChange);

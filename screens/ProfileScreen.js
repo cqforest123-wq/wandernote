@@ -143,7 +143,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
             // {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'}, // v2.0
             {icon:'📊',label:'年度报告',free:'✅',pro:'✅'},
             {icon:'🎨',label:'照片滤镜',free:'✅',pro:'✅'},
-            {icon:'🌐',label:'多语言翻译',free:'✅',pro:'✅'},
+            {icon:'🌐',label:'语言',free:'✅',pro:'✅'},
           ].map(f=>(
             <View key={f.label} style={s.featureRow}>
               <Text style={s.featureIcon}>{f.icon}</Text>
@@ -158,7 +158,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
         <View style={s.settingList}>
           <TouchableOpacity style={s.settingRow} onPress={()=>setShowLangModal(true)}>
             <Text style={s.settingIcon}>🌐</Text>
-            <Text style={s.settingLabel}>🌐 {currentLangLabel}</Text>
+            <Text style={s.settingLabel}>{currentLangLabel}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
