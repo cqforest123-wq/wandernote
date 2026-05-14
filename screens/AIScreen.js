@@ -83,13 +83,14 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
       setResult('');
       try {
         const prompt = `你是专业旅行规划师。请为去${itineraryDest}旅行${itineraryDays}天、风格偏好${itineraryStyle}的用户生成详细路书。
-要求：
-1. 返回纯JSON格式，不要有任何其他文字
-2. 格式：{"title":"标题","days":[{"day":1,"date":"第1天","theme":"主题","morning":"上午行程","afternoon":"下午行程","evening":"晚上行程","tips":"小贴士"}]}
-3. 每天行程具体，包含景点名称、预计时间、交通方式
-4. tips包含当天注意事项、推荐餐厅或特色美食
-5. 根据目的地特点和${itineraryStyle}风格定制`;
-        const text = await callClaude(prompt, 2000);
+严格要求：
+1. 只返回JSON，不要有任何前缀、后缀、解释或markdown代码块
+2. 直接以{开头，以}结尾
+3. 格式：{"title":"标题","days":[{"day":1,"date":"第1天","theme":"主题","morning":"上午行程","afternoon":"下午行程","evening":"晚上行程","tips":"小贴士"}]}
+4. 每天行程简洁，景点+时间+交通，控制在50字以内
+5. tips控制在30字以内
+6. 确保JSON完整，不要截断`;
+        const text = await callClaude(prompt, 3000);
         const clean = text.replace(/```json|```/g, '').trim();
         const parsed = JSON.parse(clean);
         // 格式化展示
