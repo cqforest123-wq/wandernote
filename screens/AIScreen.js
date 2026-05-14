@@ -17,9 +17,9 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
     { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
-    { key:'packing', label:'🧳 AI Packing List', desc:'Generate a smart packing list for your trip' },
+    { key:'packing', label:t('ai_packing'), desc:t('ai_packing_desc') },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
-    { key:'itinerary', label:'🗺 AI 路书生成', desc:'输入目的地，AI规划完整行程' },
+    { key:'itinerary', label:t('ai_itinerary'), desc:t('ai_itinerary_desc') },
   ];
 
   const buildPrompt = () => {

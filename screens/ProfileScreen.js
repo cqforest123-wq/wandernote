@@ -147,7 +147,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:support@wandernote.app')}>
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:predestina@msn.com')}>
             <Text style={s.settingIcon}>📧</Text>
             <Text style={s.settingLabel}>联系我们</Text>
             <Text style={s.settingArrow}>→</Text>

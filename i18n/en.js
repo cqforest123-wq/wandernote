@@ -138,6 +138,12 @@ export default {
   // Countdown
   countdown_days: 'days to go',
 
+  // AI modes
+  ai_packing: '🧳 AI Packing List',
+  ai_packing_desc: 'Generate a smart packing list for your trip',
+  ai_itinerary: '🗺 AI Itinerary',
+  ai_itinerary_desc: 'Enter destination, AI plans your trip',
+
   // Onboarding
   onboarding_skip: 'Skip',
   onboarding_next: 'Next',

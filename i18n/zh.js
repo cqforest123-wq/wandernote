@@ -138,6 +138,12 @@ export default {
   // 倒计时
   countdown_days: '天后出发',
 
+  // AI模式
+  ai_packing: '🧳 AI 打包清单',
+  ai_packing_desc: '根据旅程智能生成打包清单',
+  ai_itinerary: '🗺 AI 路书生成',
+  ai_itinerary_desc: '输入目的地，AI规划完整行程',
+
   // Onboarding
   onboarding_skip: '跳过',
   onboarding_next: '下一步',
