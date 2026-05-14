@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share, Keyboard } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { callClaude } from '../lib/claude';
 
@@ -272,7 +272,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
         )}
 
         {(mode==='itinerary' || (selectedTrip && (mode==='summary' || selectedDay))) && (
-          <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={generate} disabled={generating}>
+          <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={()=>{Keyboard.dismiss();generate();}} disabled={generating}>
             {generating ? (
               <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
                 <ActivityIndicator color="#0D0D0D" size="small"/>
