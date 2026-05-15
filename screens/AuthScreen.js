@@ -17,27 +17,27 @@ export default function AuthScreen({ onAuth }) {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) Alert.alert('登录失败', error.message);
+    if (error) Alert.alert(t('auth_login_failed'), error.message);
   };
 
   const handleRegister = async () => {
     if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
-    if (password.length < 6) { Alert.alert('提示','密码至少6位'); return; }
+    if (password.length < 6) { Alert.alert(t('notice'), t('auth_password_min')); return; }
     setLoading(true);
     const { error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
-    if (error) { Alert.alert('注册失败', error.message); return; }
-    Alert.alert('注册成功','请查收验证邮件，点击链接后即可登录 📧');
+    if (error) { Alert.alert(t('auth_register_failed'), error.message); return; }
+    Alert.alert(t('auth_register_success'), t('auth_check_email'));
     setMode('login');
   };
 
   const handleReset = async () => {
-    if (!email) { Alert.alert('提示','请填写邮箱'); return; }
+    if (!email) { Alert.alert(t('notice'), t('auth_enter_email')); return; }
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     setLoading(false);
-    if (error) { Alert.alert('失败', error.message); return; }
-    Alert.alert('已发送','请查收重置密码邮件 📧');
+    if (error) { Alert.alert(t('failed'), error.message); return; }
+    Alert.alert(t('auth_sent'), t('auth_reset_email_sent'));
     setMode('login');
   };
 
@@ -51,7 +51,7 @@ export default function AuthScreen({ onAuth }) {
             <Text style={{fontSize:52}}>🌺</Text>
           </View>
           <Text style={s.logoTitle}>WanderNote</Text>
-          <Text style={s.logoSub}>记录每一次远行</Text>
+          <Text style={s.logoSub}>{t('home_subtitle')}</Text>
         </View>
 
         <View style={s.form}>
@@ -59,7 +59,7 @@ export default function AuthScreen({ onAuth }) {
             {mode==='login'?t('auth_welcome'):mode==='register'?t('auth_register'):t('auth_reset')}
           </Text>
 
-          <Text style={s.label}>邮箱</Text>
+          <Text style={s.label}>{t('auth_email')}</Text>
           <TextInput
             style={s.input}
             placeholder="your@email.com"
@@ -71,10 +71,10 @@ export default function AuthScreen({ onAuth }) {
           />
 
           {mode !== 'reset' && <>
-            <Text style={s.label}>密码</Text>
+            <Text style={s.label}>{t('auth_password')}</Text>
             <TextInput
               style={s.input}
-              placeholder={mode==='register'?'至少6位':'••••••••'}
+              placeholder={mode==='register'?t('auth_password_min_placeholder'):'••••••••'}
               placeholderTextColor="#444"
               value={password}
               onChangeText={setPassword}
@@ -87,28 +87,28 @@ export default function AuthScreen({ onAuth }) {
             onPress={mode==='login'?handleLogin:mode==='register'?handleRegister:handleReset}
             disabled={loading}>
             <Text style={s.mainBtnText}>
-              {loading?'处理中...':mode==='login'?'登录 →':mode==='register'?'注册':'发送重置邮件'}
+              {loading?t('auth_processing'):mode==='login'?`${t('auth_login')} →`:mode==='register'?t('auth_register'):t('auth_send_reset')}
             </Text>
           </TouchableOpacity>
 
           <View style={s.switchRow}>
             {mode==='login' && <>
               <TouchableOpacity onPress={()=>setMode('register')}>
-                <Text style={s.switchText}>还没有账号？注册</Text>
+                <Text style={s.switchText}>{t('auth_no_account')}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={()=>setMode('reset')}>
-                <Text style={[s.switchText,{color:'#555'}]}>忘记密码</Text>
+                <Text style={[s.switchText,{color:'#555'}]}>{t('auth_forgot_password')}</Text>
               </TouchableOpacity>
             </>}
             {mode!=='login' && (
               <TouchableOpacity onPress={()=>setMode('login')}>
-                <Text style={s.switchText}>已有账号？登录</Text>
+                <Text style={s.switchText}>{t('auth_have_account')}</Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
 
-        <Text style={s.footer}>你的旅行记忆，安全存储在云端 ☁️</Text>
+        <Text style={s.footer}>{t('auth_footer')}</Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

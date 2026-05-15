@@ -6,6 +6,7 @@ import { deleteTripAndRelated } from '../lib/sync';
 import { createTrip } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
+import { getDestinationEnglishName } from '../lib/destinationEnMap';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
@@ -347,7 +348,7 @@ async function geocodeCity(cityName, countryName) {
 }
 
 export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [step, setStep] = useState(1);
   const [selectedContinent, setSelectedContinent] = useState(null);
@@ -361,6 +362,30 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [enableCountdown, setEnableCountdown] = useState(false);
   const [forecast, setForecast] = useState(null);
   const [forecastLoading, setForecastLoading] = useState(false);
+
+  const isZh = i18n.language?.startsWith('zh');
+  const destinationSource = React.useMemo(() => {
+    if (isZh) return CONTINENTS;
+
+    return CONTINENTS.map(continent => ({
+      ...continent,
+      name: getDestinationEnglishName(continent.name) || continent.name,
+      countries: continent.countries
+        .map(country => ({
+          ...country,
+          name: getDestinationEnglishName(country.name) || country.name,
+          cities: country.cities
+            .map(city => getDestinationEnglishName(city) || city)
+            .sort((a, b) => a.localeCompare(b, 'en')),
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'en')),
+    }));
+  }, [isZh]);
+
+  const allCountries = React.useMemo(
+    () => destinationSource.flatMap(continent => continent.countries),
+    [destinationSource]
+  );
 
   // 监听城市名变化自动获取天气，不依赖步骤
   React.useEffect(() => {
@@ -413,16 +438,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
   const deleteTrip = (tripId, cityName) => {
     if (deletingId) return; // 正在删除中，忽略重复触发
-    Alert.alert('删除旅程', `确定删除「${cityName}」？`, [
+    Alert.alert(t('home_delete_trip_title'), t('home_delete_trip_confirm').replace('%s', cityName), [
       { text: t('cancel'), style: 'cancel' },
       {
-        text: '删除',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           setDeletingId(tripId);
           try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error('未登录');
+            if (!user?.id) throw new Error(t('auth_not_logged_in'));
             await deleteTripAndRelated(user.id, tripId);
             setTrips(prev => prev.filter(t => t.id !== tripId));
           } catch (e) {
@@ -449,10 +474,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [sortBy, setSortBy] = useState('date'); // date | name
   const [deletingId, setDeletingId] = useState(null);
 
-  // 搜索同时匹配国家名和城市名
-  const searchResults = search ? ALL_COUNTRIES.flatMap(c => {
-    if (c.name.includes(search)) return [{ type: 'country', country: c }];
-    const matchedCities = c.cities.filter(city => city.includes(search));
+  // 搜索同时匹配国家名和城市名；非中文界面不回退中文目的地
+  const searchQuery = search.trim().toLowerCase();
+  const searchResults = searchQuery ? allCountries.flatMap(c => {
+    const countryName = String(c.name || '');
+    if (countryName.toLowerCase().includes(searchQuery)) {
+      return [{ type: 'country', country: c }];
+    }
+    const matchedCities = c.cities.filter(city =>
+      String(city || '').toLowerCase().includes(searchQuery)
+    );
     return matchedCities.map(city => ({ type: 'city', country: c, city }));
   }) : null;
 
@@ -468,10 +499,10 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         <View style={s.header}>
           <View>
             <Text style={s.title}>WanderNote</Text>
-            <Text style={s.subtitle}>记录每一次远行</Text>
+            <Text style={s.subtitle}>{t('home_subtitle')}</Text>
           </View>
           <TouchableOpacity style={s.addBtn} onPress={handleNewTrip}>
-            <Text style={s.addBtnText}>+ 新旅程</Text>
+            <Text style={s.addBtnText}>+ {t('home_new_trip')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -491,11 +522,11 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
           ))}
         </View>
 
-        <Text style={s.sectionTitle}>最近旅程</Text>
+        <Text style={s.sectionTitle}>{t('home_recent_trips')}</Text>
         <View style={{flexDirection:'row',gap:10,marginBottom:14}}>
           <TextInput
             style={{flex:1,backgroundColor:'#161616',borderRadius:12,padding:10,color:'#F0EDE8',fontSize:14,borderWidth:1,borderColor:'#242424'}}
-            placeholder="搜索旅程..."
+            placeholder={t("home_search_trip")}
             placeholderTextColor="#444"
             value={tripSearch}
             onChangeText={setTripSearch}
@@ -510,10 +541,10 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
           <View style={s.emptyBox}>
             <View style={s.emptyCard}>
               <Text style={s.emptyEmoji}>🌍</Text>
-              <Text style={s.emptyTitle}>开始你的第一段旅程</Text>
-              <Text style={s.emptyText}>世界那么大，从记录第一步开始</Text>
+              <Text style={s.emptyTitle}>{t('home_empty_title')}</Text>
+              <Text style={s.emptyText}>{t('home_empty_text')}</Text>
               <TouchableOpacity style={s.emptyBtn} onPress={handleNewTrip}>
-                <Text style={s.emptyBtnText}>+ 新建旅程</Text>
+                <Text style={s.emptyBtnText}>+ {t('home_create_trip')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -526,12 +557,12 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
             <View style={{flex:1}}>
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
-              <Text style={s.countryName}>{trip.country} · {trip.days.length}天 · {trip.days.reduce((a,d)=>a+d.memos.length,0)}条感言</Text>
+              <Text style={s.countryName}>{trip.country} · {trip.days.length} {t('unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {t('unit_memos')}</Text>
             </View>
             <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
           </TouchableOpacity>
         ))}
-        {trips.length > 0 && <Text style={s.longPressHint}>长按旅程卡片可删除</Text>}
+        {trips.length > 0 && <Text style={s.longPressHint}>{t('home_long_press_delete')}</Text>}
       </ScrollView>
 
       <Modal visible={showAdd} animationType="slide" transparent>
@@ -541,10 +572,10 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             {/* Step 1: 选国家 */}
             {step===1 && <>
               <View style={s.sheetHeader}>
-                <Text style={s.sheetTitle}>选择目的地</Text>
+                <Text style={s.sheetTitle}>{t('new_trip_select_destination')}</Text>
                 <TouchableOpacity onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
-              <TextInput style={s.searchBox} placeholder="搜索国家/地区..." placeholderTextColor="#444" value={search} onChangeText={t=>{setSearch(t);setSelectedContinent(null);}} />
+              <TextInput style={s.searchBox} placeholder={t("new_trip_search_destination")} placeholderTextColor="#444" value={search} onChangeText={t=>{setSearch(t);setSelectedContinent(null);}} />
               <ScrollView style={{maxHeight:420}} nestedScrollEnabled>
                 {searchResults && searchResults.map((item, idx)=>(
                   <TouchableOpacity key={idx} style={s.listItem} onPress={()=>{
@@ -561,7 +592,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                     </Text>
                   </TouchableOpacity>
                 ))}
-                {!search && !selectedContinent && CONTINENTS.map(cont=>(
+                {!search && !selectedContinent && destinationSource.map(cont=>(
                   <TouchableOpacity key={cont.name} style={s.continentItem} onPress={()=>setSelectedContinent(cont)}>
                     <Text style={s.continentText}>{cont.name}</Text>
                     <Text style={s.continentArrow}>→</Text>
@@ -586,7 +617,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 <TouchableOpacity onPress={()=>setStep(1)}><Text style={s.backBtn}>← {selectedCountry?.name}</Text></TouchableOpacity>
                 <TouchableOpacity onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
-              <Text style={s.inputLabel}>推荐目的地 <Text style={{color:'#444',fontSize:10}}>（可多选）</Text></Text>
+              <Text style={s.inputLabel}>{t("new_trip_recommended")} <Text style={{color:'#444',fontSize:10}}>{t("new_trip_multi_select")}</Text></Text>
               <ScrollView style={{maxHeight:200}} nestedScrollEnabled>
                 <View style={s.cityGrid}>
                   {selectedCountry?.cities.map(c=>(
@@ -607,10 +638,10 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 </View>
               </ScrollView>
 
-              <Text style={[s.inputLabel,{marginTop:16}]}>或手动输入其他地点</Text>
+              <Text style={[s.inputLabel,{marginTop:16}]}>{t("new_trip_manual_input")}</Text>
               <TextInput
                 style={s.input}
-                placeholder="城市、景点、地区..."
+                placeholder={t("new_trip_city_placeholder")}
                 placeholderTextColor="#444"
                 value={customCity}
                 onChangeText={t=>{setCustomCity(t); if(t) setSelectedCities([]);}}
@@ -620,11 +651,11 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 <View>
                   {selectedCities.length > 0 && (
                     <Text style={s.selectedHint}>
-                      已选 {selectedCities.length} 个：{selectedCities.join(' · ')}
+                      {t('new_trip_selected')} {selectedCities.length}: {selectedCities.join(' · ')}
                     </Text>
                   )}
                   <TouchableOpacity style={s.nextBtn} onPress={()=>setStep(3)}>
-                    <Text style={s.nextBtnText}>下一步 →</Text>
+                    <Text style={s.nextBtnText}>{t('next')} →</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -642,16 +673,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
               {/* 目的地天气预报 */}
               {forecastLoading && (
                 <View style={{backgroundColor:'#0D2B28',borderRadius:12,padding:12,marginBottom:12,alignItems:'center'}}>
-                  <Text style={{color:'#4ECDC490',fontSize:13}}>正在获取目的地天气...</Text>
+                  <Text style={{color:'#4ECDC490',fontSize:13}}>{t("new_trip_loading_weather")}</Text>
                 </View>
               )}
               {forecast && !forecastLoading && (
                 <View style={{backgroundColor:'#0D2B28',borderRadius:12,padding:12,marginBottom:12,borderWidth:1,borderColor:'#4ECDC430'}}>
-                  <Text style={{color:'#4ECDC4',fontSize:12,marginBottom:8,letterSpacing:1}}>📍 目的地未来7天</Text>
+                  <Text style={{color:'#4ECDC4',fontSize:12,marginBottom:8,letterSpacing:1}}>📍 {t("new_trip_7day_weather")}</Text>
                   <View style={{flexDirection:'row',gap:6}}>
                     {forecast.slice(0,7).map((day,i)=>(
                       <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
-                        <Text style={{fontSize:10,color:'#555'}}>{i===0?'今':day.date.slice(5).replace('-','/')}</Text>
+                        <Text style={{fontSize:10,color:'#555'}}>{i===0?t('today_short'):day.date.slice(5).replace('-','/')}</Text>
                         <Text style={{fontSize:16}}>{day.emoji}</Text>
                         <Text style={{fontSize:10,color:'#4ECDC4'}}>{Math.round(day.maxTemp)}°</Text>
                         <Text style={{fontSize:10,color:'#555'}}>{Math.round(day.minTemp)}°</Text>
@@ -661,7 +692,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 </View>
               )}
               <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-                <Text style={{fontSize:16,color:'#F0EDE8',fontWeight:'500'}}>✈️ 设置出发倒计时</Text>
+                <Text style={{fontSize:16,color:'#F0EDE8',fontWeight:'500'}}>✈️ {t("new_trip_departure_countdown")}</Text>
                 <TouchableOpacity
                   onPress={()=>setEnableCountdown(!enableCountdown)}
                   style={{backgroundColor:enableCountdown?'#4ECDC4':'#D4AF3730',borderRadius:14,paddingHorizontal:16,paddingVertical:6,borderWidth:1,borderColor:enableCountdown?'#4ECDC4':'#D4AF37'}}>
@@ -677,13 +708,13 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                   display="spinner"
                   maximumDate={new Date(2035,11,31)}
                   onChange={(_,date)=>{ if(date) setPlannedDateObj(date); }}
-                  locale="zh-CN"
+                  locale={isZh ? 'zh-CN' : 'en-US'}
                   style={{height:130}}
                   textColor="#F0EDE8"
                 />
               </View>}
               <Text style={s.inputLabel}>
-                选择图标 <Text style={{color:'#444',fontSize:10}}>（可选，不选默认🌍）</Text>
+                {t('new_trip_select_icon')} <Text style={{color:'#444',fontSize:10}}>{t('new_trip_icon_optional')}</Text>
               </Text>
               <ScrollView style={{maxHeight:260}} nestedScrollEnabled showsVerticalScrollIndicator={false}>
                 <View style={s.emojiRow}>
@@ -697,10 +728,10 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
               <View style={{flexDirection:'row',gap:12,marginTop:16}}>
                 <TouchableOpacity style={s.cancelBtn} onPress={()=>{resetForm();setShowAdd(false);}}>
-                  <Text style={s.cancelText}>取消</Text>
+                  <Text style={s.cancelText}>{t('cancel')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={s.confirmBtn} onPress={addTrip}>
-                  <Text style={s.confirmText}>开始记录 →</Text>
+                  <Text style={s.confirmText}>{t('new_trip_start_record')} →</Text>
                 </TouchableOpacity>
               </View>
             </>}

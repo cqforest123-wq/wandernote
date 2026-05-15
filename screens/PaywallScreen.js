@@ -34,11 +34,11 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
     const result = await purchasePackage(selectedPkg);
     setPurchasing(false);
     if (result.success && result.isPro) {
-      Alert.alert('🎉 订阅成功', '欢迎加入 WanderNote Pro！', [
-        { text: '开始使用', onPress: onSuccess }
+      Alert.alert(t('paywall_purchase_success_title'), t('paywall_purchase_success_desc'), [
+        { text: t('paywall_start_using'), onPress: onSuccess }
       ]);
     } else if (!result.cancelled) {
-      Alert.alert('购买失败', result.error || '请稍后重试');
+      Alert.alert(t('paywall_purchase_failed'), result.error || t('profile_try_later'));
     }
   };
 
@@ -47,21 +47,21 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
     const result = await restorePurchases();
     setPurchasing(false);
     if (result.success && result.isPro) {
-      Alert.alert('✅ 恢复成功', '已恢复你的 Pro 订阅', [
-        { text: '好的', onPress: onSuccess }
+      Alert.alert(t('paywall_restore_success_title'), t('paywall_restore_success_desc'), [
+        { text: t('ok'), onPress: onSuccess }
       ]);
     } else {
-      Alert.alert('未找到购买记录', '请确认使用了正确的 Apple ID');
+      Alert.alert(t('paywall_restore_not_found'), t('paywall_restore_not_found_desc'));
     }
   };
 
   const PRO_FEATURES = [
-    { icon: '✈️', text: '无限旅程记录' },
-    { icon: '☁️', text: '云端同步备份' },
-    { icon: '✦', text: 'AI创作无限次' },
-    { icon: '🗺', text: '足迹地图完整版' },
-    { icon: '🧳', text: '打包清单无限模板' },
-    { icon: '📊', text: '年度旅行报告' },
+    { icon: '✈️', text: t('paywall_feature_unlimited_trips') },
+    { icon: '☁️', text: t('paywall_feature_cloud_sync') },
+    { icon: '✦', text: t('paywall_feature_ai_unlimited') },
+    { icon: '🗺', text: t('paywall_feature_full_map') },
+    { icon: '🧳', text: t('paywall_feature_packing_templates') },
+    { icon: '📊', text: t('paywall_feature_year_report') },
   ];
 
   return (
@@ -79,7 +79,7 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
           <Text style={s.crown}>✦</Text>
           <Text style={s.title}>WanderNote Pro</Text>
           {featureName && (
-            <Text style={s.featureHint}>解锁「{featureName}」及所有专业功能</Text>
+            <Text style={s.featureHint}>{t('paywall_unlock_feature').replace('%s', featureName)}</Text>
           )}
         </View>
 
@@ -103,13 +103,13 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
               <TouchableOpacity
                 style={[s.planCard, selectedPkg === offerings.annual && s.planCardActive]}
                 onPress={() => setSelectedPkg(offerings.annual)}>
-                <View style={s.planBadge}><Text style={s.planBadgeText}>最划算</Text></View>
-                <Text style={[s.planName, selectedPkg === offerings.annual && s.planNameActive]}>年度订阅</Text>
+                <View style={s.planBadge}><Text style={s.planBadgeText}>{t('paywall_best_value')}</Text></View>
+                <Text style={[s.planName, selectedPkg === offerings.annual && s.planNameActive]}>{t('paywall_annual')}</Text>
                 <Text style={[s.planPrice, selectedPkg === offerings.annual && s.planPriceActive]}>
                   {offerings.annual.product.priceString}
                 </Text>
                 <Text style={s.planNote}>
-                  约 {offerings.annual.product.currencyCode} {(offerings.annual.product.price / 12).toFixed(2)}/月
+                  {t('paywall_about')} {offerings.annual.product.currencyCode} {(offerings.annual.product.price / 12).toFixed(2)}/{t('profile_month')}
                 </Text>
               </TouchableOpacity>
             )}
@@ -117,17 +117,17 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
               <TouchableOpacity
                 style={[s.planCard, selectedPkg === offerings.monthly && s.planCardActive]}
                 onPress={() => setSelectedPkg(offerings.monthly)}>
-                <Text style={[s.planName, selectedPkg === offerings.monthly && s.planNameActive]}>月度订阅</Text>
+                <Text style={[s.planName, selectedPkg === offerings.monthly && s.planNameActive]}>{t('paywall_monthly')}</Text>
                 <Text style={[s.planPrice, selectedPkg === offerings.monthly && s.planPriceActive]}>
                   {offerings.monthly.product.priceString}
                 </Text>
-                <Text style={s.planNote}>按月付费，随时取消</Text>
+                <Text style={s.planNote}>{t('paywall_monthly_note')}</Text>
               </TouchableOpacity>
             )}
           </View>
         ) : (
           <View style={s.noOfferings}>
-            <Text style={s.noOfferingsText}>暂时无法加载价格，请稍后重试</Text>
+            <Text style={s.noOfferingsText}>{t('paywall_no_offerings')}</Text>
           </View>
         )}
 
@@ -138,18 +138,18 @@ export default function PaywallScreen({ onSuccess, onClose, featureName }) {
           disabled={!selectedPkg || purchasing}>
           {purchasing
             ? <ActivityIndicator color="#0D0D0D" />
-            : <Text style={s.buyBtnText}>开始订阅 →</Text>
+            : <Text style={s.buyBtnText}>{t('paywall_subscribe')} →</Text>
           }
         </TouchableOpacity>
 
         {/* 恢复购买 */}
         <TouchableOpacity style={s.restoreBtn} onPress={handleRestore} disabled={purchasing}>
-          <Text style={s.restoreBtnText}>恢复购买</Text>
+          <Text style={s.restoreBtnText}>{t('paywall_restore')}</Text>
         </TouchableOpacity>
 
         <Text style={s.legal}>
-          订阅将自动续费，可随时在 App Store 订阅设置中取消。{'\n'}
-          续订将在到期前24小时内扣款。
+          {t('paywall_legal_1')}{'\n'}
+          {t('paywall_legal_2')}
         </Text>
       </ScrollView>
     </SafeAreaView>

@@ -8,16 +8,18 @@ import { supabase } from '../lib/supabase';
 import { syncMemosUp, syncMemosDown, syncMemosUpWithTripId } from '../lib/sync';
 import { STORAGE_KEYS } from '../lib/storageKeys';
 import { createMemo } from '../lib/models';
+import { useTranslation } from 'react-i18next';
+import { GLOBAL_PACKING_TEMPLATES } from '../lib/globalPackingTemplates';
 
 const STORAGE_KEY = STORAGE_KEYS.memos;
 
 const CATEGORIES = [
-  { key: 'travel',  label: '✈️ 旅行',  color: '#D4AF37' },
-  { key: 'packing', label: '🧳 打包',  color: '#4ECDC4' },
-  { key: 'todo',    label: '✅ 待办',  color: '#6BCB77' },
-  { key: 'idea',    label: '💡 灵感',  color: '#FFB347' },
-  { key: 'note',    label: '📝 笔记',  color: '#9B8EC4' },
-  { key: 'other',   label: '📌 其他',  color: '#888'    },
+  { key: 'travel',  labelKey: 'memo_cat_travel',  color: '#D4AF37' },
+  { key: 'packing', labelKey: 'memo_cat_packing', color: '#4ECDC4' },
+  { key: 'todo',    labelKey: 'memo_cat_todo',    color: '#6BCB77' },
+  { key: 'idea',    labelKey: 'memo_cat_idea',    color: '#FFB347' },
+  { key: 'note',    labelKey: 'memo_cat_note',    color: '#9B8EC4' },
+  { key: 'other',   labelKey: 'memo_cat_other',   color: '#888'    },
 ];
 
 const SMART_PACKING = {
@@ -145,6 +147,7 @@ const SMART_PACKING = {
 
 // ─── 分组折叠组件 ───────────────────────────────────────────────
 function PackingGroup({ groupName, items, memoId, onToggle, onReminder, catColor }) {
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(true);
   const groupItems = items.filter(i => i.groupKey === groupName);
   const total   = groupItems.length;
@@ -176,7 +179,7 @@ function PackingGroup({ groupName, items, memoId, onToggle, onReminder, catColor
           <Text
             onPress={(e) => { e?.stopPropagation?.(); onReminder?.(memoId, item.id); }}
             style={[pg.remind, item.remind && pg.remindActive]}>
-            {item.remind ? '⏰ 稍后' : '稍后'}
+            {item.remind ? `⏰ ${t('memo_remind_later')}` : t('memo_later')}
           </Text>
         </TouchableOpacity>
       ))}
@@ -203,6 +206,7 @@ const pg = StyleSheet.create({
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
 export default function MemoScreen({ route, navigation, isPro, openPaywall, trips = [] }) {
+  const { t, i18n } = useTranslation();
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
   const [memos,        setMemos]        = useState([]);
@@ -218,6 +222,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
   const [aiDays, setAIDays] = useState('7');
   const [aiGenerating, setAIGenerating] = useState(false);
   const [filterCat,    setFilterCat]    = useState('all');
+
+  const packingTemplates = React.useMemo(
+    () => i18n.language?.startsWith('zh') ? SMART_PACKING : GLOBAL_PACKING_TEMPLATES,
+    [i18n.language]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -315,9 +324,9 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
       const packCount = memos.filter(m => m.category === 'packing').length;
       if (packCount >= FREE_PACKING_LIMIT) {
         Alert.alert(
-          '已达免费版上限',
-          `免费版最多创建 ${FREE_PACKING_LIMIT} 个打包清单\n升级 Pro 即可无限创建`,
-          [{ text: '知道了', style: 'cancel' }]
+          t('alert_pro_limit'),
+          t('memo_free_packing_limit').replace('%d', FREE_PACKING_LIMIT),
+          [{ text: t('ok'), style: 'cancel' }]
         );
         return;
       }
@@ -350,11 +359,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
     const memo = memos.find(m => m.id === id);
     const isBound = memo?.tripId;
     const msg = isBound
-      ? `确定删除「${titleText}」？\n\n⚠️ 此清单已绑定旅程，删除后无法恢复。`
-      : `确定删除「${titleText}」？`;
-    Alert.alert('删除', msg, [
-      { text: '取消', style: 'cancel' },
-      { text: '删除', style: 'destructive', onPress: async () => saveMemos(memos.filter(m => m.id !== id)) },
+      ? t('memo_delete_bound_confirm').replace('%s', titleText)
+      : t('memo_delete_confirm').replace('%s', titleText);
+    Alert.alert(t('delete'), msg, [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('delete'), style: 'destructive', onPress: async () => saveMemos(memos.filter(m => m.id !== id)) },
     ]);
   };
 
@@ -379,13 +388,13 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
   const removeItem = (id) => { if (items.length > 1) setItems(items.filter(i => i.id !== id)); };
 
   const applyTemplate = (key) => {
-    const tpl = SMART_PACKING[key];
+    const tpl = packingTemplates[key];
     if (!tpl) return;
     const allItems = Object.entries(tpl.groups).flatMap(([groupName, list]) =>
       list.map((text, i) => ({ id: Date.now() + Math.random() * 1000 + i, text, checked: false, remind: false, groupKey: groupName }))
     );
     setItems(allItems);
-    setTitle(key === '通用' ? '旅行打包清单' : `${key}旅行打包清单`);
+    setTitle(tpl?.emoji === '🎒' ? t('memo_default_packing_title') : `${key} ${t('memo_packing_list_suffix')}`);
     setCategory('packing');
     setShowTemplate(false);
     setShowAdd(true);
@@ -423,7 +432,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
             <View style={[s.bigBarFill, { width: `${pct}%` }]} />
           </View>
           <Text style={[s.bigBarText, done === total && total > 0 && { color: '#4ECDC4' }]}>
-            {done}/{total} 已备齐
+            {done}/{total} {t('memo_packed')}
           </Text>
         </View>
 
@@ -453,26 +462,26 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                 <Text
                   onPress={(e) => { e?.stopPropagation?.(); toggleReminder(memo.id, item.id); }}
                   style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>
-                  {item.remind ? '⏰ 稍后' : '稍后'}
+                  {item.remind ? `⏰ ${t('memo_remind_later')}` : t('memo_later')}
                 </Text>
               </TouchableOpacity>
             ))
         }
         {groups.length > 3 && (
-          <Text style={s.moreGroups}>还有 {groups.length - 3} 个分类 →</Text>
+          <Text style={s.moreGroups}>{t('memo_more_groups').replace('%d', groups.length - 3)} →</Text>
         )}
 
         {/* 底部：绑定旅程（占位） */}
         <View style={s.packCardFoot}>
-          <TouchableOpacity style={[s.bindTripBtn, memo.tripId && {backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]} onPress={() => Alert.alert(memo.tripId ? '已绑定旅程' : '绑定旅程', memo.tripId ? `当前已绑定到该旅程的打包清单` : '从旅程页面进入可自动绑定')}>
+          <TouchableOpacity style={[s.bindTripBtn, memo.tripId && {backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]} onPress={() => Alert.alert(memo.tripId ? t('memo_bound_trip') : t('memo_bind_trip'), memo.tripId ? t('memo_bound_trip_desc') : t('memo_bind_trip_desc'))}>
             <Text style={[s.bindTripText, memo.tripId && {color:'#D4AF37'}]}>
               {memo.tripId
-                ? `✓ ${trips.find(t => String(t.id) === String(memo.tripId))?.city || '已绑定旅程'}`
-                : '🗺️ 绑定旅程'}
+                ? `✓ ${trips.find(t => String(t.id) === String(memo.tripId))?.city || t('memo_bound_trip')}`
+                : `🗺️ ${t('memo_bind_trip')}`}
             </Text>
           </TouchableOpacity>
           {done === total && total > 0 && (
-            <Text style={s.allDoneBadge}>✅ 已备齐</Text>
+            <Text style={s.allDoneBadge}>✅ {t('memo_all_packed')}</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -489,7 +498,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
         onLongPress={() => deleteMemo(memo.id, memo.title)} activeOpacity={0.85}>
         <View style={s.memoCardHeader}>
           <View style={[s.catBadge, { backgroundColor: cat.color + '20', borderColor: cat.color + '60' }]}>
-            <Text style={[s.catBadgeText, { color: cat.color }]}>{cat.label}</Text>
+            <Text style={[s.catBadgeText, { color: cat.color }]}>{t(cat.labelKey)}</Text>
           </View>
           <Text style={s.memoDate}>{memo.updatedAt}</Text>
         </View>
@@ -512,11 +521,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
             <Text
               onPress={(e) => { e?.stopPropagation?.(); toggleReminder(memo.id, item.id); }}
               style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>
-              {item.remind ? '⏰ 稍后' : '稍后'}
+              {item.remind ? `⏰ ${t('memo_remind_later')}` : t('memo_later')}
             </Text>
           </TouchableOpacity>
         ))}
-        {total > 3 && <Text style={s.moreText}>还有 {total - 3} 项...</Text>}
+        {total > 3 && <Text style={s.moreText}>{t('memo_more_items').replace('%d', total - 3)}</Text>}
       </TouchableOpacity>
     );
   };
@@ -528,17 +537,17 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
       {/* ── 页头 ── */}
       {tripId && (
         <TouchableOpacity style={{paddingHorizontal:24,paddingTop:8}} onPress={()=>route?.params && navigation?.goBack?.()}>
-          <Text style={{color:'#4ECDC4',fontSize:14}}>← 返回旅程</Text>
+          <Text style={{color:'#4ECDC4',fontSize:14}}>← {t('memo_back_to_trip')}</Text>
         </TouchableOpacity>
       )}
       <View style={s.header}>
         <View>
-          <Text style={s.pageTitle}>{tripName ? `${tripName} · 打包` : '行前准备'}</Text>
-          <Text style={s.pageSubtitle}>{tripName ? '该旅程的打包清单' : '打包清单 · 旅行感言'}</Text>
+          <Text style={s.pageTitle}>{tripName ? `${tripName} · ${t('memo_pack')}` : t('memo_pre_trip')}</Text>
+          <Text style={s.pageSubtitle}>{tripName ? t('memo_trip_packing_subtitle') : t('memo_page_subtitle')}</Text>
         </View>
         <TouchableOpacity style={s.newBtn}
           onPress={() => openNew(tab === 'packing' ? 'packing' : 'note')}>
-          <Text style={s.newBtnText}>＋ 新建</Text>
+          <Text style={s.newBtnText}>＋ {t('new')}</Text>
         </TouchableOpacity>
       </View>
 
@@ -546,7 +555,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
       <View style={s.tabRow}>
         <TouchableOpacity style={[s.tabBtn, tab === 'packing' && s.tabBtnActive]}
           onPress={() => setTab('packing')}>
-          <Text style={[s.tabText, tab === 'packing' && s.tabTextActive]}>🧳 打包清单</Text>
+          <Text style={[s.tabText, tab === 'packing' && s.tabTextActive]}>🧳 {t('memo_packing_list')}</Text>
           {packMemos.length > 0 && (
             <View style={[s.tabBadge, tab === 'packing' && { backgroundColor: '#4ECDC4' }]}>
               <Text style={s.tabBadgeText}>{packMemos.length}</Text>
@@ -555,7 +564,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
         </TouchableOpacity>
         <TouchableOpacity style={[s.tabBtn, tab === 'memo' && s.tabBtnActive]}
           onPress={() => setTab('memo')}>
-          <Text style={[s.tabText, tab === 'memo' && s.tabTextActive]}>📝 旅行感言</Text>
+          <Text style={[s.tabText, tab === 'memo' && s.tabTextActive]}>📝 {t('day_travel_memos')}</Text>
           {otherMemos.length > 0 && (
             <View style={[s.tabBadge, tab === 'memo' && { backgroundColor: '#D4AF37' }]}>
               <Text style={s.tabBadgeText}>{otherMemos.length}</Text>
@@ -570,8 +579,8 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
           {/* 智能模板入口 */}
           <TouchableOpacity style={s.templateBanner} onPress={() => { setShowTemplate(true); }}>
             <View>
-              <Text style={s.templateBannerTitle}>✨ 智能打包模板</Text>
-              <Text style={s.templateBannerSub}>套用模板，进入编辑后保存</Text>
+              <Text style={s.templateBannerTitle}>✨ {t('memo_smart_templates')}</Text>
+              <Text style={s.templateBannerSub}>{t('memo_template_banner_sub')}</Text>
             </View>
             <Text style={s.templateBannerArrow}>→</Text>
           </TouchableOpacity>
@@ -579,8 +588,8 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
           {packMemos.length === 0 ? (
             <View style={s.emptyBox}>
               <Text style={s.emptyEmoji}>🧳</Text>
-              <Text style={s.emptyText}>还没有打包清单</Text>
-              <Text style={s.emptyHint}>点上方模板快速生成，或手动新建</Text>
+              <Text style={s.emptyText}>{t('memo_empty_packing')}</Text>
+              <Text style={s.emptyHint}>{t('memo_empty_packing_hint')}</Text>
             </View>
           ) : (
             packMemos.map(m => <PackingCard key={m.id} memo={m} />)
@@ -596,13 +605,13 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
               <TouchableOpacity
                 style={[s.filterChip, filterCat === 'all' && s.filterChipActive]}
                 onPress={() => setFilterCat('all')}>
-                <Text style={[s.filterChipText, filterCat === 'all' && { color: '#D4AF37' }]}>全部</Text>
+                <Text style={[s.filterChipText, filterCat === 'all' && { color: '#D4AF37' }]}>{t('all')}</Text>
               </TouchableOpacity>
               {CATEGORIES.filter(c => c.key !== 'packing').map(cat => (
                 <TouchableOpacity key={cat.key}
                   style={[s.filterChip, filterCat === cat.key && { borderColor: cat.color, backgroundColor: cat.color + '15' }]}
                   onPress={() => setFilterCat(cat.key)}>
-                  <Text style={[s.filterChipText, filterCat === cat.key && { color: cat.color }]}>{cat.label}</Text>
+                  <Text style={[s.filterChipText, filterCat === cat.key && { color: cat.color }]}>{t(cat.labelKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -611,8 +620,8 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
             {otherMemos.length === 0 ? (
               <View style={s.emptyBox}>
                 <Text style={s.emptyEmoji}>📝</Text>
-                <Text style={s.emptyText}>还没有旅行感言</Text>
-                <Text style={s.emptyHint}>点击「＋ 新建」开始记录</Text>
+                <Text style={s.emptyText}>{t('memo_empty_notes')}</Text>
+                <Text style={s.emptyHint}>{t('memo_empty_notes_hint')}</Text>
               </View>
             ) : (
               otherMemos.map(m => <MemoCard key={m.id} memo={m} />)
@@ -626,11 +635,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.overlay}>
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>{editingMemo ? '编辑' : '新建'}</Text>
+              <Text style={s.sheetTitle}>{editingMemo ? t('edit') : t('new')}</Text>
               <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
                 {!editingMemo && (
                   <TouchableOpacity onPress={() => { setShowAdd(false); setTimeout(() => setShowTemplate(true), 200); }}>
-                    <Text style={{ color: '#4ECDC4', fontSize: 13 }}>📦 模板</Text>
+                    <Text style={{ color: '#4ECDC4', fontSize: 13 }}>📦 {t('memo_template')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={() => setShowAdd(false)}>
@@ -646,7 +655,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                   <TouchableOpacity key={cat.key}
                     style={[s.catChip, category === cat.key && { backgroundColor: cat.color + '20', borderColor: cat.color }]}
                     onPress={() => setCategory(cat.key)}>
-                    <Text style={[s.catChipText, category === cat.key && { color: cat.color }]}>{cat.label}</Text>
+                    <Text style={[s.catChipText, category === cat.key && { color: cat.color }]}>{t(cat.labelKey)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -654,14 +663,14 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
 
             <TextInput
               style={s.titleInput}
-              placeholder="清单标题..."
+              placeholder={t("memo_title_placeholder")}
               placeholderTextColor="#444"
               value={title}
               onChangeText={setTitle}
             />
 
             {category === 'packing' && (
-              <Text style={s.reminderHint}>点右侧「稍后」标记暂时不能打包的物品</Text>
+              <Text style={s.reminderHint}>{t('memo_reminder_hint')}</Text>
             )}
 
             {/* 编辑模式：打包清单用分组展示 */}
@@ -680,11 +689,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                 {items.filter(i => !i.groupKey).map((item, idx) => (
                   <View key={item.id} style={s.itemRow}>
                     <Text style={s.itemBullet}>•</Text>
-                    <TextInput style={s.itemInput} placeholder={`自定义第 ${idx+1} 项...`}
+                    <TextInput style={s.itemInput} placeholder={t('memo_custom_item_placeholder').replace('%d', idx + 1)}
                       placeholderTextColor="#444" value={item.text}
                       onChangeText={t => updateItem(item.id, t)} multiline />
                     <TouchableOpacity onPress={() => setItems(items.map(i => i.id === item.id ? { ...i, remind: !i.remind } : i))}>
-                      <Text style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>{item.remind ? '⏰ 稍后' : '稍后'}</Text>
+                      <Text style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>{item.remind ? `⏰ ${t('memo_remind_later')}` : t('memo_later')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeItem(item.id)}>
                       <Text style={{ color: '#555', fontSize: 18, padding: 4 }}>×</Text>
@@ -692,7 +701,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                   </View>
                 ))}
                 <TouchableOpacity style={s.addItemBtn} onPress={addItem}>
-                  <Text style={s.addItemBtnText}>＋ 添加自定义项</Text>
+                  <Text style={s.addItemBtnText}>＋ {t('memo_add_custom_item')}</Text>
                 </TouchableOpacity>
               </ScrollView>
             ) : (
@@ -700,11 +709,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                 {items.map((item, idx) => (
                   <View key={item.id} style={s.itemRow}>
                     <Text style={s.itemBullet}>•</Text>
-                    <TextInput style={s.itemInput} placeholder={`第 ${idx+1} 项...`}
+                    <TextInput style={s.itemInput} placeholder={t('memo_item_placeholder').replace('%d', idx + 1)}
                       placeholderTextColor="#444" value={item.text}
                       onChangeText={t => updateItem(item.id, t)} multiline />
                     <TouchableOpacity onPress={() => setItems(items.map(i => i.id === item.id ? { ...i, remind: !i.remind } : i))}>
-                      <Text style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>{item.remind ? '⏰ 稍后' : '稍后'}</Text>
+                      <Text style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>{item.remind ? `⏰ ${t('memo_remind_later')}` : t('memo_later')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeItem(item.id)}>
                       <Text style={{ color: '#555', fontSize: 18, padding: 4 }}>×</Text>
@@ -712,17 +721,17 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                   </View>
                 ))}
                 <TouchableOpacity style={s.addItemBtn} onPress={addItem}>
-                  <Text style={s.addItemBtnText}>＋ 添加一项</Text>
+                  <Text style={s.addItemBtnText}>＋ {t('memo_add_item')}</Text>
                 </TouchableOpacity>
               </ScrollView>
             )}
 
             <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
               <TouchableOpacity style={s.cancelBtn} onPress={() => setShowAdd(false)}>
-                <Text style={s.cancelText}>取消</Text>
+                <Text style={s.cancelText}>{t('cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.confirmBtn} onPress={saveMemo}>
-                <Text style={s.confirmText}>保存</Text>
+                <Text style={s.confirmText}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -735,8 +744,8 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
           <View style={[s.sheet, { paddingBottom: 32 }]}>
             <View style={s.sheetHeader}>
               <View>
-                <Text style={s.sheetTitle}>选择目的地模板</Text>
-                <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>选择模板套用，确认后保存</Text>
+                <Text style={s.sheetTitle}>{t('memo_select_template')}</Text>
+                <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>{t('memo_select_template_sub')}</Text>
               </View>
               <TouchableOpacity onPress={() => setShowTemplate(false)}>
                 <Text style={s.closeBtn}>✕</Text>
@@ -747,23 +756,23 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
               {!showAIGen ? (
                 <TouchableOpacity
                   style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16,flexDirection:'row',alignItems:'center',gap:12}}
-                  onPress={()=>{ if(!isPro){ setShowTemplate(false); openPaywall&&openPaywall('AI智能清单'); return; } setShowAIGen(true); }}>
+                  onPress={()=>{ if(!isPro){ setShowTemplate(false); openPaywall&&openPaywall(t('memo_ai_checklist')); return; } setShowAIGen(true); }}>
                   <Text style={{fontSize:28}}>✦</Text>
                   <View style={{flex:1}}>
-                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>AI 补充建议</Text>
-                    <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>根据目的地补充特殊物品建议</Text>
+                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>{t('memo_ai_suggestions')}</Text>
+                    <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>{t('memo_ai_suggestions_desc')}</Text>
                   </View>
                   {!isPro && <Text style={{color:'#A78BFA',fontSize:11,backgroundColor:'#A78BFA20',paddingHorizontal:8,paddingVertical:3,borderRadius:8}}>Pro</Text>}
                 </TouchableOpacity>
               ) : (
                 <View style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16}}>
                   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>✦ AI 补充建议</Text>
+                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>✦ {t('memo_ai_suggestions')}</Text>
                     <TouchableOpacity onPress={()=>setShowAIGen(false)}><Text style={{color:'#555',fontSize:14}}>✕</Text></TouchableOpacity>
                   </View>
                   <TextInput
                     style={{backgroundColor:'#0D0D0D',borderRadius:10,padding:12,color:'#F0EDE8',fontSize:14,borderWidth:1,borderColor:'#2A2A2A',marginBottom:10}}
-                    placeholder="目的地（如：京都、冰岛、巴厘岛）"
+                    placeholder={t("memo_ai_destination_placeholder")}
                     placeholderTextColor="#444"
                     value={aiDestination}
                     onChangeText={setAIDestination}
@@ -776,7 +785,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                           backgroundColor:aiDays===d?'#A78BFA20':'#1A1A1A',
                           alignItems:'center'}}
                         onPress={()=>setAIDays(d)}>
-                        <Text style={{color:aiDays===d?'#A78BFA':'#555',fontSize:13}}>{d}天</Text>
+                        <Text style={{color:aiDays===d?'#A78BFA':'#555',fontSize:13}}>{d} {t('unit_days')}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -788,19 +797,19 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                       setAIGenerating(true);
                       try {
                         const { callClaude } = require('../lib/claude');
-                        const prompt = `你是旅行打包清单专家。请为去${aiDestination}旅行${aiDays}天的用户生成一份详细打包清单。
-要求：
-1. 返回纯JSON格式，不要有任何其他文字
-2. 格式如下：{"title":"${aiDestination}${aiDays}天旅行清单","groups":{"分类名":["物品1","物品2"]}}
-3. 分类包括：证件、财务、电子设备、衣物、日用品、特殊物品
-4. 每个分类5-8个物品，物品前加适合的emoji
-5. 根据目的地特点给出针对性建议`;
+                        const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${aiDestination}.
+Requirements:
+1. Return pure JSON only, with no extra text.
+2. Format: {"title":"${aiDestination} ${aiDays}-day packing list","groups":{"Category name":["item 1","item 2"]}}
+3. Use these groups: Documents, Money, Electronics, Clothing, Toiletries, Special items.
+4. Each group should include 5-8 items, each with a suitable emoji.
+5. Adapt the suggestions to the destination.`;
                         const text = await callClaude(prompt, 1500);
                         const clean = text.replace(/```json|```/g, '').trim();
                         const parsed = JSON.parse(clean);
                         const newMemo = createMemo({
                           category: 'packing',
-                          title: parsed.title || `${aiDestination} AI清单`,
+                          title: parsed.title || `${aiDestination} ${t('memo_ai_checklist')}`,
                           items: Object.entries(parsed.groups).flatMap(([group, items]) =>
                             items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
                           ),
@@ -810,21 +819,21 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                         await saveMemos(next);
                         setShowAIGen(false);
                         setShowTemplate(false);
-                        Alert.alert('✅ 生成成功', `已为${aiDestination}生成专属清单`);
+                        Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', aiDestination));
                       } catch(e) {
-                        Alert.alert('生成失败', e.message || '请稍后重试');
+                        Alert.alert(t('memo_ai_failed'), e.message || t('profile_try_later'));
                       } finally {
                         setAIGenerating(false);
                       }
                     }}>
                     <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>
-                      {aiGenerating ? 'AI生成中...' : '✦ 开始生成'}
+                      {aiGenerating ? t('memo_ai_generating') : `✦ ${t('memo_ai_start')}`}
                     </Text>
                   </TouchableOpacity>
                 </View>
               )}
               <View style={s.templateGrid}>
-                {Object.entries(SMART_PACKING).map(([key, tpl]) => {
+                {Object.entries(packingTemplates).map(([key, tpl]) => {
                   const totalItems = Object.values(tpl.groups).reduce((a, b) => a + b.length, 0);
                   const groupCount = Object.keys(tpl.groups).length;
                   return (
@@ -834,8 +843,8 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                       <Text style={s.templateCardTitle}>{key}</Text>
                       <Text style={s.templateCardDesc}>{tpl.desc}</Text>
                       <View style={s.templateCardFoot}>
-                        <Text style={s.templateCardStat}>{groupCount} 分类</Text>
-                        <Text style={s.templateCardStat}>{totalItems} 项</Text>
+                        <Text style={s.templateCardStat}>{groupCount} {t('memo_groups')}</Text>
+                        <Text style={s.templateCardStat}>{totalItems} {t('memo_items')}</Text>
                       </View>
                     </TouchableOpacity>
                   );

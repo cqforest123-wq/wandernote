@@ -7,8 +7,41 @@ import { createPhoto, createVideo } from '../lib/models';
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 8) / 3;
 
-const TAGS = ['美食','风景','邂逅','探险','住宿','交通','购物','感受'];
-const TAG_COLORS = {'美食':'#FF8C69','风景':'#6BCB77','邂逅':'#9B8EC4','探险':'#5BC0BE','住宿':'#FFB347','交通':'#64B5F6','购物':'#F06292','感受':'#A8D8EA'};
+const TAGS = ['food','scenery','encounter','adventure','stay','transport','shopping','feeling'];
+const TAG_LABEL_KEYS = {
+  food: 'day_tag_food',
+  scenery: 'day_tag_scenery',
+  encounter: 'day_tag_encounter',
+  adventure: 'day_tag_adventure',
+  stay: 'day_tag_stay',
+  transport: 'day_tag_transport',
+  shopping: 'day_tag_shopping',
+  feeling: 'day_tag_feeling',
+};
+const LEGACY_TAG_MAP = {
+  '美食': 'food',
+  '风景': 'scenery',
+  '邂逅': 'encounter',
+  '探险': 'adventure',
+  '住宿': 'stay',
+  '交通': 'transport',
+  '购物': 'shopping',
+  '感受': 'feeling',
+};
+const TAG_COLORS = {
+  food: '#FF8C69',
+  scenery: '#6BCB77',
+  encounter: '#9B8EC4',
+  adventure: '#5BC0BE',
+  stay: '#FFB347',
+  transport: '#64B5F6',
+  shopping: '#F06292',
+  feeling: '#A8D8EA',
+};
+
+function normalizeTag(tag) {
+  return LEGACY_TAG_MAP[tag] || tag || 'feeling';
+}
 
 export default function DayDetailScreen({ route, navigation, trips, setTrips }) {
   const { tripId, dayDate } = route.params;
@@ -19,7 +52,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const [showMemoModal, setShowMemoModal] = useState(false);
   const [editingMemo, setEditingMemo] = useState(null); // null=新增, object=编辑
   const [memoText, setMemoText] = useState('');
-  const [selectedTag, setSelectedTag] = useState('感受');
+  const [selectedTag, setSelectedTag] = useState('feeling');
   const [previewPhoto, setPreviewPhoto] = useState(null);
 
   if (!trip||!day) return null;
@@ -32,14 +65,14 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const openNewMemo = () => {
     setEditingMemo(null);
     setMemoText('');
-    setSelectedTag('感受');
+    setSelectedTag('feeling');
     setShowMemoModal(true);
   };
 
   const openEditMemo = (memo) => {
     setEditingMemo(memo);
     setMemoText(memo.text);
-    setSelectedTag(memo.tag);
+    setSelectedTag(normalizeTag(memo.tag));
     setShowMemoModal(true);
   };
 
@@ -60,7 +93,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const deleteMemo = (memoId) => {
     Alert.alert(t('day_delete_memo'), t('alert_delete_memo_confirm'),[
       {text:t('cancel'),style:'cancel'},
-      {text:'删除',style:'destructive',onPress:()=>{
+      {text:t('delete'),style:'destructive',onPress:()=>{
         updateDay(d=>({...d,memos:d.memos.filter(m=>m.id!==memoId)}));
         setShowMemoModal(false);
       }},
@@ -96,7 +129,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const deletePhoto = (photoId) => {
     Alert.alert(t('alert_delete_photo'), t('alert_delete_photo_confirm'),[
       {text:t('cancel'),style:'cancel'},
-      {text:'删除',style:'destructive',onPress:()=>{
+      {text:t('delete'),style:'destructive',onPress:()=>{
         updateDay(d=>({...d,photos:d.photos.filter(p=>p.id!==photoId)}));
         setPreviewPhoto(null);
       }},
@@ -121,13 +154,13 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const deleteVideo = (videoId) => {
     Alert.alert(t('alert_delete_video'), t('alert_delete_video_confirm'),[
       {text:t('cancel'),style:'cancel'},
-      {text:'删除',style:'destructive',onPress:()=>{
+      {text:t('delete'),style:'destructive',onPress:()=>{
         updateDay(d=>({...d,videos:(d.videos||[]).filter(v=>v.id!==videoId)}));
       }},
     ]);
   };
 
-  const showPhotoOptions = () => Alert.alert(t('day_photo_source'),'选择来源',[
+  const showPhotoOptions = () => Alert.alert(t('day_photo_source'), t('day_photo_source_subtitle'),[
     {text:t('day_photo_album'),onPress:pickPhotos},
     {text:t('day_photo_camera'),onPress:takePhoto},
     {text:t('cancel'),style:'cancel'},
@@ -152,10 +185,10 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
           </View>
           <View style={s.dayActions}>
             <TouchableOpacity style={s.actionBtn} onPress={openNewMemo}>
-              <Text style={s.actionBtnText}>📝 感言</Text>
+              <Text style={s.actionBtnText}>{`📝 ${t('day_memo')}`}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[s.actionBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}>
-              <Text style={[s.actionBtnText,{color:'#4ECDC4'}]}>📸 照片</Text>
+              <Text style={[s.actionBtnText,{color:'#4ECDC4'}]}>{`📸 ${t('stat_photos')}`}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -164,20 +197,19 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
           <View style={s.emptyBox}>
             <View style={s.emptyCard}>
             <Text style={s.emptyEmoji}>✏️</Text>
-            <Text style={s.emptyTitle}>记录今天的故事</Text>
-            <Text style={s.emptyText}>写下感言或上传照片
-把这一天永远留住</Text>
+            <Text style={s.emptyTitle}>{t('day_empty_title')}</Text>
+            <Text style={s.emptyText}>{t('day_empty_text')}</Text>
             </View>
             <View style={s.emptyBtns}>
-              <TouchableOpacity style={s.emptyBtn} onPress={openNewMemo}><Text style={s.emptyBtnText}>📝 写感言</Text></TouchableOpacity>
-              <TouchableOpacity style={[s.emptyBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}><Text style={[s.emptyBtnText,{color:'#4ECDC4'}]}>📸 传照片</Text></TouchableOpacity>
+              <TouchableOpacity style={s.emptyBtn} onPress={openNewMemo}><Text style={s.emptyBtnText}>{`📝 ${t('day_write_memo')}`}</Text></TouchableOpacity>
+              <TouchableOpacity style={[s.emptyBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}><Text style={[s.emptyBtnText,{color:'#4ECDC4'}]}>{`📸 ${t('day_upload_photo')}`}</Text></TouchableOpacity>
             </View>
           </View>
         ) : (
           <>
             {photos.length>0 && (
               <>
-                <Text style={s.sectionTitle}>照片 ({photos.length})</Text>
+                <Text style={s.sectionTitle}>{t('stat_photos')} ({photos.length})</Text>
                 <View style={s.photoGrid}>
                   {photos.map((photo,index)=>(
                     <TouchableOpacity key={`photo_${photo.id}_${index}`} onPress={()=>setPreviewPhoto(photo)} onLongPress={()=>deletePhoto(photo.id)}>
@@ -195,16 +227,16 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
             {day.memos.length>0 && (
               <>
-                <Text style={s.sectionTitle}>旅行感言 ({day.memos.length})</Text>
+                <Text style={s.sectionTitle}>{t('day_travel_memos')} ({day.memos.length})</Text>
                 {day.memos.map(memo=>(
                   <TouchableOpacity key={String(memo.id)} style={s.memoCard} onPress={()=>openEditMemo(memo)} activeOpacity={0.8}>
                     <View style={s.memoTop}>
-                      <View style={[s.tagBadge,{backgroundColor:`${TAG_COLORS[memo.tag]||'#888'}20`,borderColor:`${TAG_COLORS[memo.tag]||'#888'}50`}]}>
-                        <Text style={[s.tagText,{color:TAG_COLORS[memo.tag]||'#888'}]}>{memo.tag}</Text>
+                      <View style={[s.tagBadge,{backgroundColor:`${TAG_COLORS[normalizeTag(memo.tag)]||'#888'}20`,borderColor:`${TAG_COLORS[normalizeTag(memo.tag)]||'#888'}50`}]}>
+                        <Text style={[s.tagText,{color:TAG_COLORS[normalizeTag(memo.tag)]||'#888'}]}>{t(TAG_LABEL_KEYS[normalizeTag(memo.tag)] || 'day_tag_feeling')}</Text>
                       </View>
                       <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
                         <Text style={s.memoTime}>{memo.time}</Text>
-                        <Text style={s.editHint}>点击编辑</Text>
+                        <Text style={s.editHint}>{t('tap_to_edit')}</Text>
                       </View>
                     </View>
                     <Text style={s.memoText}>{memo.text}</Text>
@@ -224,7 +256,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
           </TouchableOpacity>
           {previewPhoto && <Image source={{uri:previewPhoto.uri}} style={s.photoFull} resizeMode="contain"/>}
           <TouchableOpacity style={s.photoDeleteBtn} onPress={()=>deletePhoto(previewPhoto?.id)}>
-            <Text style={s.photoDeleteText}>🗑 删除照片</Text>
+            <Text style={s.photoDeleteText}>{`🗑 ${t('day_delete_photo')}`}</Text>
           </TouchableOpacity>
         </View>
       </Modal>
@@ -238,26 +270,26 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
               <View style={{flexDirection:'row',gap:16}}>
                 {editingMemo && (
                   <TouchableOpacity onPress={()=>deleteMemo(editingMemo.id)}>
-                    <Text style={{color:'#FF6B6B',fontSize:14}}>删除</Text>
+                    <Text style={{color:'#FF6B6B',fontSize:14}}>{t('delete')}</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity onPress={()=>setShowMemoModal(false)}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
             </View>
-            <Text style={s.inputLabel}>标签</Text>
+            <Text style={s.inputLabel}>{t('day_label_tag')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:16}}>
               <View style={{flexDirection:'row',gap:8}}>
-                {TAGS.map(t=>(
-                  <TouchableOpacity key={t} onPress={()=>setSelectedTag(t)} style={[s.tagChip,selectedTag===t&&{backgroundColor:`${TAG_COLORS[t]}20`,borderColor:`${TAG_COLORS[t]}60`}]}>
-                    <Text style={[s.tagChipText,selectedTag===t&&{color:TAG_COLORS[t]}]}>{t}</Text>
+                {TAGS.map(tag=>(
+                  <TouchableOpacity key={tag} onPress={()=>setSelectedTag(tag)} style={[s.tagChip,selectedTag===tag&&{backgroundColor:`${TAG_COLORS[tag]}20`,borderColor:`${TAG_COLORS[tag]}60`}]}>
+                    <Text style={[s.tagChipText,selectedTag===tag&&{color:TAG_COLORS[tag]}]}>{t(TAG_LABEL_KEYS[tag])}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </ScrollView>
-            <Text style={s.inputLabel}>内容</Text>
-            <TextInput style={[s.input,{height:140,textAlignVertical:'top'}]} placeholder="此刻的感受、看到的风景、尝到的美食..." placeholderTextColor="#444" multiline value={memoText} onChangeText={setMemoText} autoFocus/>
+            <Text style={s.inputLabel}>{t('day_label_content')}</Text>
+            <TextInput style={[s.input,{height:140,textAlignVertical:'top'}]} placeholder={t("day_memo_placeholder")} placeholderTextColor="#444" multiline value={memoText} onChangeText={setMemoText} autoFocus/>
             <View style={{flexDirection:'row',gap:12}}>
-              <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowMemoModal(false)}><Text style={s.cancelText}>取消</Text></TouchableOpacity>
+              <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowMemoModal(false)}><Text style={s.cancelText}>{t('cancel')}</Text></TouchableOpacity>
               <TouchableOpacity style={s.confirmBtn} onPress={saveMemo}><Text style={s.confirmText}>{editingMemo?t('save'):t('save')}</Text></TouchableOpacity>
             </View>
           </View>

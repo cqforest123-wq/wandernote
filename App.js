@@ -29,13 +29,7 @@ const Stack = createNativeStackNavigator();
 const FREE_TRIP_LIMIT = 3;
 const STORAGE_KEY = STORAGE_KEYS.trips;
 
-const INITIAL_TRIPS = [
-  { id:1, city:'京都', country:'日本', date:'2026.03', emoji:'🗼', coords:null, days:[
-    { date:'2026.03.15', weekDay:'周日', memos:[{id:1,text:'清晨的岚山竹林，只有风声',tag:'风景',time:'07:30'},{id:2,text:'嵯峨野的豆腐料理，入口即化',tag:'美食',time:'12:15'}], photos:[], videos:[] },
-    { date:'2026.03.16', weekDay:'周一', memos:[{id:3,text:'伏见稻荷大社，千本鸟居在晨雾中若隐若现',tag:'探险',time:'09:00'}], photos:[], videos:[] },
-  ]},
-  { id:2, city:'雷克雅未克', country:'冰岛', date:'2025.11', emoji:'🌋', coords:null, days:[] },
-];
+const INITIAL_TRIPS = [];
 
 // MainApp：已登录用户的业务逻辑和导航
 function MainApp({ session }) {
@@ -118,9 +112,13 @@ function MainApp({ session }) {
         ? newTripsOrFn(prev)
         : newTripsOrFn;
       if (!isPro && next.length > prev.length && prev.length >= FREE_TRIP_LIMIT) {
-        Alert.alert('已达免费版上限',
-          `免费版最多记录 ${FREE_TRIP_LIMIT} 个旅程\n升级 Pro 即可无限记录`,
-          [{text:'暂不',style:'cancel'},{text:'去升级',onPress:()=>openPaywall('无限旅程')}]
+        Alert.alert(
+          t('alert_pro_limit'),
+          t('alert_pro_limit_desc').replace('%d', FREE_TRIP_LIMIT),
+          [
+            {text:t('cancel'),style:'cancel'},
+            {text:t('alert_upgrade'),onPress:()=>openPaywall(t('profile_unlimited'))}
+          ]
         );
         return prev;
       }
@@ -145,7 +143,7 @@ function MainApp({ session }) {
   if (!loaded) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
       <ActivityIndicator color="#D4AF37" size="large"/>
-      <Text style={{color:'#555',marginTop:12,fontSize:13}}>加载中...</Text>
+      <Text style={{color:'#555',marginTop:12,fontSize:13}}>{t('loading')}</Text>
     </View>
   );
 

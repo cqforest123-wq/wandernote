@@ -15,7 +15,7 @@ const PAGES = [
     titleKey: 'onboarding_1_title',
     subKey: 'onboarding_1_sub',
     descKey: 'onboarding_1_desc',
-    features: null,
+    featureKeys: null,
   },
   {
     emoji: '📖',
@@ -24,7 +24,7 @@ const PAGES = [
     titleKey: 'onboarding_2_title',
     subKey: 'onboarding_2_sub',
     descKey: 'onboarding_2_desc',
-    features: ['📅 按天记录旅行日志', '📸 照片随手留存', '📝 旅行感言随时写'],
+    featureKeys: ['onboarding_2_feature_1', 'onboarding_2_feature_2', 'onboarding_2_feature_3'],
   },
   {
     emoji: '✦',
@@ -33,7 +33,7 @@ const PAGES = [
     titleKey: 'onboarding_3_title',
     subKey: 'onboarding_3_sub',
     descKey: 'onboarding_3_desc',
-    features: ['📖 旅行日记自动生成', '📱 朋友圈文案一键输出', '✨ 旅程总结精华回顾'],
+    featureKeys: ['onboarding_3_feature_1', 'onboarding_3_feature_2', 'onboarding_3_feature_3'],
   },
   {
     emoji: '🗺',
@@ -42,7 +42,7 @@ const PAGES = [
     titleKey: 'onboarding_4_title',
     subKey: 'onboarding_4_sub',
     descKey: 'onboarding_4_desc',
-    features: ['🌐 足迹地图可视化', '☁️ 云端自动备份', '🔄 多设备无缝同步'],
+    featureKeys: ['onboarding_4_feature_1', 'onboarding_4_feature_2', 'onboarding_4_feature_3'],
   },
 ];
 
@@ -99,11 +99,11 @@ export default function OnboardingScreen({ onDone }) {
             <Text style={s.desc}>{t(p.descKey)}</Text>
 
             {/* 功能列表 */}
-            {p.features && (
+            {p.featureKeys && (
               <View style={s.featureList}>
-                {p.features.map((f, i) => (
+                {p.featureKeys.map((key, i) => (
                   <View key={i} style={[s.featureItem, { borderColor: p.accentColor + '30', backgroundColor: p.accentColor + '10' }]}>
-                    <Text style={[s.featureText, { color: p.accentColor }]}>{f}</Text>
+                    <Text style={[s.featureText, { color: p.accentColor }]}>{t(key)}</Text>
                   </View>
                 ))}
               </View>

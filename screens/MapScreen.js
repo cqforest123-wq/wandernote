@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import MapView, { Marker } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
@@ -33,6 +34,7 @@ function getCoords(cityName) {
 }
 
 export default function MapScreen({ trips }) {
+  const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const mapRef = useRef(null);
   const [mapType, setMapType] = useState('standard');
@@ -77,13 +79,13 @@ export default function MapScreen({ trips }) {
       {/* 顶部统计 */}
       <View style={s.header}>
         <View>
-          <Text style={s.title}>🗺 旅行足迹</Text>
-          <Text style={s.subtitle}>足迹遍布 {mappedTrips.length} 个地方</Text>
+          <Text style={s.title}>🗺 {t('map_title')}</Text>
+          <Text style={s.subtitle}>{t('map_subtitle').replace('%d', mappedTrips.length)}</Text>
         </View>
         <TouchableOpacity
           style={s.mapTypeBtn}
           onPress={() => setMapType(mapType === 'standard' ? 'satellite' : 'standard')}>
-          <Text style={s.mapTypeBtnText}>{mapType === 'standard' ? '🛰 卫星' : '🗺 地图'}</Text>
+          <Text style={s.mapTypeBtnText}>{mapType === 'standard' ? `🛰 ${t('map_satellite')}` : `🗺 ${t('map_standard')}`}</Text>
         </TouchableOpacity>
       </View>
 
@@ -92,8 +94,8 @@ export default function MapScreen({ trips }) {
         {mappedTrips.length === 0 ? (
           <View style={s.emptyMap}>
             <Text style={s.emptyEmoji}>🌍</Text>
-            <Text style={s.emptyText}>还没有可显示的旅程</Text>
-            <Text style={s.emptyHint}>添加旅程后这里会显示你的足迹</Text>
+            <Text style={s.emptyText}>{t('map_empty_title')}</Text>
+            <Text style={s.emptyHint}>{t('map_empty_hint')}</Text>
           </View>
         ) : (
           <MapView
@@ -143,7 +145,7 @@ export default function MapScreen({ trips }) {
                 <Text style={[s.tripChipCity, selectedTrip?.id === trip.id && {color:'#D4AF37'}]}>
                   {trip.city}
                 </Text>
-                <Text style={s.tripChipMeta}>{trip.days?.length || 0}天</Text>
+                <Text style={s.tripChipMeta}>{trip.days?.length || 0} {t('unit_days')}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -168,9 +170,9 @@ export default function MapScreen({ trips }) {
               </View>
               <View style={s.modalStats}>
                 {[
-                  [String(selectedTrip.days?.length || 0), '天'],
-                  [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.memos||[]).length,0)), '感言'],
-                  [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.photos||[]).length,0)), '照片'],
+                  [String(selectedTrip.days?.length || 0), t('unit_days')],
+                  [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.memos||[]).length,0)), t('stat_memos')],
+                  [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.photos||[]).length,0)), t('stat_photos')],
                 ].map(([n,l]) => (
                   <View key={l} style={s.modalStat}>
                     <Text style={s.modalStatNum}>{n}</Text>
@@ -180,7 +182,7 @@ export default function MapScreen({ trips }) {
               </View>
               {selectedTrip.plannedDate && (
                 <Text style={{color:'#4ECDC4', fontSize:13, textAlign:'center', marginTop:8}}>
-                  ✈️ 出发日期：{selectedTrip.plannedDate}
+                  ✈️ {t('map_departure_date')}: {selectedTrip.plannedDate}
                 </Text>
               )}
             </View>

@@ -1,17 +1,43 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share, Keyboard } from 'react-native';
 import { useTranslation } from 'react-i18next';
+
+const ITINERARY_STYLES = [
+  { key: 'balanced', labelKey: 'ai_style_balanced' },
+  { key: 'culture', labelKey: 'ai_style_culture' },
+  { key: 'food', labelKey: 'ai_style_food' },
+  { key: 'nature', labelKey: 'ai_style_nature' },
+  { key: 'shopping', labelKey: 'ai_style_shopping' },
+  { key: 'relax', labelKey: 'ai_style_relax' },
+];
+
+function getAiOutputLanguage(lang) {
+  const code = String(lang || 'en').split('-')[0];
+  const map = {
+    zh: 'Chinese',
+    en: 'English',
+    ja: 'Japanese',
+    ko: 'Korean',
+    fr: 'French',
+    es: 'Spanish',
+    th: 'Thai',
+  };
+  return map[code] || 'English';
+}
+
 import { callClaude } from '../lib/claude';
 
 export default function AIScreen({ trips, isPro, openPaywall }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState('');
   const [itineraryDest, setItineraryDest] = useState('');
   const [itineraryDays, setItineraryDays] = useState('5');
-  const [itineraryStyle, setItineraryStyle] = useState('综合');
+  const [itineraryStyle, setItineraryStyle] = useState('balanced');
+  const aiOutputLanguage = getAiOutputLanguage(i18n.language);
+  const daysUnit = t('unit_days');
   const [mode, setMode] = useState('diary');
 
   const MODES = [
@@ -26,89 +52,100 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
     if (mode === 'summary') {
       const trip = selectedTrip;
       const allMemos = trip.days.flatMap(d => d.memos.map(m => `[${d.date} ${m.tag}] ${m.text}`));
-      return `你是一位擅长写旅行文章的作家。请根据以下旅行记录，写一篇完整的旅程总结文章。
+      return `You are a skilled travel writer. Based on the following travel records, write a complete trip summary article.
+Output language: ${aiOutputLanguage}.
 
-旅行地点：${trip.city}，${trip.country}
-旅行时间：${trip.date}
-共${trip.days.length}天，${allMemos.length}条感言
+Destination: ${trip.city}, ${trip.country}
+Trip date: ${trip.date}
+Duration: ${trip.days.length} days, ${allMemos.length} notes
 
-感言记录：
-${allMemos.length > 0 ? allMemos.join('\n') : '（无文字记录）'}
+Travel notes:
+${allMemos.length > 0 ? allMemos.join('
+') : 'No written notes. Infer cautiously from the destination and dates.'}
 
-要求：
-- 用第一人称，真实感人的笔触
-- 结构：开篇→行程亮点→感悟收尾
-- 字数600-800字，中文，文笔优美有画面感`;
+Requirements:
+- Use first-person voice.
+- Make it authentic, specific, and emotionally grounded.
+- Structure: opening → trip highlights → reflective ending.
+- Include vivid details and a sense of place.
+- Avoid overpromising facts that are not in the record.`;
     }
 
     if (mode === 'social') {
       const day = selectedDay;
       const memos = day.memos.map(m => m.text).join('；');
-      return `你是一位擅长写小红书/朋友圈文案的博主。请根据以下旅行记录，写一段适合发社交媒体的文案。
+      return `You are a travel social media copywriter. Based on the following travel record, write a short post suitable for Instagram, TikTok, or social sharing.
+Output language: ${aiOutputLanguage}.
 
-地点：${selectedTrip.city}，${selectedTrip.country}
-日期：${day.date} ${day.weekDay}
-感言记录：${memos || '无文字记录，请根据地点发挥'}
-照片数量：${(day.photos||[]).length}张
+Destination: ${selectedTrip.city}, ${selectedTrip.country}
+Date: ${day.date} ${day.weekDay}
+Notes: ${memos || 'No written notes. Infer cautiously from the destination.'}
+Photo count: ${(day.photos||[]).length}
 
-要求：
-- 100-150字，轻松活泼有感染力
-- 包含2-3个相关emoji
-- 结尾加3-5个话题标签（如#京都旅行 #日本）
-- 让人看了想去`;
+Requirements:
+- 100-150 words.
+- Light, vivid, and shareable.
+- Include 2-3 relevant emoji.
+- End with 3-5 relevant hashtags.
+- Do not invent specific facts unless clearly implied.`;
     }
 
     const day = selectedDay;
     const memos = day.memos.map(m => `[${m.tag}] ${m.text}`).join('\n');
-    return `你是一位擅长写旅行日记的作家。请根据以下记录，写一篇当天的旅行日记。
+    return `You are a travel diary writer. Based on the following record, write a diary entry for this day.
+Output language: ${aiOutputLanguage}.
 
-地点：${selectedTrip.city}，${selectedTrip.country}
-日期：${day.date} ${day.weekDay}
-照片数量：${(day.photos||[]).length}张
-感言记录：
-${memos || '无文字记录，请根据地点和日期发挥想象'}
+Destination: ${selectedTrip.city}, ${selectedTrip.country}
+Date: ${day.date} ${day.weekDay}
+Photo count: ${(day.photos||[]).length}
+Notes:
+${memos || 'No written notes. Infer cautiously from the destination and date.'}
 
-要求：
-- 第一人称，300-400字
-- 有具体细节，有感受，有画面感
-- 开头不要用"今天"，要有创意
-- 结尾留有意境`;
+Requirements:
+- First-person voice.
+- 300-400 words.
+- Include concrete details, feelings, and visual scenes.
+- Avoid starting with a generic phrase like “Today”.
+- End with a reflective tone.`;
   };
 
   const generate = async () => {
     if (mode === 'itinerary') {
       // if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; } // TEST: 暂时跳过付费验证
-      if (!itineraryDest.trim()) { Alert.alert('提示', '请输入目的地'); return; }
+      if (!itineraryDest.trim()) { Alert.alert(t('ai_alert_title'), t('ai_enter_destination')); return; }
       setGenerating(true);
       setResult('');
       try {
-        const prompt = `你是专业旅行规划师。请为去${itineraryDest}旅行${itineraryDays}天、风格偏好${itineraryStyle}的用户生成详细路书。
-严格要求：
-1. 只返回JSON，不要有任何前缀、后缀、解释或markdown代码块
-2. 直接以{开头，以}结尾
-3. 格式：{"title":"标题","days":[{"day":1,"date":"第1天","theme":"主题","morning":"上午行程","afternoon":"下午行程","evening":"晚上行程","tips":"小贴士","distance":"景点间距离","hours":"建议游览时间","status":"营业提示"}]}
-4. 每天行程简洁，景点+时间+交通，控制在50字以内
-5. tips包含实用建议，distance填景点间大概距离，hours填建议游览时长，status填营业注意事项
-6. 每个字段控制在30字以内，确保JSON完整不截断`;
+        const prompt = `You are a professional travel planner. Create a detailed ${itineraryDays}-day itinerary for ${itineraryDest}.
+Travel style: ${t(`ai_style_${itineraryStyle}`)}.
+Output language for all JSON values: ${aiOutputLanguage}.
+
+Strict requirements:
+1. Return JSON only. No prefix, suffix, explanation, or markdown code block.
+2. Start directly with { and end directly with }.
+3. Format: {"title":"Title","days":[{"day":1,"date":"Day 1","theme":"Theme","morning":"Morning plan","afternoon":"Afternoon plan","evening":"Evening plan","tips":"Practical tips","distance":"Approximate distance between places","hours":"Suggested visit duration","status":"Opening-status reminder"}]}
+4. Keep each day concise: attractions + time + transport.
+5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
+6. Keep each field short and ensure valid complete JSON.`;
         const text = await callClaude(prompt, 3000);
         const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
         const parsed = JSON.parse(clean);
         // 格式化展示
-        const disclaimer = '⚠️ 以下内容由AI生成，建议出发前核实实际情况，景点开放时间及营业状态可能有变化。';
+        const disclaimer = t('ai_disclaimer');
         const formatted = parsed.days.map(d => {
-          let dayText = '📅 第' + d.day + '天 · ' + d.theme +
-            '\n🌅 上午：' + d.morning +
-            '\n☀️ 下午：' + d.afternoon +
-            '\n🌙 晚上：' + d.evening;
-          if (d.distance) dayText += '\n📍 距离：' + d.distance;
-          if (d.hours) dayText += '\n⏱ 时长：' + d.hours;
-          if (d.status) dayText += '\n🏪 营业：' + d.status;
-          dayText += '\n💡 贴士：' + d.tips;
+          let dayText = t('ai_day_number').replace('%d', d.day) + ' · ' + d.theme +
+            '\n🌅 ' + t('ai_morning') + ': ' + d.morning +
+            '\n☀️ ' + t('ai_afternoon') + ': ' + d.afternoon +
+            '\n🌙 ' + t('ai_evening') + ': ' + d.evening;
+          if (d.distance) dayText += '\n📍 ' + t('ai_distance') + ': ' + d.distance;
+          if (d.hours) dayText += '\n⏱ ' + t('ai_duration') + ': ' + d.hours;
+          if (d.status) dayText += '\n🏪 ' + t('ai_opening_status') + ': ' + d.status;
+          dayText += '\n💡 ' + t('ai_tips') + ': ' + d.tips;
           return dayText;
         }).join('\n\n');
         setResult('🗺 ' + parsed.title + '\n\n' + disclaimer + '\n\n' + formatted);
       } catch (e) {
-        Alert.alert('生成失败', e.message || '请检查网络后重试');
+        Alert.alert(t('ai_generate_failed'), e.message || t('ai_network_retry'));
       } finally {
         setGenerating(false);
       }
@@ -174,11 +211,11 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.header}>
-          <Text style={s.title}>✦ AI 创作</Text>
-          <Text style={s.subtitle}>让AI帮你记录旅行故事</Text>
+          <Text style={s.title}>✦ {t('ai_title')}</Text>
+          <Text style={s.subtitle}>{t('ai_subtitle')}</Text>
         </View>
 
-        <Text style={s.sectionTitle}>生成类型</Text>
+        <Text style={s.sectionTitle}>{t('ai_generation_type')}</Text>
         <View style={s.modeList}>
           {MODES.map(m=>(
             <TouchableOpacity key={m.key} style={[s.modeCard, mode===m.key&&s.modeCardActive]}
@@ -192,15 +229,15 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
         {/* 路书生成模式：显示专属输入区，隐藏旅程选择 */}
         {mode === 'itinerary' ? (
           <View style={{marginBottom:20}}>
-            <Text style={s.sectionTitle}>目的地</Text>
+            <Text style={s.sectionTitle}>{t('ai_destination')}</Text>
             <TextInput
               style={{backgroundColor:'#161616',borderRadius:12,padding:14,color:'#F0EDE8',fontSize:15,marginBottom:12,borderWidth:1,borderColor:'#242424'}}
-              placeholder="输入目的地（如：京都、冰岛、巴厘岛）"
+              placeholder={t("ai_destination_placeholder")}
               placeholderTextColor="#444"
               value={itineraryDest}
               onChangeText={setItineraryDest}
             />
-            <Text style={s.sectionTitle}>天数</Text>
+            <Text style={s.sectionTitle}>{t('ai_days')}</Text>
             <View style={{flexDirection:'row',gap:8,marginBottom:12}}>
               {['3','5','7','10','14'].map(d=>(
                 <TouchableOpacity key={d}
@@ -209,28 +246,28 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
                     backgroundColor:itineraryDays===d?'#D4AF3720':'#161616',
                     alignItems:'center'}}
                   onPress={()=>setItineraryDays(d)}>
-                  <Text style={{color:itineraryDays===d?'#D4AF37':'#555',fontSize:14}}>{d}天</Text>
+                  <Text style={{color:itineraryDays===d?'#D4AF37':'#555',fontSize:14}}>{d} {daysUnit}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={s.sectionTitle}>旅行风格</Text>
+            <Text style={s.sectionTitle}>{t('ai_travel_style')}</Text>
             <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:4}}>
-              {['综合','文化历史','美食探索','自然户外','购物娱乐','轻松休闲'].map(style=>(
+              {ITINERARY_STYLES.map(style=>(
                 <TouchableOpacity key={style}
                   style={{paddingHorizontal:14,paddingVertical:8,borderRadius:20,borderWidth:1,
-                    borderColor:itineraryStyle===style?'#D4AF37':'#242424',
-                    backgroundColor:itineraryStyle===style?'#D4AF3720':'#161616'}}
-                  onPress={()=>setItineraryStyle(style)}>
-                  <Text style={{color:itineraryStyle===style?'#D4AF37':'#555',fontSize:13}}>{style}</Text>
+                    borderColor:itineraryStyle===style.key?'#D4AF37':'#242424',
+                    backgroundColor:itineraryStyle===style.key?'#D4AF3720':'#161616'}}
+                  onPress={()=>setItineraryStyle(style.key)}>
+                  <Text style={{color:itineraryStyle===style.key?'#D4AF37':'#555',fontSize:13}}>{t(style.labelKey)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
         ) : (
         <>
-        <Text style={s.sectionTitle}>选择旅程</Text>
+        <Text style={s.sectionTitle}>{t('ai_select_trip')}</Text>
         {trips.length===0 ? (
-          <Text style={{color:'#555',fontSize:13,marginBottom:20}}>还没有旅程记录</Text>
+          <Text style={{color:'#555',fontSize:13,marginBottom:20}}>{t('ai_no_trips')}</Text>
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:20}}>
             <View style={{flexDirection:'row',gap:10}}>
@@ -239,7 +276,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
                   onPress={()=>{setSelectedTrip(t);setSelectedDay(null);setResult('');}}>
                   <Text style={{fontSize:20,marginBottom:4}}>{t.emoji}</Text>
                   <Text style={[s.tripChipCity, selectedTrip?.id===t.id&&{color:'#D4AF37'}]}>{t.city}</Text>
-                  <Text style={s.tripChipMeta}>{t.days.length}天</Text>
+                  <Text style={s.tripChipMeta}>{t.days.length} {daysUnit}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -249,9 +286,9 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
         </>)}
         {mode !== 'itinerary' && selectedTrip && mode!=='summary' && (
           <>
-            <Text style={s.sectionTitle}>选择哪一天</Text>
+            <Text style={s.sectionTitle}>{t('ai_select_day')}</Text>
             {selectedTrip.days.length===0 ? (
-              <Text style={{color:'#555',fontSize:13,marginBottom:20}}>这趟旅程还没有记录</Text>
+              <Text style={{color:'#555',fontSize:13,marginBottom:20}}>{t('ai_no_day_records')}</Text>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:20}}>
                 <View style={{flexDirection:'row',gap:10}}>
@@ -276,7 +313,7 @@ ${memos || '无文字记录，请根据地点和日期发挥想象'}
             {generating ? (
               <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
                 <ActivityIndicator color="#0D0D0D" size="small"/>
-                <Text style={s.generateBtnText}>AI 正在创作中...</Text>
+                <Text style={s.generateBtnText}>{t('ai_generating')}</Text>
               </View>
             ) : (
               <Text style={s.generateBtnText}>✦ Generate</Text>

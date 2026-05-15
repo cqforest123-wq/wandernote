@@ -9,10 +9,10 @@ import { deleteTripAndRelated } from '../lib/sync';
 import { createDay } from '../lib/models';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
+const WEEKDAY_KEYS = ['weekday_sun','weekday_mon','weekday_tue','weekday_wed','weekday_thu','weekday_fri','weekday_sat'];
 
 export default function TripDetailScreen({ route, navigation, trips, setTrips }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { tripId } = route.params;
   const trip = trips.find(t => t.id === tripId);
 
@@ -64,7 +64,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   today.setHours(23,59,59,999);
 
   const dateStr = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth()+1).padStart(2,'0')}.${String(selectedDate.getDate()).padStart(2,'0')}`;
-  const weekDay = WEEKDAYS[selectedDate.getDay()];
+  const weekDay = t(WEEKDAY_KEYS[selectedDate.getDay()]);
   const existsAlready = trip.days.find(d => d.date === dateStr);
 
   const openAddDay = () => {
@@ -98,10 +98,10 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     const highlights = trip.days.flatMap(d=>d.memos).slice(0,3).map(m=>m.text).join(' | ');
     const lines = [
       trip.emoji + ' ' + trip.city + ' · ' + trip.country,
-      '📅 ' + trip.days.length + '天旅程 · ' + trip.date,
-      '📝 ' + totalMemos + '条感言 · 📸 ' + totalPhotos + '张照片',
-      highlights ? '旅行亮点：' + highlights : '',
-      '— 来自 WanderNote 旅行笔记',
+      '📅 ' + trip.days.length + ' ' + t('unit_days') + ' · ' + trip.date,
+      '📝 ' + totalMemos + ' ' + t('unit_memos') + ' · 📸 ' + totalPhotos + ' ' + t('stat_photos'),
+      highlights ? t('trip_share_highlights') + ': ' + highlights : '',
+      '— ' + t('trip_share_from'),
     ].filter(Boolean);
     await Share.share({ message: lines.join('\n') });
   };
@@ -111,13 +111,13 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     Alert.alert(t('trip_delete'), `${t('trip_delete_confirm').replace('%s', trip.city)}`, [
       { text: t('cancel'), style: 'cancel' },
       {
-        text: '删除',
+        text: t('delete'),
         style: 'destructive',
         onPress: async () => {
           setIsDeleting(true);
           try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error('未登录');
+            if (!user?.id) throw new Error(t('auth_not_logged_in'));
             await deleteTripAndRelated(user.id, trip.id);
             setTrips(prev => prev.filter(t => t.id !== trip.id));
             navigation.goBack();
@@ -135,7 +135,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const deleteDay = (dayDate) => {
     Alert.alert(t('alert_delete_day'), t('alert_delete_day_confirm').replace('%s', dayDate),[
       {text:t('cancel'),style:'cancel'},
-      {text:'删除',style:'destructive',onPress:()=>setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
+      {text:t('delete'),style:'destructive',onPress:()=>setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:t.days.filter(d=>d.date!==dayDate)}:t))},
     ]);
   };
 
@@ -144,10 +144,10 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
       <ScrollView contentContainerStyle={s.scroll}>
         <View style={s.topRow}>
-          <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← 返回</Text></TouchableOpacity>
+          <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← {t('back')}</Text></TouchableOpacity>
           <View style={{flexDirection:'row',gap:12}}>
-            <TouchableOpacity onPress={shareTrip}><Text style={{color:'#4ECDC4',fontSize:13}}>分享 ↗</Text></TouchableOpacity>
-            <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>删除旅程</Text></TouchableOpacity>
+            <TouchableOpacity onPress={shareTrip}><Text style={{color:'#4ECDC4',fontSize:13}}>{t('share')} ↗</Text></TouchableOpacity>
+            <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>{t('trip_delete')}</Text></TouchableOpacity>
           </View>
         </View>
 
@@ -169,19 +169,19 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             setEditDateObj(new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])));
             setShowEditDate(true);
           }} style={{marginBottom:16,flexDirection:'row',alignItems:'center',gap:8}}>
-            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ 出发：{trip.plannedDate}</Text>
-            <Text style={{fontSize:12,color:'#4ECDC4'}}>点击修改</Text>
+            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ {t('trip_departure')}: {trip.plannedDate}</Text>
+            <Text style={{fontSize:12,color:'#4ECDC4'}}>{t('tap_to_edit')}</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity onPress={()=>setShowEditDate(true)} style={{marginBottom:16}}>
-            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ 设置出发倒计时</Text>
+            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ {t('new_trip_departure_countdown')}</Text>
           </TouchableOpacity>
         )}
         {distance && (
           <View style={s.distanceCard}>
             <Text style={s.distanceIcon}>📍</Text>
             <View>
-              <Text style={s.distanceLabel}>距离目的地</Text>
+              <Text style={s.distanceLabel}>{t('trip_distance_to_destination')}</Text>
               <Text style={s.distanceValue}>{distance}</Text>
             </View>
           </View>
@@ -204,11 +204,11 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             ))}
             {forecast && (
               <View style={{marginTop:10,paddingTop:10,borderTopWidth:1,borderTopColor:'#4ECDC420'}}>
-                <Text style={{color:'#4ECDC490',fontSize:11,marginBottom:8,letterSpacing:1}}>未来7天</Text>
+                <Text style={{color:'#4ECDC490',fontSize:11,marginBottom:8,letterSpacing:1}}>{t('new_trip_7day_weather')}</Text>
                 <View style={{flexDirection:'row',gap:4}}>
                   {forecast.slice(0,7).map((day,i)=>(
                     <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
-                      <Text style={{fontSize:10,color:'#555'}}>{i===0?'今':day.date.slice(5).replace('-','/')}</Text>
+                      <Text style={{fontSize:10,color:'#555'}}>{i===0?t('today_short'):day.date.slice(5).replace('-','/')}</Text>
                       <Text style={{fontSize:14}}>{day.emoji}</Text>
                       <Text style={{fontSize:10,color:'#4ECDC4'}}>{formatTemp(day.maxTemp, useFahrenheit)}</Text>
                       <Text style={{fontSize:10,color:'#555'}}>{formatTemp(day.minTemp, useFahrenheit)}</Text>
@@ -222,8 +222,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={s.statsRow}>
           {[
             [String(trip.days.length),t('stat_days')],
-            [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),'感言'],
-            [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),'照片'],
+            [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),t('stat_memos')],
+            [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),t('stat_photos')],
             // [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'], // v2.0
           ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
@@ -237,8 +237,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <TouchableOpacity style={s.packingBtn}
           onPress={()=>navigation.navigate('TripMemo',{tripId:trip.id, tripName:trip.city})}>
           <View style={{flex:1}}>
-            <Text style={s.packingBtnTitle}>🧳 行前打包清单</Text>
-            <Text style={s.packingBtnSub}>查看或创建该旅程的打包清单</Text>
+            <Text style={s.packingBtnTitle}>🧳 {t('trip_packing_list')}</Text>
+            <Text style={s.packingBtnSub}>{t('trip_packing_subtitle')}</Text>
           </View>
           <Text style={{color:'#4ECDC4',fontSize:18}}>→</Text>
         </TouchableOpacity>
@@ -246,8 +246,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <TouchableOpacity style={s.addDayBtn} onPress={openAddDay}>
           <Text style={s.addDayIcon}>+</Text>
           <View>
-            <Text style={s.addDayText}>记录今天</Text>
-            <Text style={s.addDayHint}>{`${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`} · {WEEKDAYS[today.getDay()]}</Text>
+            <Text style={s.addDayText}>{t('trip_record_today')}</Text>
+            <Text style={s.addDayHint}>{`${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`} · {t(WEEKDAY_KEYS[today.getDay()])}</Text>
           </View>
         </TouchableOpacity>
 
@@ -255,14 +255,13 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           <View style={s.emptyBox}>
             <View style={s.emptyCard}>
               <Text style={s.emptyEmoji}>📖</Text>
-              <Text style={s.emptyTitle}>旅途才刚刚开始</Text>
-              <Text style={s.emptyText}>点击上方「记录今天」
-把今天的故事留下来</Text>
+              <Text style={s.emptyTitle}>{t('trip_empty_title')}</Text>
+              <Text style={s.emptyText}>{t('trip_empty_text')}</Text>
             </View>
           </View>
         ) : (
           <>
-            <Text style={s.sectionTitle}>旅行日志 · {trip.days.length}天</Text>
+            <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {t('unit_days')}</Text>
             {[...trip.days].reverse().map((day,i)=>{
               const photos = day.photos||[];
               return (
@@ -303,7 +302,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>记录这一天</Text>
+              <Text style={s.sheetTitle}>{t('trip_record_this_day')}</Text>
               <TouchableOpacity onPress={()=>setShowAddDay(false)}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
             </View>
 
@@ -325,13 +324,13 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             {/* 日期预览 */}
             <View style={s.datePreview}>
               <Text style={s.datePreviewText}>{dateStr}</Text>
-              <Text style={s.datePreviewWeek}>{existsAlready?'✓ 已有记录':weekDay}</Text>
+              <Text style={s.datePreviewWeek}>{existsAlready?t('trip_already_recorded'):weekDay}</Text>
             </View>
 
-            <Text style={s.inputLabel}>写点什么（可选）</Text>
+            <Text style={s.inputLabel}>{t('trip_write_optional')}</Text>
             <TextInput
               style={[s.input,{height:72,textAlignVertical:'top'}]}
-              placeholder="今天去了哪里，看到了什么..."
+              placeholder={t("trip_day_note_placeholder")}
               placeholderTextColor="#444"
               multiline
               value={dayNote}
@@ -339,7 +338,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             />
 
             <TouchableOpacity style={s.confirmBtn} onPress={addDay}>
-              <Text style={s.confirmText}>{existsAlready?'进入这天的记录 →':'开始记录 →'}</Text>
+              <Text style={s.confirmText}>{existsAlready?`${t('trip_enter_day')} →`:`${t('new_trip_start_record')} →`}</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -350,19 +349,19 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
           <View style={s.sheet}>
             <View style={s.sheetHeader}>
-              <Text style={s.sheetTitle}>修改旅程名称</Text>
+              <Text style={s.sheetTitle}>{t('trip_edit_name')}</Text>
               <TouchableOpacity onPress={()=>setShowEditTrip(false)}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
             </View>
-            <Text style={s.inputLabel}>目的地名称</Text>
+            <Text style={s.inputLabel}>{t('trip_destination_name')}</Text>
             <TextInput
               style={s.input}
-              placeholder="城市或景点名称"
+              placeholder={t("trip_destination_placeholder")}
               placeholderTextColor="#444"
               value={editCity}
               onChangeText={setEditCity}
               autoFocus
             />
-            <Text style={s.inputLabel}>图标</Text>
+            <Text style={s.inputLabel}>{t('trip_icon')}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:16}}>
               <View style={{flexDirection:'row',gap:8}}>
                 {['🌍','🗼','🏯','🌋','🏔','🌊','🏝','✈️','🌺','🐢','🦁','🐘','🌅','🎭','🍜','🍣','🏕','🎿','🧗','🗺'].map((e,i)=>(
@@ -375,8 +374,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               </View>
             </ScrollView>
             <View style={{flexDirection:'row',gap:12}}>
-              <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowEditTrip(false)}><Text style={s.cancelText}>取消</Text></TouchableOpacity>
-              <TouchableOpacity style={s.confirmBtn} onPress={saveEditTrip}><Text style={s.confirmText}>保存</Text></TouchableOpacity>
+              <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowEditTrip(false)}><Text style={s.cancelText}>{t('cancel')}</Text></TouchableOpacity>
+              <TouchableOpacity style={s.confirmBtn} onPress={saveEditTrip}><Text style={s.confirmText}>{t('save')}</Text></TouchableOpacity>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -385,7 +384,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={{flex:1,justifyContent:'flex-end',backgroundColor:'#000000BB'}}>
           <View style={{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:24,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A'}}>
             <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-              <Text style={{fontSize:20,color:'#F0EDE8',fontWeight:'300'}}>设置出发日期</Text>
+              <Text style={{fontSize:20,color:'#F0EDE8',fontWeight:'300'}}>{t('trip_set_departure_date')}</Text>
               <TouchableOpacity onPress={()=>setShowEditDate(false)}><Text style={{fontSize:18,color:'#555'}}>✕</Text></TouchableOpacity>
             </View>
             <View style={{backgroundColor:'#1A1A1A',borderRadius:14,overflow:'hidden',marginBottom:20}}>
@@ -402,7 +401,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             </View>
             <View style={{flexDirection:'row',gap:12}}>
               <TouchableOpacity style={{flex:1,padding:16,borderRadius:14,backgroundColor:'#1A1A1A',alignItems:'center'}} onPress={()=>setShowEditDate(false)}>
-                <Text style={{color:'#555',fontSize:15}}>取消</Text>
+                <Text style={{color:'#555',fontSize:15}}>{t('cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={{flex:1,padding:16,borderRadius:14,backgroundColor:'#4ECDC4',alignItems:'center'}}
                 onPress={()=>{
@@ -411,7 +410,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                   setTrips(prev=>prev.map(t=>t.id===tripId?{...t,plannedDate:pd}:t));
                   setShowEditDate(false);
                 }}>
-                <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>保存</Text>
+                <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
