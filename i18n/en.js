@@ -467,4 +467,8 @@ export default {
   filter_desc_dramatic: 'High contrast with stronger visual impact',
   filter_desc_matte: 'Low-contrast matte look with an Instagram-style finish',
   ai_destination_placeholder: 'Enter destination, e.g. Tokyo, Iceland, Bali',
+  ai_notice: 'Notice',
+  ai_select_trip_first: 'Please select a trip first.',
+  ai_select_day_first: 'Please select a day first.',
+  ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
 };

@@ -56,7 +56,6 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
     { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
-    { key:'packing', label:t('ai_packing'), desc:t('ai_packing_desc') },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
     { key:'itinerary', label:t('ai_itinerary'), desc:t('ai_itinerary_desc') },
   ];
@@ -164,7 +163,7 @@ Strict requirements:
       return;
     }
     if (mode === 'packing') {
-      if (!selectedTrip) { Alert.alert('Notice','Please select a trip first'); return; }
+      if (!selectedTrip) { Alert.alert(t('ai_notice'), t('ai_select_trip_first')); return; }
       setGenerating(true);
       setResult('');
       try {
@@ -200,7 +199,7 @@ Strict requirements:
       return;
     }
     if (mode !== 'summary' && !selectedDay) { Alert.alert('Notice','Please select a day first'); return; }
-    if (!selectedTrip) { Alert.alert('Notice','Please select a trip first'); return; }
+    if (!selectedTrip) { Alert.alert(t('ai_notice'), t('ai_select_trip_first')); return; }
     setGenerating(true);
     setResult('');
     try {
@@ -231,7 +230,14 @@ Strict requirements:
         <View style={s.modeList}>
           {MODES.map(m=>(
             <TouchableOpacity key={m.key} style={[s.modeCard, mode===m.key&&s.modeCardActive]}
-              onPress={()=>{setMode(m.key);setResult('');setSelectedDay(null);}}>
+              onPress={()=>{
+                if (m.key !== 'itinerary' && trips.length === 0) {
+                  Alert.alert(t('ai_notice'), t('ai_create_trip_first'));
+                }
+                setMode(m.key);
+                setResult('');
+                setSelectedDay(null);
+              }}>
               <Text style={[s.modeLabel, mode===m.key&&{color:'#D4AF37'}]}>{m.label}</Text>
               <Text style={s.modeDesc}>{m.desc}</Text>
             </TouchableOpacity>

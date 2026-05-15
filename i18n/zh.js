@@ -467,4 +467,8 @@ export default {
   filter_desc_dramatic: '高对比戏剧感，冲击力强',
   filter_desc_matte: '低对比哑光，ins风格',
   ai_destination_placeholder: '输入目的地（如：东京、冰岛、巴厘岛）',
+  ai_notice: '提示',
+  ai_select_trip_first: '请先选择一个旅程',
+  ai_select_day_first: '请先选择一天记录',
+  ai_create_trip_first: '请先创建旅程并添加记录后再使用这个 AI 功能',
 };
