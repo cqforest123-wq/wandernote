@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, maxTokens } = await req.json()
+    const { prompt, maxTokens, responseMimeType } = await req.json()
 
     if (!prompt || !String(prompt).trim()) {
       return new Response(
@@ -37,8 +37,12 @@ serve(async (req) => {
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
-            maxOutputTokens: maxTokens ?? 1000,
-            temperature: 0.3,
+            maxOutputTokens: Math.min(Math.max(maxTokens ?? 4096, 4096), 12000),
+            temperature: 0.2,
+            thinkingConfig: {
+              thinkingBudget: 0,
+            },
+            ...(responseMimeType ? { responseMimeType } : {}),
           },
         }),
       }

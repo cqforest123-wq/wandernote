@@ -22,7 +22,7 @@ export default {
   day_tag: 'タグ', day_content: '内容', day_photo_source: '写真を追加',
   day_photo_album: 'アルバムから選択', day_photo_camera: '今すぐ撮影',
   day_long_press_delete: '長押しで削除', day_video_prefix: '動画',
-  ai_title: '✦ AI 創作', ai_subtitle: 'AIが旅の物語を記録します',
+  ai_title: 'AI Creation', ai_subtitle: 'AIが旅の物語を記録します',
   ai_type: '生成タイプ', ai_diary: '📖 旅行日記', ai_diary_desc: '完全な叙述スタイル、保存に最適',
   ai_social: '📱 SNS投稿文', ai_social_desc: 'SNSに最適', ai_summary: '✨ 旅のまとめ',
   ai_summary_desc: '旅全体のハイライト', ai_select_trip: '旅を選択', ai_select_day: '日を選択',
@@ -351,4 +351,5 @@ export default {
   filter_desc_warm: 'Warm tones with a gentle healing feel',
   filter_desc_dramatic: 'High contrast with stronger visual impact',
   filter_desc_matte: 'Low-contrast matte look with an Instagram-style finish',
+  ai_destination_placeholder: 'Enter destination, e.g. Tokyo, Iceland, Bali',
 };

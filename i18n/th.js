@@ -22,7 +22,7 @@ export default {
   day_tag: 'แท็ก', day_content: 'เนื้อหา', day_photo_source: 'เพิ่มรูปภาพ',
   day_photo_album: 'เลือกจากอัลบั้ม', day_photo_camera: 'ถ่ายรูปเดี๋ยวนี้',
   day_long_press_delete: 'กดค้างเพื่อลบ', day_video_prefix: 'วิดีโอ',
-  ai_title: '✦ AI สร้างสรรค์', ai_subtitle: 'AI บันทึกเรื่องราวการเดินทางของคุณ',
+  ai_title: 'AI Creation', ai_subtitle: 'AI บันทึกเรื่องราวการเดินทางของคุณ',
   ai_type: 'ประเภทการสร้าง', ai_diary: '📖 ไดอารี่การเดินทาง', ai_diary_desc: 'สไตล์บรรยายสมบูรณ์',
   ai_social: '📱 โพสต์โซเชียล', ai_social_desc: 'เหมาะสำหรับโซเชียลมีเดีย',
   ai_summary: '✨ สรุปทริป', ai_summary_desc: 'ไฮไลท์ตลอดทริป',
@@ -352,4 +352,5 @@ export default {
   filter_desc_warm: 'Warm tones with a gentle healing feel',
   filter_desc_dramatic: 'High contrast with stronger visual impact',
   filter_desc_matte: 'Low-contrast matte look with an Instagram-style finish',
+  ai_destination_placeholder: 'Enter destination, e.g. Tokyo, Iceland, Bali',
 };

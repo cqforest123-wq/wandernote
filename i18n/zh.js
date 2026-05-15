@@ -74,7 +74,7 @@ export default {
   day_video_prefix: '视频',
 
   // AI创作
-  ai_title: '✦ AI 创作',
+  ai_title: 'AI 创作',
   ai_subtitle: '让AI帮你记录旅行故事',
   ai_type: '生成类型',
   ai_diary: '📖 旅行日记',
@@ -466,4 +466,5 @@ export default {
   filter_desc_warm: '暖色调，温暖治愈系',
   filter_desc_dramatic: '高对比戏剧感，冲击力强',
   filter_desc_matte: '低对比哑光，ins风格',
+  ai_destination_placeholder: '输入目的地（如：东京、冰岛、巴厘岛）',
 };

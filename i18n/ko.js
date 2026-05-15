@@ -22,7 +22,7 @@ export default {
   day_tag: '태그', day_content: '내용', day_photo_source: '사진 추가',
   day_photo_album: '앨범에서 선택', day_photo_camera: '지금 촬영',
   day_long_press_delete: '길게 눌러 삭제', day_video_prefix: '동영상',
-  ai_title: '✦ AI 창작', ai_subtitle: 'AI가 여행 이야기를 기록합니다',
+  ai_title: 'AI Creation', ai_subtitle: 'AI가 여행 이야기를 기록합니다',
   ai_type: '생성 유형', ai_diary: '📖 여행 일기', ai_diary_desc: '완전한 서술 스타일, 보관에 적합',
   ai_social: '📱 SNS 문구', ai_social_desc: 'SNS에 적합', ai_summary: '✨ 여행 요약',
   ai_summary_desc: '전체 여행의 하이라이트', ai_select_trip: '여행 선택', ai_select_day: '날 선택',
@@ -351,4 +351,5 @@ export default {
   filter_desc_warm: 'Warm tones with a gentle healing feel',
   filter_desc_dramatic: 'High contrast with stronger visual impact',
   filter_desc_matte: 'Low-contrast matte look with an Instagram-style finish',
+  ai_destination_placeholder: 'Enter destination, e.g. Tokyo, Iceland, Bali',
 };

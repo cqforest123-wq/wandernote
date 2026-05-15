@@ -11,6 +11,19 @@ const ITINERARY_STYLES = [
   { key: 'relax', labelKey: 'ai_style_relax' },
 ];
 
+
+function parseAiJsonObject(text) {
+  const clean = String(text || '').replace(/```json|```/g, '').trim();
+  const start = clean.indexOf('{');
+  const end = clean.lastIndexOf('}');
+
+  if (start < 0 || end <= start) {
+    throw new Error('AI did not return valid JSON.');
+  }
+
+  return JSON.parse(clean.slice(start, end + 1));
+}
+
 function getAiOutputLanguage(lang) {
   const code = String(lang || 'en').split('-')[0];
   const map = {
@@ -60,8 +73,7 @@ Trip date: ${trip.date}
 Duration: ${trip.days.length} days, ${allMemos.length} notes
 
 Travel notes:
-${allMemos.length > 0 ? allMemos.join('
-') : 'No written notes. Infer cautiously from the destination and dates.'}
+${allMemos.length > 0 ? allMemos.join('\n') : 'No written notes. Infer cautiously from the destination and dates.'}
 
 Requirements:
 - Use first-person voice.
@@ -127,9 +139,9 @@ Strict requirements:
 4. Keep each day concise: attractions + time + transport.
 5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
 6. Keep each field short and ensure valid complete JSON.`;
-        const text = await callClaude(prompt, 3000);
+        const text = await callClaude(prompt, 8000, { responseMimeType: 'application/json' });
         const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
-        const parsed = JSON.parse(clean);
+        const parsed = parseAiJsonObject(text);
         // 格式化展示
         const disclaimer = t('ai_disclaimer');
         const formatted = parsed.days.map(d => {
@@ -159,7 +171,7 @@ Strict requirements:
         const text = await callClaude(buildPrompt(), 1200);
         // 解析 JSON 并存为打包清单
         const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
-        const parsed = JSON.parse(clean);
+        const parsed = parseAiJsonObject(text);
         const AsyncStorage = require('@react-native-async-storage/async-storage').default;
         const STORAGE_KEY = '@wandernote_memos';
         const existing = await AsyncStorage.getItem(STORAGE_KEY);
@@ -253,7 +265,7 @@ Strict requirements:
             <Text style={s.sectionTitle}>{t('ai_travel_style')}</Text>
             <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:4}}>
               {ITINERARY_STYLES.map(style=>(
-                <TouchableOpacity key={style}
+                <TouchableOpacity key={style.key}
                   style={{paddingHorizontal:14,paddingVertical:8,borderRadius:20,borderWidth:1,
                     borderColor:itineraryStyle===style.key?'#D4AF37':'#242424',
                     backgroundColor:itineraryStyle===style.key?'#D4AF3720':'#161616'}}

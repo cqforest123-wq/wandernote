@@ -22,7 +22,7 @@ export default {
   day_tag: 'Etiqueta', day_content: 'Contenido', day_photo_source: 'Añadir foto',
   day_photo_album: 'Elegir del álbum', day_photo_camera: 'Tomar foto ahora',
   day_long_press_delete: 'Mantén pulsado para eliminar', day_video_prefix: 'Video',
-  ai_title: '✦ Creación IA', ai_subtitle: 'La IA registra tu historia de viaje',
+  ai_title: 'AI Creation', ai_subtitle: 'La IA registra tu historia de viaje',
   ai_type: 'Tipo de generación', ai_diary: '📖 Diario de viaje', ai_diary_desc: 'Estilo narrativo completo',
   ai_social: '📱 Post redes sociales', ai_social_desc: 'Ideal para redes sociales',
   ai_summary: '✨ Resumen del viaje', ai_summary_desc: 'Lo mejor de todo el viaje',
@@ -352,4 +352,5 @@ export default {
   filter_desc_warm: 'Warm tones with a gentle healing feel',
   filter_desc_dramatic: 'High contrast with stronger visual impact',
   filter_desc_matte: 'Low-contrast matte look with an Instagram-style finish',
+  ai_destination_placeholder: 'Enter destination, e.g. Tokyo, Iceland, Bali',
 };

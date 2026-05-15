@@ -74,7 +74,7 @@ export default {
   day_video_prefix: 'Video',
 
   // AI Creation
-  ai_title: '✦ AI Create',
+  ai_title: 'AI Creation',
   ai_subtitle: 'Let AI tell your travel story',
   ai_type: 'Content Type',
   ai_diary: '📖 Travel Diary',
@@ -466,4 +466,5 @@ export default {
   filter_desc_warm: 'Warm tones with a gentle healing feel',
   filter_desc_dramatic: 'High contrast with stronger visual impact',
   filter_desc_matte: 'Low-contrast matte look with an Instagram-style finish',
+  ai_destination_placeholder: 'Enter destination, e.g. Tokyo, Iceland, Bali',
 };
