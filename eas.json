@@ -15,6 +15,11 @@
       "ios": {
         "buildConfiguration": "Release"
       }
+    },
+    "production": {
+      "ios": {
+        "buildConfiguration": "Release"
+      }
     }
   }
 }

@@ -14,15 +14,14 @@
     "ios": {
       "supportsTablet": false,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "Used to calculate distance to your travel destinations"
-      },
-      "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "WanderNote需要访问您的相册来上传旅行照片",
-        "NSCameraUsageDescription": "WanderNote需要访问相机来拍摄旅行照片",
-        "NSPhotoLibraryAddUsageDescription": "WanderNote需要保存照片到您的相册",
+        "NSLocationWhenInUseUsageDescription": "WanderNote uses your location to estimate distance to your travel destinations and display travel footprints on the map.",
+        "NSPhotoLibraryUsageDescription": "WanderNote needs access to your photo library so you can add travel photos to your trip records.",
+        "NSCameraUsageDescription": "WanderNote needs camera access so you can take travel photos and save them to your trip records.",
+        "NSPhotoLibraryAddUsageDescription": "WanderNote needs permission to save edited travel photos to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.litao0729.wandernote"
+      "bundleIdentifier": "com.litao0729.wandernote",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +32,9 @@
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE",
         "CAMERA"
-      ]
+      ],
+      "package": "com.litao0729.wandernote",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/favicon.png"
