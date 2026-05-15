@@ -19,6 +19,8 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
     { code: 'es', label: 'Español' },
     { code: 'th', label: 'ภาษาไทย' },
   ];
+
+const ENABLE_YEAR_REPORT = false;
   const [showLangModal, setShowLangModal] = useState(false);
   const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
   const selectLanguage = async (code) => {
@@ -114,16 +116,18 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
           <Text style={s.reportArrow}>→</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
+        {ENABLE_YEAR_REPORT && (
+          <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
           <View>
             <Text style={s.reportTitle}>📊 {t('profile_year_report')}</Text>
             <Text style={s.reportDesc}>{t('profile_year_report_desc')}</Text>
           </View>
           <Text style={s.reportArrow}>→</Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
+        )}
 
         {!isPro && (
-          <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall('Pro会员') : setShowPricing(true)}>
+          <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall(t('profile_pro_member')) : setShowPricing(true)}>
             <View>
               <Text style={s.upgradeTitle}>✦ {t('profile_upgrade_pro')}</Text>
               <Text style={s.upgradeDesc}>{t('profile_upgrade_desc')}</Text>
@@ -196,14 +200,14 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
               placeholder={t("profile_nickname_placeholder")}
               placeholderTextColor="#444"
               value={nickname}
-              onChangeText={t=>setNickname(t)}
+              onChangeText={text=>setNickname(text)}
               autoFocus
               maxLength={20}
               returnKeyType="done"
             />
             <View style={{flexDirection:'row',gap:12,marginTop:8}}>
               <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowEditProfile(false)}>
-                <Text style={{color:'#555',fontSize:15}}>取消</Text>
+                <Text style={{color:'#555',fontSize:15}}>{t('cancel')}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.editSaveBtn} onPress={()=>{saveProfile(nickname);setShowEditProfile(false);}}>
                 <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>{t('save')}</Text>
@@ -238,7 +242,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
                 <Text style={s.pricingFeatureText}>{f}</Text>
               </View>
             ))}
-            <TouchableOpacity style={s.subscribeBtn} onPress={()=>{ setShowPricing(false); openPaywall && openPaywall('Pro会员'); }}>
+            <TouchableOpacity style={s.subscribeBtn} onPress={()=>{ setShowPricing(false); openPaywall && openPaywall(t('profile_pro_member')); }}>
               <Text style={s.subscribeBtnText}>{t('profile_subscribe_now')} →</Text>
             </TouchableOpacity>
             <Text style={s.pricingNote}>{t('profile_cancel_anytime')}</Text>
@@ -260,7 +264,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
               </TouchableOpacity>
             ))}
             <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowLangModal(false)}>
-              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>取消</Text>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

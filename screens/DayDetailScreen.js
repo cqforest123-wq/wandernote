@@ -50,7 +50,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const { t } = useTranslation();
   const [showMemoModal, setShowMemoModal] = useState(false);
-  const [editingMemo, setEditingMemo] = useState(null); // null=新增, object=编辑
+  const [editingMemo, setEditingMemo] = useState(null); // null=new, object=edit
   const [memoText, setMemoText] = useState('');
   const [selectedTag, setSelectedTag] = useState('feeling');
   const [previewPhoto, setPreviewPhoto] = useState(null);

@@ -3,21 +3,22 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableO
 import * as ImagePicker from 'expo-image-picker';
 import * as MediaLibrary from 'expo-media-library';
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { useTranslation } from 'react-i18next';
 
 const { width } = Dimensions.get('window');
 const PREVIEW_SIZE = width - 48;
 
 const FILTERS = [
-  { id: 'original', name: '原图', icon: '🖼', style: {} },
-  { id: 'vintage', name: '复古', icon: '🟤', style: { sepia: 0.8, contrast: 1.1, brightness: 0.9 } },
-  { id: 'film', name: '胶片', icon: '🎞', style: { sepia: 0.3, contrast: 1.2, brightness: 1.05, saturate: 0.8 } },
-  { id: 'bw', name: '黑白', icon: '⬛', style: { grayscale: 1, contrast: 1.1 } },
-  { id: 'fade', name: '褪色', icon: '🌫', style: { opacity: 0.85, sepia: 0.2, brightness: 1.1, saturate: 0.7 } },
-  { id: 'vivid', name: '鲜艳', icon: '🌈', style: { saturate: 1.8, contrast: 1.1, brightness: 1.05 } },
-  { id: 'cool', name: '冷调', icon: '🔵', style: { saturate: 0.9, brightness: 1.05, hueRotate: 200 } },
-  { id: 'warm', name: '暖调', icon: '🟠', style: { saturate: 1.2, brightness: 1.0, hueRotate: 20 } },
-  { id: 'dramatic', name: '戏剧', icon: '🎭', style: { contrast: 1.5, brightness: 0.9, saturate: 1.2 } },
-  { id: 'matte', name: '哑光', icon: '🌁', style: { contrast: 0.85, brightness: 1.1, saturate: 0.9 } },
+  { id: 'original', labelKey: 'filter_original', descKey: null, icon: '🖼', style: {} },
+  { id: 'vintage', labelKey: 'filter_vintage', descKey: 'filter_desc_vintage', icon: '🟤', style: { sepia: 0.8, contrast: 1.1, brightness: 0.9 } },
+  { id: 'film', labelKey: 'filter_film', descKey: 'filter_desc_film', icon: '🎞', style: { sepia: 0.3, contrast: 1.2, brightness: 1.05, saturate: 0.8 } },
+  { id: 'bw', labelKey: 'filter_bw', descKey: 'filter_desc_bw', icon: '⬛', style: { grayscale: 1, contrast: 1.1 } },
+  { id: 'fade', labelKey: 'filter_fade', descKey: 'filter_desc_fade', icon: '🌫', style: { opacity: 0.85, sepia: 0.2, brightness: 1.1, saturate: 0.7 } },
+  { id: 'vivid', labelKey: 'filter_vivid', descKey: 'filter_desc_vivid', icon: '🌈', style: { saturate: 1.8, contrast: 1.1, brightness: 1.05 } },
+  { id: 'cool', labelKey: 'filter_cool', descKey: 'filter_desc_cool', icon: '🔵', style: { saturate: 0.9, brightness: 1.05, hueRotate: 200 } },
+  { id: 'warm', labelKey: 'filter_warm', descKey: 'filter_desc_warm', icon: '🟠', style: { saturate: 1.2, brightness: 1.0, hueRotate: 20 } },
+  { id: 'dramatic', labelKey: 'filter_dramatic', descKey: 'filter_desc_dramatic', icon: '🎭', style: { contrast: 1.5, brightness: 0.9, saturate: 1.2 } },
+  { id: 'matte', labelKey: 'filter_matte', descKey: 'filter_desc_matte', icon: '🌁', style: { contrast: 0.85, brightness: 1.1, saturate: 0.9 } },
 ];
 
 function getFilterStyle(filter) {
@@ -42,13 +43,14 @@ function getOverlayConfig(filterId) {
 }
 
 export default function PhotoFilterScreen({ navigation }) {
+  const { t } = useTranslation();
   const [photo, setPhoto] = useState(null);
   const [selectedFilter, setSelectedFilter] = useState('original');
   const [saving, setSaving] = useState(false);
 
   const pickPhoto = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert('需要权限', '请允许访问相册'); return; }
+    if (status !== 'granted') { Alert.alert(t('photo_permission_title'), t('photo_permission_album')); return; }
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaType ? [ImagePicker.MediaType.Images] : ImagePicker.MediaTypeOptions.Images,
       quality: 1,
@@ -61,7 +63,7 @@ export default function PhotoFilterScreen({ navigation }) {
     setSaving(true);
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') { Alert.alert('需要权限', '请允许保存到相册'); return; }
+      if (status !== 'granted') { Alert.alert(t('photo_permission_title'), t('photo_permission_save')); return; }
 
       // 用 manipulator 处理基础变换
       const actions = [];
@@ -74,9 +76,9 @@ export default function PhotoFilterScreen({ navigation }) {
       });
 
       await MediaLibrary.saveToLibraryAsync(result.uri);
-      Alert.alert('保存成功', '照片已保存到相册 📸');
+      Alert.alert(t('photo_save_success'), t('photo_save_success_desc'));
     } catch (e) {
-      Alert.alert('保存失败', e.message);
+      Alert.alert(t('photo_save_failed'), e.message);
     } finally {
       setSaving(false);
     }
@@ -90,12 +92,12 @@ export default function PhotoFilterScreen({ navigation }) {
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D"/>
       <View style={s.header}>
         <TouchableOpacity onPress={()=>navigation.goBack()}>
-          <Text style={s.back}>← 返回</Text>
+          <Text style={s.back}>← {t('back')}</Text>
         </TouchableOpacity>
-        <Text style={s.title}>🎨 照片滤镜</Text>
+        <Text style={s.title}>🎨 {t('photo_filter_title')}</Text>
         {photo && (
           <TouchableOpacity onPress={savePhoto} disabled={saving}>
-            <Text style={s.saveBtn}>{saving ? '保存中...' : '保存'}</Text>
+            <Text style={s.saveBtn}>{saving ? t('saving') : t('save')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -120,14 +122,14 @@ export default function PhotoFilterScreen({ navigation }) {
             )}
             {/* 滤镜名称标签 */}
             <View style={s.filterLabel}>
-              <Text style={s.filterLabelText}>{currentFilter.icon} {currentFilter.name}</Text>
+              <Text style={s.filterLabelText}>{currentFilter.icon} {t(currentFilter.labelKey)}</Text>
             </View>
           </View>
         ) : (
           <TouchableOpacity style={s.emptyPhoto} onPress={pickPhoto}>
             <Text style={s.emptyPhotoEmoji}>📷</Text>
-            <Text style={s.emptyPhotoText}>点击选择照片</Text>
-            <Text style={s.emptyPhotoHint}>从相册选择一张开始</Text>
+            <Text style={s.emptyPhotoText}>{t('photo_select_photo')}</Text>
+            <Text style={s.emptyPhotoHint}>{t('photo_select_hint')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -135,13 +137,13 @@ export default function PhotoFilterScreen({ navigation }) {
       {/* 选择照片按钮 */}
       {photo && (
         <TouchableOpacity style={s.changePhotoBtn} onPress={pickPhoto}>
-          <Text style={s.changePhotoBtnText}>更换照片</Text>
+          <Text style={s.changePhotoBtnText}>{t('photo_change_photo')}</Text>
         </TouchableOpacity>
       )}
 
       {/* 滤镜选择 */}
       <View style={s.filterSection}>
-        <Text style={s.filterSectionTitle}>选择滤镜</Text>
+        <Text style={s.filterSectionTitle}>{t('photo_select_filter')}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{flexDirection:'row', gap:12, paddingHorizontal:24, paddingVertical:12}}>
             {FILTERS.map(f => (
@@ -152,7 +154,7 @@ export default function PhotoFilterScreen({ navigation }) {
                 <View style={[s.filterPreview, selectedFilter===f.id && s.filterPreviewActive]}>
                   <Text style={{fontSize:24}}>{f.icon}</Text>
                 </View>
-                <Text style={[s.filterName, selectedFilter===f.id && s.filterNameActive]}>{f.name}</Text>
+                <Text style={[s.filterName, selectedFilter===f.id && s.filterNameActive]}>{t(f.labelKey)}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -161,30 +163,8 @@ export default function PhotoFilterScreen({ navigation }) {
 
       {/* 滤镜效果说明 */}
       <View style={s.filterDesc}>
-        {[
-          {id:'vintage', desc:'仿旧棕褐色调，复古胶片感'},
-          {id:'film', desc:'经典胶片质感，温润自然'},
-          {id:'bw', desc:'纯粹黑白，突出构图与光影'},
-          {id:'fade', desc:'轻柔褪色，文艺小清新'},
-          {id:'vivid', desc:'高饱和鲜艳，色彩跳跃'},
-          {id:'cool', desc:'冷色调，清冷高级感'},
-          {id:'warm', desc:'暖色调，温暖治愈系'},
-          {id:'dramatic', desc:'高对比戏剧感，冲击力强'},
-          {id:'matte', desc:'低对比哑光，ins风格'},
-        ].find(d => d.id === selectedFilter) && (
-          <Text style={s.filterDescText}>
-            {[
-              {id:'vintage', desc:'仿旧棕褐色调，复古胶片感'},
-              {id:'film', desc:'经典胶片质感，温润自然'},
-              {id:'bw', desc:'纯粹黑白，突出构图与光影'},
-              {id:'fade', desc:'轻柔褪色，文艺小清新'},
-              {id:'vivid', desc:'高饱和鲜艳，色彩跳跃'},
-              {id:'cool', desc:'冷色调，清冷高级感'},
-              {id:'warm', desc:'暖色调，温暖治愈系'},
-              {id:'dramatic', desc:'高对比戏剧感，冲击力强'},
-              {id:'matte', desc:'低对比哑光，ins风格'},
-            ].find(d => d.id === selectedFilter)?.desc}
-          </Text>
+        {currentFilter?.descKey && (
+          <Text style={s.filterDescText}>{t(currentFilter.descKey)}</Text>
         )}
       </View>
     </SafeAreaView>

@@ -437,7 +437,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const deleteTrip = (tripId, cityName) => {
-    if (deletingId) return; // 正在删除中，忽略重复触发
+    if (deletingId) return; // ignore repeated taps while deleting
     Alert.alert(t('home_delete_trip_title'), t('home_delete_trip_confirm').replace('%s', cityName), [
       { text: t('cancel'), style: 'cancel' },
       {

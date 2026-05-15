@@ -107,7 +107,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const deleteTrip = () => {
-    if (isDeleting) return; // 正在删除中，忽略重复触发
+    if (isDeleting) return; // ignore repeated taps while deleting
     Alert.alert(t('trip_delete'), `${t('trip_delete_confirm').replace('%s', trip.city)}`, [
       { text: t('cancel'), style: 'cancel' },
       {
