@@ -1,42 +1,75 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Content-Type': 'application/json',
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'authorization, content-type',
-    }})
+    return new Response('ok', { headers: corsHeaders })
   }
 
-  const { prompt, maxTokens } = await req.json()
-  const apiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
+  try {
+    const { prompt, maxTokens } = await req.json()
 
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          maxOutputTokens: maxTokens ?? 1000,
-          temperature: 0.3,
-        },
-      }),
+    if (!prompt || !String(prompt).trim()) {
+      return new Response(
+        JSON.stringify({ error: 'Missing prompt' }),
+        { status: 400, headers: corsHeaders }
+      )
     }
-  )
 
-  const data = await res.json()
-  console.log('status:', res.status, 'error:', data.error?.message ?? 'none')
+    const apiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
+    if (!apiKey) {
+      return new Response(
+        JSON.stringify({ error: 'AI service is not configured' }),
+        { status: 500, headers: corsHeaders }
+      )
+    }
 
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
-  console.log('text length:', text.length, 'first 100:', text.slice(0,100))
-  const result = { content: [{ type: 'text', text }] }
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            maxOutputTokens: maxTokens ?? 1000,
+            temperature: 0.3,
+          },
+        }),
+      }
+    )
 
-  return new Response(JSON.stringify(result), {
-    headers: {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-    },
-  })
+    const data = await res.json()
+
+    if (!res.ok) {
+      return new Response(
+        JSON.stringify({ error: data.error?.message || 'AI request failed' }),
+        { status: res.status, headers: corsHeaders }
+      )
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text ?? ''
+
+    if (!text) {
+      return new Response(
+        JSON.stringify({ error: 'Empty AI response' }),
+        { status: 502, headers: corsHeaders }
+      )
+    }
+
+    return new Response(
+      JSON.stringify({ content: [{ type: 'text', text }] }),
+      { headers: corsHeaders }
+    )
+  } catch (e) {
+    return new Response(
+      JSON.stringify({ error: e?.message || 'Unexpected AI proxy error' }),
+      { status: 500, headers: corsHeaders }
+    )
+  }
 })

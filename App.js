@@ -38,13 +38,13 @@ function MainApp({ session }) {
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const [isPro, setIsPro] = useState(true); // TODO: set back to false after testing
+  const [isPro, setIsPro] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState(null);
 
   useEffect(() => {
     const handleLangChange = (lng) => {
-      console.log('App languageChanged:', lng);
+      
       setLangKey(lng);
     };
     i18n.on('languageChanged', handleLangChange);
@@ -57,7 +57,7 @@ function MainApp({ session }) {
       .then(() => checkProStatus())
       .then(status => setIsPro(Boolean(status)))
       .catch(e => {
-        console.warn('RevenueCat初始化失败:', e.message);
+        console.warn('RevenueCat init failed:', e.message);
         setIsPro(false);
       });
   }, [session?.user?.id]);
