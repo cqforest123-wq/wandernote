@@ -74,7 +74,7 @@ function MainApp({ session }) {
         const userId = session?.user?.id;
         if (userId) {
           const { trips: cloudTrips } = await initSync(userId);
-          if (cloudTrips?.length) {
+          if (Array.isArray(cloudTrips)) {
             setTripsState(cloudTrips);
             setLoaded(true);
             return;
@@ -135,11 +135,11 @@ function MainApp({ session }) {
   };
 
   const tabs = [
-    {key:'home', icon:'🗺', label:t('tab_home')||'旅程'},
-    {key:'map', icon:'📍', label:t('tab_map')||'足迹'},
-    {key:'memo', icon:'📋', label:t('tab_memo')||'清单'},
-    {key:'ai', icon:'✦', label:'AI'},
-    {key:'profile', icon:'👤', label:'我的'},
+    {key:'home', icon:'🗺', label:t('tab_home')},
+    {key:'map', icon:'📍', label:t('tab_map')},
+    {key:'memo', icon:'📋', label:t('tab_memo')},
+    {key:'ai', icon:'✦', label:t('tab_ai')},
+    {key:'profile', icon:'👤', label:t('tab_profile')},
   ];
 
   if (!loaded) return (

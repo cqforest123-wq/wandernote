@@ -6,6 +6,7 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, Touch
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
+import { createDay } from '../lib/models';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const WEEKDAYS = ['周日','周一','周二','周三','周四','周五','周六'];
@@ -75,13 +76,11 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const addDay = () => {
     if (selectedDate > today) { Alert.alert(t('confirm'), t('alert_future_date')); return; }
     if (existsAlready) { setShowAddDay(false); navigation.navigate('DayDetail',{tripId,dayDate:dateStr}); return; }
-    const pad = n=>String(n).padStart(2,'0');
-    const now = new Date();
-    const newDay = {
-      date: dateStr, weekDay,
-      memos: dayNote.trim()?[{id:Date.now(),text:dayNote.trim(),tag:'感受',time:`${pad(now.getHours())}:${pad(now.getMinutes())}`}]:[],
-      photos:[], videos:[],
-    };
+    const newDay = createDay({
+      date: dateStr,
+      weekDay,
+      memoText: dayNote,
+    });
     setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:[...t.days,newDay].sort((a,b)=>a.date.localeCompare(b.date))}:t));
     setDayNote(''); setShowAddDay(false);
     navigation.navigate('DayDetail',{tripId,dayDate:dateStr});

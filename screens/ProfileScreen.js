@@ -28,7 +28,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
       setCurrentLang(code);
       setShowLangModal(false);
     } catch (e) {
-      Alert.alert('切换失败', e.message || '请稍后再试');
+      Alert.alert(t('profile_language_switch_failed'), e.message || t('profile_try_later'));
     }
   };
   const [selectedPlan, setSelectedPlan] = useState('annual');
@@ -61,8 +61,8 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
 
   const handleLogout = () => {
     Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
-      {text:'取消',style:'cancel'},
-      {text:'退出',style:'destructive',onPress:async()=>{ await supabase.auth.signOut(); }},
+      {text:t('cancel'),style:'cancel'},
+      {text:t('profile_logout_action'),style:'destructive',onPress:async()=>{ await supabase.auth.signOut(); }},
     ]);
   };
 
@@ -83,21 +83,21 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
             <View style={s.avatarEditBadge}><Text style={{fontSize:10}}>✏️</Text></View>
           </TouchableOpacity>
           <TouchableOpacity onPress={()=>setShowEditProfile(true)}>
-            <Text style={s.nicknameText}>{nickname || '点击设置昵称'}</Text>
+            <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
           <Text style={s.email}>{email}</Text>
           <TouchableOpacity style={[s.planBadge,isPro&&{backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]} onPress={()=>!isPro&&setShowPricing(true)}>
-            <Text style={[s.planText,isPro&&{color:'#D4AF37'}]}>{isPro?'✦ Pro 会员':'免费版 · 点击升级'}</Text>
+            <Text style={[s.planText,isPro&&{color:'#D4AF37'}]}>{isPro ? t('profile_pro_member') : t('profile_free_upgrade')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={s.statsGrid}>
           {[
-            [String(trips.length),'旅程',isPro?'∞':'3'],
-            [String(totalDays),'天数',''],
-            [String(totalMemos),'感言',''],
-            [String(totalPhotos),'照片',''],
-            [String(totalVideos),'视频',''],
+            [String(trips.length),t('profile_stat_trips'),isPro?'∞':'3'],
+            [String(totalDays),t('profile_stat_days'),''],
+            [String(totalMemos),t('profile_stat_memos'),''],
+            [String(totalPhotos),t('profile_stat_photos'),''],
+            [String(totalVideos),t('profile_stat_videos'),''],
           ].map(([n,l,limit])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}{limit?<Text style={s.statLimit}>/{limit}</Text>:null}</Text>
@@ -108,16 +108,16 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
 
         <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('PhotoFilter')} >
           <View>
-            <Text style={s.reportTitle}>🎨 照片滤镜</Text>
-            <Text style={s.reportDesc}>复古胶片 · 黑白 · 鲜艳等10种风格</Text>
+            <Text style={s.reportTitle}>🎨 {t('profile_photo_filter')}</Text>
+            <Text style={s.reportDesc}>{t('profile_photo_filter_desc')}</Text>
           </View>
           <Text style={s.reportArrow}>→</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
           <View>
-            <Text style={s.reportTitle}>📊 年度旅行报告</Text>
-            <Text style={s.reportDesc}>回顾你的旅行足迹与故事</Text>
+            <Text style={s.reportTitle}>📊 {t('profile_year_report')}</Text>
+            <Text style={s.reportDesc}>{t('profile_year_report_desc')}</Text>
           </View>
           <Text style={s.reportArrow}>→</Text>
         </TouchableOpacity>
@@ -125,25 +125,25 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
         {!isPro && (
           <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall('Pro会员') : setShowPricing(true)}>
             <View>
-              <Text style={s.upgradeTitle}>✦ 升级到 Pro</Text>
-              <Text style={s.upgradeDesc}>无限旅程 · 云端备份 · AI生成图集</Text>
+              <Text style={s.upgradeTitle}>✦ {t('profile_upgrade_pro')}</Text>
+              <Text style={s.upgradeDesc}>{t('profile_upgrade_desc')}</Text>
             </View>
             <Text style={s.upgradeArrow}>→</Text>
           </TouchableOpacity>
         )}
 
-        <Text style={s.sectionTitle}>功能对比</Text>
+        <Text style={s.sectionTitle}>{t('profile_feature_compare')}</Text>
         <View style={s.featureList}>
           {[
-            {icon:'🗺',label:'旅程数量',free:'最多3个',pro:'无限'},
-            {icon:'☁️',label:'云端备份',free:'❌',pro:'✅'},
-            {icon:'🤖',label:'AI生成日记',free:'❌',pro:'✅'},
-            {icon:'🖼',label:'图集生成',free:'❌',pro:'✅'},
-            {icon:'📸',label:'照片存储',free:'本地',pro:'无限云端'},
+            {icon:'🗺',label:t('profile_feature_trip_count'),free:t('profile_max_3'),pro:t('profile_unlimited')},
+            {icon:'☁️',label:t('profile_feature_cloud_backup'),free:'❌',pro:'✅'},
+            {icon:'🤖',label:t('profile_feature_ai_diary'),free:'❌',pro:'✅'},
+            {icon:'🖼',label:t('profile_feature_album'),free:'❌',pro:'✅'},
+            {icon:'📸',label:t('profile_feature_photo_storage'),free:t('profile_local'),pro:t('profile_unlimited_cloud')},
             // {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'}, // v2.0
-            {icon:'📊',label:'年度报告',free:'✅',pro:'✅'},
-            {icon:'🎨',label:'照片滤镜',free:'✅',pro:'✅'},
-            {icon:'🌐',label:'语言',free:'✅',pro:'✅'},
+            {icon:'📊',label:t('profile_feature_year_report'),free:'✅',pro:'✅'},
+            {icon:'🎨',label:t('profile_feature_photo_filter'),free:'✅',pro:'✅'},
+            {icon:'🌐',label:t('profile_feature_language'),free:'✅',pro:'✅'},
           ].map(f=>(
             <View key={f.label} style={s.featureRow}>
               <Text style={s.featureIcon}>{f.icon}</Text>
@@ -154,7 +154,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
           ))}
         </View>
 
-        <Text style={s.sectionTitle}>账号设置</Text>
+        <Text style={s.sectionTitle}>{t('profile_account_settings')}</Text>
         <View style={s.settingList}>
           <TouchableOpacity style={s.settingRow} onPress={()=>setShowLangModal(true)}>
             <Text style={s.settingIcon}>🌐</Text>
@@ -164,36 +164,36 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
 
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:predestina@msn.com')}>
             <Text style={s.settingIcon}>📧</Text>
-            <Text style={s.settingLabel}>联系我们</Text>
+            <Text style={s.settingLabel}>{t('profile_contact')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://cqforest123-wq.github.io/wandernote/privacy-policy.html')}>
             <Text style={s.settingIcon}>🔐</Text>
-            <Text style={s.settingLabel}>隐私政策</Text>
+            <Text style={s.settingLabel}>{t('profile_privacy_policy')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/idYOUR_APP_ID?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
-            <Text style={s.settingLabel}>给App评分</Text>
+            <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-          <Text style={s.logoutText}>退出登录</Text>
+          <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
         </TouchableOpacity>
 
-        <Text style={s.version}>WanderNote v1.0.0 · 记录每一次远行</Text>
+        <Text style={s.version}>WanderNote v1.0.0 · {t('profile_version_slogan')}</Text>
       </ScrollView>
 
       <Modal visible={showEditProfile} animationType="slide" transparent>
         <View style={s.overlay}>
           <TouchableOpacity style={{flex:1}} onPress={()=>setShowEditProfile(false)}/>
           <View style={s.editSheet}>
-            <Text style={s.editTitle}>编辑昵称</Text>
+            <Text style={s.editTitle}>{t('profile_edit_nickname')}</Text>
             <TextInput
               style={s.editInput}
-              placeholder="输入你的旅行昵称..."
+              placeholder={t("profile_nickname_placeholder")}
               placeholderTextColor="#444"
               value={nickname}
               onChangeText={t=>setNickname(t)}
@@ -206,7 +206,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
                 <Text style={{color:'#555',fontSize:15}}>取消</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.editSaveBtn} onPress={()=>{saveProfile(nickname);setShowEditProfile(false);}}>
-                <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>保存</Text>
+                <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -217,31 +217,31 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
         <View style={s.overlay}>
           <TouchableOpacity style={{flex:1}} onPress={()=>setShowPricing(false)}/>
           <View style={s.pricingSheet}>
-            <Text style={s.pricingTitle}>升级到 Pro</Text>
-            <Text style={s.pricingSubtitle}>解锁完整旅行记录体验</Text>
+            <Text style={s.pricingTitle}>{t('profile_upgrade_pro')}</Text>
+            <Text style={s.pricingSubtitle}>{t('profile_unlock_full')}</Text>
             <View style={s.planToggle}>
               {['monthly','annual'].map(p=>(
                 <TouchableOpacity key={p} style={[s.planBtn,selectedPlan===p&&s.planBtnActive]} onPress={()=>setSelectedPlan(p)}>
                   <Text style={[s.planBtnText,selectedPlan===p&&s.planBtnTextActive]}>
-                    {p==='monthly'?'月付':'年付 省33%'}
+                    {p==='monthly'?t('profile_monthly'):t('profile_annual_save')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
             <View style={s.priceBox}>
               <Text style={s.priceNum}>¥{selectedPlan==='monthly'?'28':'19'}</Text>
-              <Text style={s.pricePer}>/ 月{selectedPlan==='annual'?' · 按年付费 ¥228':''}</Text>
+              <Text style={s.pricePer}>/ {t('profile_month')}{selectedPlan==='annual'?` · ${t('profile_billed_yearly')} ¥228`:''}</Text>
             </View>
-            {['无限旅程记录','云端自动备份','AI旅行日记生成','一键图集导出','照片视频云存储','年度旅行报告'].map(f=>(
+            {[t('profile_pro_unlimited_trips'),t('profile_pro_cloud_backup'),t('profile_pro_ai_diary'),t('profile_pro_album_export'),t('profile_pro_media_cloud'),t('profile_pro_year_report')].map(f=>(
               <View key={f} style={s.pricingFeatureRow}>
                 <Text style={s.check}>✦</Text>
                 <Text style={s.pricingFeatureText}>{f}</Text>
               </View>
             ))}
             <TouchableOpacity style={s.subscribeBtn} onPress={()=>{ setShowPricing(false); openPaywall && openPaywall('Pro会员'); }}>
-              <Text style={s.subscribeBtnText}>立即订阅 →</Text>
+              <Text style={s.subscribeBtnText}>{t('profile_subscribe_now')} →</Text>
             </TouchableOpacity>
-            <Text style={s.pricingNote}>随时取消 · 无隐藏费用</Text>
+            <Text style={s.pricingNote}>{t('profile_cancel_anytime')}</Text>
           </View>
         </View>
       </Modal>
@@ -250,7 +250,7 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
         <View style={s.overlay}>
           <TouchableOpacity style={{flex:1}} onPress={()=>setShowLangModal(false)}/>
           <View style={s.editSheet}>
-            <Text style={s.editTitle}>选择语言 / Select Language</Text>
+            <Text style={s.editTitle}>{t('profile_select_language')}</Text>
             {LANGS.map(lang=>(
               <TouchableOpacity key={lang.code}
                 style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#222',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}

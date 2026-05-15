@@ -3,6 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
+import { createTrip } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
@@ -385,20 +386,20 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const addTrip = () => {
-    const now = new Date();
-    const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}`;
     const emoji = selectedEmoji || '🌍';
     const cityName = customCity.trim() || selectedCities.join(' · ');
     if (!cityName) return;
-    const newTrip = {
-      id: Date.now(), city: cityName,
-      country: selectedCountry.name, date: dateStr, emoji, days: [],
+    const plannedDateValue = enableCountdown ? (() => {
+      const d = plannedDateObj;
+      return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+    })() : null;
+    const newTrip = createTrip({
+      city: cityName,
+      country: selectedCountry?.name || '',
+      emoji,
+      plannedDate: plannedDateValue,
       coords: null,
-      plannedDate: enableCountdown ? (() => {
-        const d = plannedDateObj;
-        return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
-      })() : null
-    };
+    });
     setTrips(prev => [newTrip, ...prev]);
     resetForm(); setShowAdd(false);
     navigation.navigate('TripDetail', { tripId: newTrip.id });

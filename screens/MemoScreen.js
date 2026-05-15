@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { syncMemosUp, syncMemosDown, syncMemosUpWithTripId } from '../lib/sync';
 import { STORAGE_KEYS } from '../lib/storageKeys';
+import { createMemo } from '../lib/models';
 
 const STORAGE_KEY = STORAGE_KEYS.memos;
 
@@ -143,7 +144,7 @@ const SMART_PACKING = {
 };
 
 // ─── 分组折叠组件 ───────────────────────────────────────────────
-function PackingGroup({ groupName, items, memoId, onToggle, catColor }) {
+function PackingGroup({ groupName, items, memoId, onToggle, onReminder, catColor }) {
   const [open, setOpen] = useState(true);
   const groupItems = items.filter(i => i.groupKey === groupName);
   const total   = groupItems.length;
@@ -172,6 +173,11 @@ function PackingGroup({ groupName, items, memoId, onToggle, catColor }) {
             {item.checked && <Text style={pg.tick}>✓</Text>}
           </View>
           <Text style={[pg.itemText, item.checked && pg.itemDone]}>{item.text}</Text>
+          <Text
+            onPress={(e) => { e?.stopPropagation?.(); onReminder?.(memoId, item.id); }}
+            style={[pg.remind, item.remind && pg.remindActive]}>
+            {item.remind ? '⏰ 稍后' : '稍后'}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
@@ -191,6 +197,8 @@ const pg = StyleSheet.create({
   tick:      { fontSize: 10, color: '#0D0D0D', fontWeight: '700' },
   itemText:  { fontSize: 14, color: '#C0BAB0', flex: 1 },
   itemDone:  { textDecorationLine: 'line-through', color: '#444' },
+  remind:    { fontSize: 12, color: '#555', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: '#333', overflow: 'hidden' },
+  remindActive: { color: '#FFB347', borderColor: '#FFB347', backgroundColor: '#FFB34718' },
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
@@ -202,7 +210,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
   const [showAdd,      setShowAdd]      = useState(false);
   const [editingMemo,  setEditingMemo]  = useState(null);
   const [title,        setTitle]        = useState('');
-  const [items,        setItems]        = useState([{ id: Date.now(), text: '', checked: false }]);
+  const [items,        setItems]        = useState([{ id: Date.now(), text: '', checked: false, remind: false }]);
   const [category,     setCategory]     = useState('note');
   const [showTemplate, setShowTemplate] = useState(false);
   const [showAIGen, setShowAIGen] = useState(false);
@@ -213,22 +221,31 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
 
   useEffect(() => {
     let mounted = true;
+    const timers = [];
+
+    const openTemplateLater = () => {
+      const timer = setTimeout(() => {
+        if (mounted) setShowTemplate(true);
+      }, 300);
+      timers.push(timer);
+    };
+
     const loadMemos = async () => {
       try {
         // 先尝试云端
         const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) {
+        if (isPro && user?.id) {
           const cloudMemos = await syncMemosDown(user.id);
-          if (cloudMemos?.length) {
+          if (Array.isArray(cloudMemos)) {
             setMemos(cloudMemos);
             if (tripId) {
-              const has = cloudMemos.some(m => m.category === 'packing' && m.tripId === tripId);
+              const has = cloudMemos.some(m => m.category === 'packing' && String(m.tripId) === String(tripId));
               if (!has) {
                 setCategory('packing');
                 setTitle('');
-                setItems([{ id: Date.now(), text: '', checked: false }]);
+                setItems([{ id: Date.now(), text: '', checked: false, remind: false }]);
                 setEditingMemo(null);
-                if (mounted) setTimeout(() => setShowTemplate(true), 300);
+                openTemplateLater();
               }
             }
             return;
@@ -239,13 +256,13 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
         const loaded = v ? (() => { try { return JSON.parse(v); } catch(e) { console.warn("MemoScreen: 本地数据损坏，已重置"); return []; } })() : [];
         setMemos(loaded);
         if (tripId) {
-          const has = loaded.some(m => m.category === 'packing' && m.tripId === tripId);
+          const has = loaded.some(m => m.category === 'packing' && String(m.tripId) === String(tripId));
           if (!has) {
             setCategory('packing');
             setTitle('');
-            setItems([{ id: Date.now(), text: '', checked: false }]);
+            setItems([{ id: Date.now(), text: '', checked: false, remind: false }]);
             setEditingMemo(null);
-            if (mounted) setTimeout(() => setShowTemplate(true), 300);
+            openTemplateLater();
           }
         }
       } catch (e) {
@@ -255,8 +272,12 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
       }
     };
     loadMemos();
-    return () => { mounted = false; };
-  }, []);
+
+    return () => {
+      mounted = false;
+      timers.forEach(clearTimeout);
+    };
+  }, [tripId, isPro]);
 
   const saveMemos = async (next) => {
     setMemos(next);
@@ -273,7 +294,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
   const openNew = (defaultCat = 'note') => {
     setEditingMemo(null);
     setTitle('');
-    setItems([{ id: Date.now(), text: '', checked: false }]);
+    setItems([{ id: Date.now(), text: '', checked: false, remind: false }]);
     setCategory(defaultCat);
     setShowAdd(true);
   };
@@ -312,15 +333,15 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
           : m
       ));
     } else {
-      await saveMemos([{
-        id: Date.now(),
-        title: title.trim() || '未命名清单',
-        items: validItems,
-        category,
-        tripId: tripId || null,
-        createdAt: timeStr,
-        updatedAt: timeStr,
-      }, ...memos]);
+      await saveMemos([
+        createMemo({
+          title,
+          items: validItems,
+          category,
+          tripId: tripId || null,
+        }),
+        ...memos,
+      ]);
     }
     setShowAdd(false);
   };
@@ -345,7 +366,15 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
     ));
   };
 
-  const addItem = () => setItems([...items, { id: Date.now(), text: '', checked: false }]);
+  const toggleReminder = async (memoId, itemId) => {
+    await saveMemos(memos.map(m =>
+      m.id === memoId
+        ? { ...m, items: m.items.map(i => i.id === itemId ? { ...i, remind: !i.remind } : i) }
+        : m
+    ));
+  };
+
+  const addItem = () => setItems([...items, { id: Date.now(), text: '', checked: false, remind: false }]);
   const updateItem = (id, text) => setItems(items.map(i => i.id === id ? { ...i, text } : i));
   const removeItem = (id) => { if (items.length > 1) setItems(items.filter(i => i.id !== id)); };
 
@@ -353,7 +382,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
     const tpl = SMART_PACKING[key];
     if (!tpl) return;
     const allItems = Object.entries(tpl.groups).flatMap(([groupName, list]) =>
-      list.map((text, i) => ({ id: Date.now() + Math.random() * 1000 + i, text, checked: false, groupKey: groupName }))
+      list.map((text, i) => ({ id: Date.now() + Math.random() * 1000 + i, text, checked: false, remind: false, groupKey: groupName }))
     );
     setItems(allItems);
     setTitle(key === '通用' ? '旅行打包清单' : `${key}旅行打包清单`);
@@ -364,7 +393,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
 
   const getCat    = (key) => CATEGORIES.find(c => c.key === key) || CATEGORIES[5];
   const packMemos = tripId
-    ? memos.filter(m => m.category === 'packing' && m.tripId === tripId)
+    ? memos.filter(m => m.category === 'packing' && String(m.tripId) === String(tripId))
     : memos.filter(m => m.category === 'packing');
   const otherMemos = filterCat === 'all'
     ? memos.filter(m => m.category !== 'packing')
@@ -421,6 +450,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                 <Text style={[s.simpleItemText, item.checked && { color: '#444', textDecorationLine: 'line-through' }]}>
                   {item.text}
                 </Text>
+                <Text
+                  onPress={(e) => { e?.stopPropagation?.(); toggleReminder(memo.id, item.id); }}
+                  style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>
+                  {item.remind ? '⏰ 稍后' : '稍后'}
+                </Text>
               </TouchableOpacity>
             ))
         }
@@ -475,6 +509,11 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
               {item.checked ? '✓' : '○'}
             </Text>
             <Text style={[s.itemText, item.checked && s.itemTextDone]}>{item.text}</Text>
+            <Text
+              onPress={(e) => { e?.stopPropagation?.(); toggleReminder(memo.id, item.id); }}
+              style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>
+              {item.remind ? '⏰ 稍后' : '稍后'}
+            </Text>
           </TouchableOpacity>
         ))}
         {total > 3 && <Text style={s.moreText}>还有 {total - 3} 项...</Text>}
@@ -621,6 +660,10 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
               onChangeText={setTitle}
             />
 
+            {category === 'packing' && (
+              <Text style={s.reminderHint}>点右侧「稍后」标记暂时不能打包的物品</Text>
+            )}
+
             {/* 编辑模式：打包清单用分组展示 */}
             {category === 'packing' && editingMemo ? (
               <ScrollView style={{ maxHeight: 320 }} nestedScrollEnabled>
@@ -629,6 +672,9 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                     memoId={editingMemo?.id} catColor="#4ECDC4"
                     onToggle={(_, itemId) => {
                       setItems(items.map(i => i.id === itemId ? { ...i, checked: !i.checked } : i));
+                    }}
+                    onReminder={(_, itemId) => {
+                      setItems(items.map(i => i.id === itemId ? { ...i, remind: !i.remind } : i));
                     }} />
                 ))}
                 {items.filter(i => !i.groupKey).map((item, idx) => (
@@ -637,6 +683,9 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                     <TextInput style={s.itemInput} placeholder={`自定义第 ${idx+1} 项...`}
                       placeholderTextColor="#444" value={item.text}
                       onChangeText={t => updateItem(item.id, t)} multiline />
+                    <TouchableOpacity onPress={() => setItems(items.map(i => i.id === item.id ? { ...i, remind: !i.remind } : i))}>
+                      <Text style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>{item.remind ? '⏰ 稍后' : '稍后'}</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeItem(item.id)}>
                       <Text style={{ color: '#555', fontSize: 18, padding: 4 }}>×</Text>
                     </TouchableOpacity>
@@ -654,6 +703,9 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                     <TextInput style={s.itemInput} placeholder={`第 ${idx+1} 项...`}
                       placeholderTextColor="#444" value={item.text}
                       onChangeText={t => updateItem(item.id, t)} multiline />
+                    <TouchableOpacity onPress={() => setItems(items.map(i => i.id === item.id ? { ...i, remind: !i.remind } : i))}>
+                      <Text style={{ color: item.remind ? '#FFB347' : '#555', fontSize: 12, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 1, borderColor: item.remind ? '#FFB347' : '#333', backgroundColor: item.remind ? '#FFB34718' : 'transparent', overflow: 'hidden' }}>{item.remind ? '⏰ 稍后' : '稍后'}</Text>
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => removeItem(item.id)}>
                       <Text style={{ color: '#555', fontSize: 18, padding: 4 }}>×</Text>
                     </TouchableOpacity>
@@ -698,15 +750,15 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                   onPress={()=>{ if(!isPro){ setShowTemplate(false); openPaywall&&openPaywall('AI智能清单'); return; } setShowAIGen(true); }}>
                   <Text style={{fontSize:28}}>✦</Text>
                   <View style={{flex:1}}>
-                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>AI 智能生成清单</Text>
-                    <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>输入目的地，AI为你定制专属清单</Text>
+                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>AI 补充建议</Text>
+                    <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>根据目的地补充特殊物品建议</Text>
                   </View>
                   {!isPro && <Text style={{color:'#A78BFA',fontSize:11,backgroundColor:'#A78BFA20',paddingHorizontal:8,paddingVertical:3,borderRadius:8}}>Pro</Text>}
                 </TouchableOpacity>
               ) : (
                 <View style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16}}>
                   <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>✦ AI 智能生成清单</Text>
+                    <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>✦ AI 补充建议</Text>
                     <TouchableOpacity onPress={()=>setShowAIGen(false)}><Text style={{color:'#555',fontSize:14}}>✕</Text></TouchableOpacity>
                   </View>
                   <TextInput
@@ -746,16 +798,14 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                         const text = await callClaude(prompt, 1500);
                         const clean = text.replace(/```json|```/g, '').trim();
                         const parsed = JSON.parse(clean);
-                        const newMemo = {
-                          id: Date.now(),
+                        const newMemo = createMemo({
                           category: 'packing',
                           title: parsed.title || `${aiDestination} AI清单`,
                           items: Object.entries(parsed.groups).flatMap(([group, items]) =>
-                            items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false }))
+                            items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
                           ),
                           tripId: tripId || null,
-                          createdAt: new Date().toISOString(),
-                        };
+                        });
                         const next = [...memos, newMemo];
                         await saveMemos(next);
                         setShowAIGen(false);
@@ -884,7 +934,8 @@ const s = StyleSheet.create({
   closeBtn:    { fontSize: 18, color: '#555' },
   catChip:     { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 16, backgroundColor: '#1A1A1A', borderWidth: 1, borderColor: '#2A2A2A' },
   catChipText: { fontSize: 13, color: '#666' },
-  titleInput:  { backgroundColor: '#1A1A1A', borderRadius: 12, padding: 14, color: '#F0EDE8', fontSize: 16, marginBottom: 14, borderWidth: 1, borderColor: '#2A2A2A' },
+  titleInput:  { backgroundColor: '#1A1A1A', borderRadius: 12, padding: 14, color: '#F0EDE8', fontSize: 16, marginBottom: 8, borderWidth: 1, borderColor: '#2A2A2A' },
+  reminderHint: { color: '#666', fontSize: 12, marginBottom: 14 },
   itemRow:     { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   itemBullet:  { color: '#4ECDC4', fontSize: 18, width: 16 },
   itemInput:   { flex: 1, backgroundColor: '#1A1A1A', borderRadius: 10, padding: 10, color: '#F0EDE8', fontSize: 14, borderWidth: 1, borderColor: '#2A2A2A' },

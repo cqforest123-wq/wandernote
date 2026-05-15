@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
+import { createPhoto, createVideo } from '../lib/models';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 8) / 3;
@@ -77,9 +78,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       selectionLimit: 20,
     });
     if (!result.canceled) {
-      const newPhotos = result.assets.map(a => ({
-        id: Date.now()+Math.random(), uri: a.uri
-      }));
+      const newPhotos = result.assets.map(a => createPhoto({ uri: a.uri }));
       updateDay(d=>({...d,photos:[...(d.photos||[]),...newPhotos]}));
     }
   };
@@ -90,7 +89,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
     const result = await ImagePicker.launchCameraAsync({quality:0.8});
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      updateDay(d=>({...d,photos:[...(d.photos||[]),{id:Date.now(),uri}]}));
+      updateDay(d=>({...d,photos:[...(d.photos||[]),createPhoto({ uri })]}));
     }
   };
 
@@ -114,7 +113,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       selectionLimit: 5,
     });
     if (!result.canceled) {
-      const newVideos = result.assets.map(a=>({id:Date.now()+Math.random(), uri:a.uri, duration:a.duration}));
+      const newVideos = result.assets.map(a => createVideo({ uri: a.uri, duration: a.duration }));
       updateDay(d=>({...d, videos:[...(d.videos||[]),...newVideos]}));
     }
   };
