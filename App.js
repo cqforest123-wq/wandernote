@@ -138,7 +138,8 @@ function MainApp({ session }) {
     });
   };
 
-  const openPaywall = (featureName) => {
+  const openPaywall = (featureName = null) => {
+    if (!ENABLE_PURCHASES) return;
     setPaywallFeature(featureName);
     setShowPaywall(true);
   };
@@ -192,7 +193,7 @@ function MainApp({ session }) {
           </TouchableOpacity>
         ))}
       </View>
-      <Modal visible={showPaywall} animationType="slide" presentationStyle="pageSheet">
+      <Modal visible={ENABLE_PURCHASES && showPaywall} animationType="slide" presentationStyle="pageSheet">
         <PaywallScreen
           featureName={paywallFeature}
           onSuccess={() => { setIsPro(true); setShowPaywall(false); }}
