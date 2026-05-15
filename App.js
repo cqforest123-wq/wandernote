@@ -9,6 +9,7 @@ import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
 import { initSync, syncTripsUp } from './lib/sync';
 import { initPurchases, checkProStatus } from './lib/purchases';
+import { ENABLE_PURCHASES, BETA_UNLOCK_PRO } from './lib/featureFlags';
 import { supabase } from './lib/supabase';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -38,7 +39,7 @@ function MainApp({ session }) {
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const [isPro, setIsPro] = useState(false);
+  const [isPro, setIsPro] = useState(BETA_UNLOCK_PRO);
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState(null);
 
@@ -52,6 +53,16 @@ function MainApp({ session }) {
   }, [i18n]);
 
   useEffect(() => {
+    if (BETA_UNLOCK_PRO) {
+      setIsPro(true);
+      return;
+    }
+
+    if (!ENABLE_PURCHASES) {
+      setIsPro(false);
+      return;
+    }
+
     if (!session?.user?.id) return;
     initPurchases(session.user.id)
       .then(() => checkProStatus())
