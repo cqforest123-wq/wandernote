@@ -394,11 +394,11 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     const coords = getCityCoords(cityName);
     if (!coords) { setForecast(null); return; }
     setForecastLoading(true);
-    fetchWeatherForecast(coords.lat, coords.lng)
+    fetchWeatherForecast(coords.lat, coords.lng, 'auto', i18n.language)
       .then(f => setForecast(f))
       .catch(() => setForecast(null))
       .finally(() => setForecastLoading(false));
-  }, [customCity, selectedCities]);
+  }, [customCity, selectedCities, i18n.language]);
 
   const resetForm = () => {
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
