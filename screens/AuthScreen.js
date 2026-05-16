@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 
@@ -44,7 +44,12 @@ export default function AuthScreen({ onAuth }) {
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
-      <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.inner}>
+      <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={{flex:1}}>
+        <ScrollView
+          contentContainerStyle={s.inner}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
 
         <View style={s.logoArea}>
           <View style={s.logoIcon}>
@@ -109,6 +114,7 @@ export default function AuthScreen({ onAuth }) {
         </View>
 
         <Text style={s.footer}>{t('auth_footer')}</Text>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -116,7 +122,7 @@ export default function AuthScreen({ onAuth }) {
 
 const s = StyleSheet.create({
   container:{flex:1,backgroundColor:'#0D0D0D'},
-  inner:{flex:1,padding:32,justifyContent:'space-between'},
+  inner:{flexGrow:1,padding:32,justifyContent:'space-between'},
   logoArea:{alignItems:'center',paddingTop:20},
   logoIcon:{width:100,height:100,borderRadius:24,backgroundColor:'#0D1B2A',borderWidth:2,borderColor:'#FF8C5A40',alignItems:'center',justifyContent:'center',marginBottom:4},
   logoTitle:{fontSize:32,color:'#F0EDE8',fontWeight:'300',letterSpacing:2,marginTop:14},

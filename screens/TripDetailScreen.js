@@ -45,18 +45,18 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         setDistance(formatDistance(km));
       } catch (e) {}
     })();
-  }, [trip?.coords, trip?.city]);
+  }, [trip?.coords, trip?.city, i18n.language]);
 
   useEffect(() => {
     const dest = trip?.coords || getCityCoords(trip?.city);
     if (!dest) return;
-    fetchCurrentWeather(dest.lat, dest.lng).then(w => {
+    fetchCurrentWeather(dest.lat, dest.lng, 'auto', i18n.language).then(w => {
       if (w) setWeather(w);
     });
-    fetchWeatherForecast(dest.lat, dest.lng).then(f => {
+    fetchWeatherForecast(dest.lat, dest.lng, 'auto', i18n.language).then(f => {
       if (f) setForecast(f);
     });
-  }, [trip?.coords, trip?.city]);
+  }, [trip?.coords, trip?.city, i18n.language]);
 
   if (!trip) return null;
 
@@ -196,7 +196,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
               </View>
               <Text style={s.weatherToggle}>{useFahrenheit ? '°F' : '°C'}</Text>
             </View>
-            {getClothingAdvice(weather.temp, weather.temp - 5, weather.code).map((item, i) => (
+            {getClothingAdvice(weather.temp, weather.temp - 5, weather.code, i18n.language).map((item, i) => (
               <View key={i} style={s.clothingRow}>
                 <Text style={s.clothingIcon}>{item.icon}</Text>
                 <Text style={s.clothingText}>{item.text}</Text>
