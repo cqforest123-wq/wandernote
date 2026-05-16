@@ -8,11 +8,11 @@ Working name:
 
 Trademark / naming risk note:
 
-旅迹 is currently only a working name. Public web checks found existing same-name game / mini-game usage and a similar travel-note App Store name pattern. Before public domestic release, run formal trademark and app-market checks.
+旅迹 is currently only a working name. Before public domestic release, run formal trademark, app-market, mini-program, and similar-name checks. Pay special attention to travel, map, itinerary, AI assistant, and content-generation products.
 
 Formal name candidates:
 - 旅迹
-- 旅迹记
+- 旅迹本
 - 行迹
 - 旅途记
 
@@ -22,7 +22,7 @@ AI旅行记录与行程助手
 
 Slogan:
 
-把每一次远行，变成可以回看的旅迹忆。
+把每一次远行，变成可以回看的旅行足迹。
 
 Naming rule:
 - Do not use WanderNote as the primary domestic user-facing name.
