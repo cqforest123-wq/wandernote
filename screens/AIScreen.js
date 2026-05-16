@@ -40,6 +40,7 @@ function getAiOutputLanguage(lang) {
 }
 
 import { callClaude } from '../lib/claude';
+import { requestDomesticAiItineraryAccess } from '../lib/domesticAiAccess';
 
 export default function AIScreen({ trips, isPro, openPaywall }) {
   const { t, i18n } = useTranslation();
@@ -125,6 +126,17 @@ Requirements:
     if (mode === 'itinerary') {
       // if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; } // TEST: 暂时跳过付费验证
       if (!itineraryDest.trim()) { Alert.alert(t('ai_alert_title'), t('ai_enter_destination')); return; }
+
+      const access = await requestDomesticAiItineraryAccess();
+      if (!access.allowed) {
+        Alert.alert('今日次数已用完', '今日 AI 路书生成次数已用完，请明天再试。');
+        return;
+      }
+
+      if (access.source === 'rewarded_ad') {
+        Alert.alert('已通过激励广告解锁', '模拟广告已完成，本次 AI 路书生成已解锁。');
+      }
+
       setGenerating(true);
       setResult('');
       try {
