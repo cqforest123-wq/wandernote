@@ -209,12 +209,20 @@ Strict requirements:
           {MODES.map(m=>(
             <TouchableOpacity key={m.key} style={[s.modeCard, mode===m.key&&s.modeCardActive]}
               onPress={()=>{
-                if (m.key !== 'itinerary' && trips.length === 0) {
-                  Alert.alert(t('ai_notice'), t('ai_create_trip_first'));
+                if (m.key !== 'itinerary') {
+                  if (trips.length === 0) {
+                    Alert.alert(t('ai_notice'), t('ai_create_trip_first'));
+                  } else if (!selectedTrip) {
+                    Alert.alert(t('ai_notice'), t('ai_select_trip_first'));
+                  } else if (m.key !== 'summary' && !selectedDay) {
+                    Alert.alert(t('ai_notice'), t('ai_select_day_first'));
+                  }
                 }
                 setMode(m.key);
                 setResult('');
-                setSelectedDay(null);
+                if (m.key === 'summary' || m.key === 'itinerary') {
+                  setSelectedDay(null);
+                }
               }}>
               <Text style={[s.modeLabel, mode===m.key&&{color:'#D4AF37'}]}>{m.label}</Text>
               <Text style={s.modeDesc}>{m.desc}</Text>
