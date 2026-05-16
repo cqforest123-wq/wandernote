@@ -6,6 +6,15 @@ Working name:
 
 山海记
 
+Trademark / naming risk note:
+
+山海记 is currently only a working name. Public web checks found existing same-name game / mini-game usage and a similar travel-note App Store name pattern. Before public domestic release, run formal trademark and app-market checks.
+
+Formal name candidates:
+- 山海记
+- 山海旅记
+- 山海行记
+
 Subtitle:
 
 AI旅行记录与行程助手
