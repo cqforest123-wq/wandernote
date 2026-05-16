@@ -1,5 +1,32 @@
 # WanderNote Domestic CN Ads MVP Plan
 
+## 0. Domestic Product Name
+
+Working name:
+
+山海记
+
+Subtitle:
+
+AI旅行记录与行程助手
+
+Slogan:
+
+把每一次远行，变成可以回看的山海记忆。
+
+Naming rule:
+- Do not use WanderNote as the primary domestic user-facing name.
+- Do not use platform-specific names such as Xiaohongshu / WeChat in the app name.
+- Do not lock the product name to AI only.
+- Keep the name broad enough for travel records, AI itineraries, maps, memories, and future Trip Capsule features.
+
+Future naming system:
+- Trip Capsule -> 山海胶囊
+- Travel Footprint -> 山海足迹
+- AI Itinerary -> 山海路书
+- Travel Memory -> 山海回忆
+- Packing Checklist -> 行囊清单
+
 ## 1. Product Positioning
 
 Domestic CN version is a China-focused travel memory and AI travel content app.
