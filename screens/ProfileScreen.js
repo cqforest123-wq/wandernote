@@ -39,13 +39,42 @@ const ENABLE_YEAR_REPORT = false;
   const [avatarUri, setAvatarUri] = useState(null);
 
   React.useEffect(() => {
-    AsyncStorage.getItem('@wn_nickname').then(v => { if(v) setNickname(v); });
-    AsyncStorage.getItem('@wn_avatar').then(v => { if(v) setAvatarUri(v); });
-  }, []);
+    const loadProfile = async () => {
+      try {
+        const cloudNick = session?.user?.user_metadata?.nickname;
+        if (cloudNick) {
+          setNickname(cloudNick);
+          await AsyncStorage.setItem('@wn_nickname', cloudNick);
+        } else {
+          const localNick = await AsyncStorage.getItem('@wn_nickname');
+          if (localNick) setNickname(localNick);
+        }
+
+        const localAvatar = await AsyncStorage.getItem('@wn_avatar');
+        if (localAvatar) setAvatarUri(localAvatar);
+      } catch (e) {}
+    };
+
+    loadProfile();
+  }, [session?.user?.id, session?.user?.user_metadata?.nickname]);
 
   const saveProfile = async (newNick, newAvatar) => {
-    if(newNick !== undefined) { setNickname(newNick); await AsyncStorage.setItem('@wn_nickname', newNick); }
-    if(newAvatar !== undefined) { setAvatarUri(newAvatar); await AsyncStorage.setItem('@wn_avatar', newAvatar); }
+    if (newNick !== undefined) {
+      const cleanNick = String(newNick || '').trim();
+      setNickname(cleanNick);
+      await AsyncStorage.setItem('@wn_nickname', cleanNick);
+
+      try {
+        await supabase.auth.updateUser({
+          data: { nickname: cleanNick },
+        });
+      } catch (e) {}
+    }
+
+    if (newAvatar !== undefined) {
+      setAvatarUri(newAvatar);
+      await AsyncStorage.setItem('@wn_avatar', newAvatar);
+    }
   };
 
   const pickAvatar = async () => {
