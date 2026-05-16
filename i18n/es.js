@@ -29,7 +29,7 @@ export default {
   ai_select_trip: 'Seleccionar viaje', ai_select_day: 'Seleccionar día',
   ai_no_trips: 'No hay viajes registrados', ai_no_days: 'Este viaje no tiene registros',
   ai_generate: '✦ Generar', ai_generating: 'IA creando...', ai_result: '✦ Resultado',
-  ai_share: 'Compartir →', ai_regenerate: 'Regenerar',
+  ai_share: 'Share', ai_regenerate: 'Regenerar',
   ai_packing: '🧳 Lista IA', ai_packing_desc: 'Generar lista adaptada al viaje',
   ai_itinerary: '🗺 Itinerario IA', ai_itinerary_desc: 'Introduce destino, la IA planifica',
   map_title: '🗺 Huellas de viaje', map_subtitle: '%d lugares visitados', map_satellite: '🛰 Satélite',
@@ -357,4 +357,9 @@ export default {
   ai_select_trip_first: 'Please select a trip first.',
   ai_select_day_first: 'Please select a day first.',
   ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
+  copy: 'Copy',
+  ai_copied: 'Copied to clipboard.',
+  ai_result: 'Result',
+  ai_generate_action: 'Generate',
+  ai_regenerate: 'Regenerate',
 };

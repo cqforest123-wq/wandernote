@@ -29,7 +29,7 @@ export default {
   ai_select_trip: 'เลือกทริป', ai_select_day: 'เลือกวัน',
   ai_no_trips: 'ยังไม่มีบันทึกการเดินทาง', ai_no_days: 'ทริปนี้ยังไม่มีบันทึก',
   ai_generate: '✦ เริ่มสร้าง', ai_generating: 'AI กำลังสร้าง...', ai_result: '✦ ผลลัพธ์',
-  ai_share: 'แชร์ →', ai_regenerate: 'สร้างใหม่',
+  ai_share: 'Share', ai_regenerate: 'สร้างใหม่',
   ai_packing: '🧳 รายการสัมภาระ AI', ai_packing_desc: 'สร้างรายการสัมภาระตามทริป',
   ai_itinerary: '🗺 แผนการเดินทาง AI', ai_itinerary_desc: 'ใส่จุดหมาย AI วางแผนให้',
   map_title: '🗺 รอยเท้าการเดินทาง', map_subtitle: 'เยี่ยมชม %d แห่ง', map_satellite: '🛰 ดาวเทียม',
@@ -357,4 +357,9 @@ export default {
   ai_select_trip_first: 'Please select a trip first.',
   ai_select_day_first: 'Please select a day first.',
   ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
+  copy: 'Copy',
+  ai_copied: 'Copied to clipboard.',
+  ai_result: 'Result',
+  ai_generate_action: 'Generate',
+  ai_regenerate: 'Regenerate',
 };

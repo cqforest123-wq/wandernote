@@ -28,7 +28,7 @@ export default {
   ai_summary_desc: '전체 여행의 하이라이트', ai_select_trip: '여행 선택', ai_select_day: '날 선택',
   ai_no_trips: '여행 기록이 없습니다', ai_no_days: '이 여행에는 아직 기록이 없습니다',
   ai_generate: '✦ 생성 시작', ai_generating: 'AI 작성 중...', ai_result: '✦ 생성 결과',
-  ai_share: '공유 →', ai_regenerate: '다시 생성',
+  ai_share: 'Share', ai_regenerate: '다시 생성',
   ai_packing: '🧳 AI 짐 목록', ai_packing_desc: '여행에 맞는 짐 목록 생성',
   ai_itinerary: '🗺 AI 여행 계획', ai_itinerary_desc: '목적지 입력, AI가 여행 계획 수립',
   map_title: '🗺 여행 발자국', map_subtitle: '%d 곳 방문', map_satellite: '🛰 위성',
@@ -356,4 +356,9 @@ export default {
   ai_select_trip_first: 'Please select a trip first.',
   ai_select_day_first: 'Please select a day first.',
   ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
+  copy: 'Copy',
+  ai_copied: 'Copied to clipboard.',
+  ai_result: 'Result',
+  ai_generate_action: 'Generate',
+  ai_regenerate: 'Regenerate',
 };

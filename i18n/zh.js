@@ -89,8 +89,8 @@ export default {
   ai_no_days: '这趟旅程还没有记录',
   ai_generate: '✦ 开始生成',
   ai_generating: 'AI 正在创作中...',
-  ai_result: '✦ 生成结果',
-  ai_share: '分享 →',
+  ai_result: '结果',
+  ai_share: '分享',
   ai_regenerate: '重新生成',
 
   // 足迹地图
@@ -471,4 +471,7 @@ export default {
   ai_select_trip_first: '请先选择一个旅程',
   ai_select_day_first: '请先选择一天记录',
   ai_create_trip_first: '请先创建旅程并添加记录后再使用这个 AI 功能',
+  copy: '复制',
+  ai_copied: '已复制到剪贴板',
+  ai_generate_action: '生成',
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share, Keyboard } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import * as Clipboard from 'expo-clipboard';
 
 const ITINERARY_STYLES = [
   { key: 'balanced', labelKey: 'ai_style_balanced' },
@@ -162,44 +163,15 @@ Strict requirements:
       }
       return;
     }
-    if (mode === 'packing') {
-      if (!selectedTrip) { Alert.alert(t('ai_notice'), t('ai_select_trip_first')); return; }
-      setGenerating(true);
-      setResult('');
-      try {
-        const text = await callClaude(buildPrompt(), 1200);
-        // 解析 JSON 并存为打包清单
-        const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
-        const parsed = parseAiJsonObject(text);
-        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-        const STORAGE_KEY = '@wandernote_memos';
-        const existing = await AsyncStorage.getItem(STORAGE_KEY);
-        const memos = existing ? JSON.parse(existing) : [];
-        const now = new Date();
-        const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-        const allItems = Object.entries(parsed.groups).flatMap(([groupName, list]) =>
-          list.map((text, i) => ({ id: Date.now() + Math.random() * 1000 + i, text, checked: false, groupKey: groupName }))
-        );
-        const newMemo = {
-          id: Date.now(),
-          title: parsed.title || `${selectedTrip.city} Packing List`,
-          items: allItems,
-          category: 'packing',
-          tripId: selectedTrip.id,
-          createdAt: timeStr,
-          updatedAt: timeStr,
-        };
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify([newMemo, ...memos]));
-        setResult('✅ Packing list generated and saved!\n\nGo to the Checklist tab to view your AI-generated packing list for ' + selectedTrip.city + '.');
-      } catch (e) {
-        Alert.alert('Generation Failed', e.message || 'Please check your network and try again');
-      } finally {
-        setGenerating(false);
-      }
+    if (!selectedTrip) {
+      Alert.alert(t('ai_notice'), t('ai_select_trip_first'));
       return;
     }
-    if (mode !== 'summary' && !selectedDay) { Alert.alert('Notice','Please select a day first'); return; }
-    if (!selectedTrip) { Alert.alert(t('ai_notice'), t('ai_select_trip_first')); return; }
+
+    if (mode !== 'summary' && !selectedDay) {
+      Alert.alert(t('ai_notice'), t('ai_select_day_first'));
+      return;
+    }
     setGenerating(true);
     setResult('');
     try {
@@ -215,6 +187,12 @@ Strict requirements:
   const shareResult = async () => {
     if (!result) return;
     await Share.share({ message: result });
+  };
+
+  const copyResult = async () => {
+    if (!result) return;
+    await Clipboard.setStringAsync(result);
+    Alert.alert(t('ai_notice'), t('ai_copied'));
   };
 
   return (
@@ -334,7 +312,7 @@ Strict requirements:
                 <Text style={s.generateBtnText}>{t('ai_generating')}</Text>
               </View>
             ) : (
-              <Text style={s.generateBtnText}>✦ Generate</Text>
+              <Text style={s.generateBtnText}>✦ {t('ai_generate_action')}</Text>
             )}
           </TouchableOpacity>
         )}
@@ -342,14 +320,19 @@ Strict requirements:
         {result !== '' && (
           <View style={s.resultCard}>
             <View style={s.resultHeader}>
-              <Text style={s.resultTitle}>✦ Result</Text>
-              <TouchableOpacity style={s.shareBtn} onPress={shareResult}>
-                <Text style={s.shareBtnText}>Share →</Text>
-              </TouchableOpacity>
+              <Text style={s.resultTitle}>✦ {t('ai_result')}</Text>
+              <View style={{flexDirection:'row',gap:8}}>
+                <TouchableOpacity style={s.shareBtn} onPress={copyResult}>
+                  <Text style={s.shareBtnText}>{t('copy')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.shareBtn} onPress={shareResult}>
+                  <Text style={s.shareBtnText}>{t('ai_share')} →</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             <Text style={s.resultText}>{result}</Text>
             <TouchableOpacity style={s.regenerateBtn} onPress={generate}>
-              <Text style={s.regenerateBtnText}>Regenerate</Text>
+              <Text style={s.regenerateBtnText}>{t('ai_regenerate')}</Text>
             </TouchableOpacity>
           </View>
         )}

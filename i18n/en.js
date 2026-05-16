@@ -89,8 +89,8 @@ export default {
   ai_no_days: 'No records for this trip',
   ai_generate: '✦ Generate',
   ai_generating: 'AI is writing...',
-  ai_result: '✦ Result',
-  ai_share: 'Share →',
+  ai_result: 'Result',
+  ai_share: 'Share',
   ai_regenerate: 'Regenerate',
 
   // Map
@@ -471,4 +471,7 @@ export default {
   ai_select_trip_first: 'Please select a trip first.',
   ai_select_day_first: 'Please select a day first.',
   ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
+  copy: 'Copy',
+  ai_copied: 'Copied to clipboard.',
+  ai_generate_action: 'Generate',
 };

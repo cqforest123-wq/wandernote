@@ -28,7 +28,7 @@ export default {
   ai_summary_desc: '旅全体のハイライト', ai_select_trip: '旅を選択', ai_select_day: '日を選択',
   ai_no_trips: '旅の記録がありません', ai_no_days: 'この旅にはまだ記録がありません',
   ai_generate: '✦ 生成開始', ai_generating: 'AI作成中...', ai_result: '✦ 生成結果',
-  ai_share: 'シェア →', ai_regenerate: '再生成',
+  ai_share: 'Share', ai_regenerate: '再生成',
   ai_packing: '🧳 AIパッキングリスト', ai_packing_desc: '旅に合わせたパッキングリストを生成',
   ai_itinerary: '🗺 AI旅程生成', ai_itinerary_desc: '目的地を入力、AIが旅程を計画',
   map_title: '🗺 旅の足跡', map_subtitle: '%d か所を訪問', map_satellite: '🛰 衛星',
@@ -356,4 +356,9 @@ export default {
   ai_select_trip_first: 'Please select a trip first.',
   ai_select_day_first: 'Please select a day first.',
   ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
+  copy: 'Copy',
+  ai_copied: 'Copied to clipboard.',
+  ai_result: 'Result',
+  ai_generate_action: 'Generate',
+  ai_regenerate: 'Regenerate',
 };
