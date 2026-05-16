@@ -4,16 +4,17 @@
 
 Working name:
 
-山海记
+旅迹
 
 Trademark / naming risk note:
 
-山海记 is currently only a working name. Public web checks found existing same-name game / mini-game usage and a similar travel-note App Store name pattern. Before public domestic release, run formal trademark and app-market checks.
+旅迹 is currently only a working name. Public web checks found existing same-name game / mini-game usage and a similar travel-note App Store name pattern. Before public domestic release, run formal trademark and app-market checks.
 
 Formal name candidates:
-- 山海记
-- 山海旅记
-- 山海行记
+- 旅迹
+- 旅迹记
+- 行迹
+- 旅途记
 
 Subtitle:
 
@@ -21,7 +22,7 @@ AI旅行记录与行程助手
 
 Slogan:
 
-把每一次远行，变成可以回看的山海记忆。
+把每一次远行，变成可以回看的旅迹忆。
 
 Naming rule:
 - Do not use WanderNote as the primary domestic user-facing name.
@@ -30,10 +31,10 @@ Naming rule:
 - Keep the name broad enough for travel records, AI itineraries, maps, memories, and future Trip Capsule features.
 
 Future naming system:
-- Trip Capsule -> 山海胶囊
-- Travel Footprint -> 山海足迹
-- AI Itinerary -> 山海路书
-- Travel Memory -> 山海回忆
+- Trip Capsule -> 旅迹胶囊
+- Travel Footprint -> 旅行足迹
+- AI Itinerary -> AI路书
+- Travel Memory -> 旅途回忆
 - Packing Checklist -> 行囊清单
 
 ## 1. Product Positioning
