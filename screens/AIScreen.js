@@ -151,7 +151,11 @@ Strict requirements:
 4. Keep each day concise: attractions + time + transport.
 5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
 6. Keep each field short and ensure valid complete JSON.`;
-        const text = await callClaude(prompt, 8000, { responseMimeType: 'application/json' });
+        const text = await callClaude(prompt, 8000, {
+          responseMimeType: 'application/json',
+          region: 'cn',
+          task: 'itinerary',
+        });
         const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
         const parsed = parseAiJsonObject(text);
         // 格式化展示
