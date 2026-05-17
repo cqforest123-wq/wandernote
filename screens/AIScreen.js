@@ -42,6 +42,7 @@ function getAiOutputLanguage(lang) {
 import { callClaude } from '../lib/claude';
 import { requestDomesticAiItineraryAccess } from '../lib/domesticAiAccess';
 import { buildDomesticAiPrompt } from '../lib/domesticAiPrompts';
+import { getDomesticAiMode } from '../lib/domesticAiModes';
 
 export default function AIScreen({ trips, isPro, openPaywall }) {
   const { t, i18n } = useTranslation();
@@ -60,7 +61,7 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
     { key:'wechat_moments', label:'朋友圈文案', desc:'自然、松弛、有画面感的旅行朋友圈文案。' },
     { key:'xiaohongshu_note', label:'小红书笔记', desc:'偏攻略、体验和种草风格的旅行笔记。' },
-    { key:'douyin_script', label:'抖音脚本', desc:'短视频开头钩子、镜头建议、旁白和标题。' },
+    { key:'douyin_script', label:'抖音发布包', desc:'生成钩子、镜头、旁白、字幕、封面和发布标题。' },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
     { key:'itinerary', label:t('ai_itinerary'), desc:t('ai_itinerary_desc') },
   ];
@@ -221,7 +222,12 @@ Strict requirements:
     setGenerating(true);
     setResult('');
     try {
-      const text = await callClaude(buildPrompt(), 1200);
+      const domesticMode = getDomesticAiMode(mode);
+      const maxTokens = domesticMode?.maxTokens || 1200;
+      const text = await callClaude(buildPrompt(), maxTokens, {
+        region: 'cn',
+        task: domesticMode?.task || mode,
+      });
       setResult(text);
     } catch (e) {
       Alert.alert('Generation Failed', e.message || 'Please check your network and try again');
