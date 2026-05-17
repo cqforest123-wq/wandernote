@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput,
   TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert
@@ -218,6 +218,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
   const [category,     setCategory]     = useState('note');
   const [showTemplate, setShowTemplate] = useState(false);
   const [showAIGen, setShowAIGen] = useState(false);
+  const aiPackingGeneratingRef = useRef(false);
   const [aiDestination, setAIDestination] = useState('');
   const [aiDays, setAIDays] = useState('7');
   const [aiGenerating, setAIGenerating] = useState(false);
@@ -793,7 +794,10 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                     style={{backgroundColor: aiGenerating?'#555':'#A78BFA',borderRadius:12,padding:14,alignItems:'center'}}
                     disabled={aiGenerating || !aiDestination.trim()}
                     onPress={async()=>{
+                      if (aiPackingGeneratingRef.current) return;
                       if (!aiDestination.trim()) return;
+
+                      aiPackingGeneratingRef.current = true;
                       setAIGenerating(true);
                       try {
                         const { callClaude } = require('../lib/claude');
@@ -823,6 +827,7 @@ Requirements:
                       } catch(e) {
                         Alert.alert(t('memo_ai_failed'), e.message || t('profile_try_later'));
                       } finally {
+                        aiPackingGeneratingRef.current = false;
                         setAIGenerating(false);
                       }
                     }}>
