@@ -81,6 +81,68 @@ async function callGemini({
   })
 }
 
+
+async function callDeepSeek({
+  prompt,
+  maxTokens,
+  responseMimeType,
+}: {
+  prompt: string
+  maxTokens?: number
+  responseMimeType?: string
+}) {
+  const apiKey = Deno.env.get('DEEPSEEK_API_KEY') ?? ''
+  const model = Deno.env.get('DEEPSEEK_MODEL') || 'deepseek-v4-flash'
+
+  if (!apiKey) {
+    return jsonResponse({ error: 'DeepSeek API key is not configured' }, 500)
+  }
+
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: prompt,
+        },
+      ],
+      max_tokens: clampMaxTokens(maxTokens),
+      temperature: 0.2,
+      thinking: {
+        type: 'disabled',
+      },
+      ...(responseMimeType === 'application/json'
+        ? { response_format: { type: 'json_object' } }
+        : {}),
+    }),
+  })
+
+  const data = await res.json().catch(() => ({}))
+
+  if (!res.ok) {
+    return jsonResponse(
+      { error: data.error?.message || 'DeepSeek request failed' },
+      res.status
+    )
+  }
+
+  const text = data.choices?.[0]?.message?.content ?? ''
+
+  if (!text) {
+    return jsonResponse({ error: 'Empty DeepSeek response' }, 502)
+  }
+
+  return jsonResponse({
+    content: [{ type: 'text', text }],
+  })
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -110,6 +172,14 @@ serve(async (req) => {
     // - doubao
     if (provider === 'gemini') {
       return await callGemini({
+        prompt,
+        maxTokens,
+        responseMimeType,
+      })
+    }
+
+    if (provider === 'deepseek') {
+      return await callDeepSeek({
         prompt,
         maxTokens,
         responseMimeType,
