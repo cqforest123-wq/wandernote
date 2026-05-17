@@ -41,6 +41,7 @@ function getAiOutputLanguage(lang) {
 
 import { callClaude } from '../lib/claude';
 import { requestDomesticAiItineraryAccess } from '../lib/domesticAiAccess';
+import { buildDomesticAiPrompt } from '../lib/domesticAiPrompts';
 
 export default function AIScreen({ trips, isPro, openPaywall }) {
   const { t, i18n } = useTranslation();
@@ -58,6 +59,7 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
     { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
+    { key:'wechat_moments', label:'朋友圈文案', desc:'自然、松弛、有画面感的旅行朋友圈文案。' },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
     { key:'itinerary', label:t('ai_itinerary'), desc:t('ai_itinerary_desc') },
   ];
@@ -82,6 +84,15 @@ Requirements:
 - Structure: opening → trip highlights → reflective ending.
 - Include vivid details and a sense of place.
 - Avoid overpromising facts that are not in the record.`;
+    }
+
+    if (mode === 'wechat_moments') {
+      return buildDomesticAiPrompt({
+        modeKey: 'wechat_moments',
+        trip: selectedTrip,
+        day: selectedDay,
+        outputLanguage: aiOutputLanguage,
+      });
     }
 
     if (mode === 'social') {
