@@ -61,6 +61,7 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
     { key:'social', label:t('ai_social'), desc:t('ai_social_desc') },
     { key:'wechat_moments', label:'朋友圈文案', desc:'自然、松弛、有画面感的旅行朋友圈文案。' },
     { key:'xiaohongshu_note', label:'小红书笔记', desc:'偏攻略、体验和种草风格的旅行笔记。' },
+    { key:'douyin_script', label:'抖音脚本', desc:'短视频开头钩子、镜头建议、旁白和标题。' },
     { key:'summary', label:t('ai_summary'), desc:t('ai_summary_desc') },
     { key:'itinerary', label:t('ai_itinerary'), desc:t('ai_itinerary_desc') },
   ];
@@ -99,6 +100,15 @@ Requirements:
     if (mode === 'xiaohongshu_note') {
       return buildDomesticAiPrompt({
         modeKey: 'xiaohongshu_note',
+        trip: selectedTrip,
+        day: selectedDay,
+        outputLanguage: aiOutputLanguage,
+      });
+    }
+
+    if (mode === 'douyin_script') {
+      return buildDomesticAiPrompt({
+        modeKey: 'douyin_script',
         trip: selectedTrip,
         day: selectedDay,
         outputLanguage: aiOutputLanguage,
