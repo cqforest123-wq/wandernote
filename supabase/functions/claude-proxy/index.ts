@@ -6,6 +6,12 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 }
 
+type ProxyImage = {
+  mimeType?: string
+  mime_type?: string
+  data?: string
+}
+
 function jsonResponse(body: unknown, status = 200) {
   return new Response(
     JSON.stringify(body),
@@ -27,14 +33,34 @@ function pickProvider(region?: string) {
   return Deno.env.get('AI_PROVIDER_GLOBAL') || 'gemini'
 }
 
+function normalizeImages(images: unknown): { mimeType: string; data: string }[] {
+  if (!Array.isArray(images)) return []
+
+  return images
+    .slice(0, 6)
+    .map((item) => {
+      const image = item as ProxyImage
+      const mimeType = image.mimeType || image.mime_type || 'image/jpeg'
+      const data = String(image.data || '').trim()
+
+      return {
+        mimeType,
+        data,
+      }
+    })
+    .filter((image) => image.data && image.mimeType.startsWith('image/'))
+}
+
 async function callGemini({
   prompt,
   maxTokens,
   responseMimeType,
+  images,
 }: {
   prompt: string
   maxTokens?: number
   responseMimeType?: string
+  images?: { mimeType: string; data: string }[]
 }) {
   const apiKey = Deno.env.get('GEMINI_API_KEY') ?? ''
 
@@ -42,13 +68,23 @@ async function callGemini({
     return jsonResponse({ error: 'AI service is not configured' }, 500)
   }
 
+  const parts = [
+    { text: prompt },
+    ...((images || []).map((image) => ({
+      inline_data: {
+        mime_type: image.mimeType,
+        data: image.data,
+      },
+    }))),
+  ]
+
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts }],
         generationConfig: {
           maxOutputTokens: clampMaxTokens(maxTokens),
           temperature: 0.2,
@@ -80,7 +116,6 @@ async function callGemini({
     content: [{ type: 'text', text }],
   })
 }
-
 
 async function callDeepSeek({
   prompt,
@@ -155,26 +190,34 @@ serve(async (req) => {
       responseMimeType,
       region,
       task,
+      images,
     } = await req.json()
 
     if (!prompt || !String(prompt).trim()) {
       return jsonResponse({ error: 'Missing prompt' }, 400)
     }
 
+    const normalizedImages = normalizeImages(images)
     const provider = pickProvider(region)
 
-    // Router scaffold.
-    // Current supported provider remains Gemini.
-    // Future domestic providers can be added here:
-    // - deepseek
-    // - qwen
-    // - zhipu
-    // - doubao
+    if (normalizedImages.length > 0 && provider !== 'gemini') {
+      return jsonResponse(
+        {
+          error: 'Image input currently requires Gemini provider',
+          provider,
+          region: region || 'global',
+          task: task || 'unknown',
+        },
+        400
+      )
+    }
+
     if (provider === 'gemini') {
       return await callGemini({
         prompt,
         maxTokens,
         responseMimeType,
+        images: normalizedImages,
       })
     }
 
