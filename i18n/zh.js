@@ -94,10 +94,10 @@ export default {
   ai_regenerate: '重新生成',
 
   // 足迹地图
-  map_title: '🗺 旅行足迹',
+  map_title: '旅行足迹',
   map_subtitle: '足迹遍布 %d 个地方',
-  map_satellite: '🛰 卫星',
-  map_standard: '🗺 地图',
+  map_satellite: '卫星',
+  map_standard: '地图',
   map_empty: '还没有可显示的旅程',
   map_empty_hint: '添加旅程后这里会显示你的足迹',
 

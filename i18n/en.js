@@ -94,10 +94,10 @@ export default {
   ai_regenerate: 'Regenerate',
 
   // Map
-  map_title: '🗺 Travel Map',
+  map_title: 'Travel Map',
   map_subtitle: 'Visited %d places',
-  map_satellite: '🛰 Satellite',
-  map_standard: '🗺 Map',
+  map_satellite: 'Satellite',
+  map_standard: 'Map',
   map_empty: 'No trips to show yet',
   map_empty_hint: 'Your footprints will appear here',
 

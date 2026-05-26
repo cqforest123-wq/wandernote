@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
+import { getFallbackCityCoords } from '../lib/cityFallbacks';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 const CONTINENTS = [
@@ -334,17 +335,44 @@ const ZH_TO_EN = {
 };
 
 async function geocodeCity(cityName, countryName) {
-  // 先用中文搜
-  const result = await nominatimSearch(`${cityName} ${countryName}`);
-  if (result) return result;
-  // 中文失败，尝试英文映射
-  const enName = ZH_TO_EN[cityName];
-  if (enName) {
-    const result2 = await nominatimSearch(enName);
-    if (result2) return result2;
+  const fallback = getFallbackCityCoords(cityName, countryName);
+
+  const city = String(cityName || '').trim();
+  const country = String(countryName || '').trim();
+
+  const queries = [
+    `${city} ${country}`.trim(),
+    `${city}, ${country}`.trim(),
+    city,
+  ].filter(Boolean);
+
+  for (const queryText of queries) {
+    try {
+      const query = encodeURIComponent(queryText);
+      const url = `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000);
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'WanderNote/1.0' },
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+
+      const data = await res.json();
+      if (data?.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lng = parseFloat(data[0].lon);
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          return { lat, lng };
+        }
+      }
+    } catch (e) {
+      // Try the next query, then fallback.
+    }
   }
-  // 最后只用城市名再试一次
-  return await nominatimSearch(cityName);
+
+  return fallback;
 }
 
 export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
@@ -399,6 +427,18 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
       .catch(() => setForecast(null))
       .finally(() => setForecastLoading(false));
   }, [customCity, selectedCities, i18n.language]);
+
+  const useSearchAsCustomDestination = () => {
+    const destinationName = search.trim();
+    if (!destinationName) return;
+
+    const firstMatchedCountry = searchResults?.[0]?.country || selectedCountry || null;
+
+    setSelectedCountry(firstMatchedCountry);
+    setSelectedCities([]);
+    setCustomCity(destinationName);
+    setStep(3);
+  };
 
   const resetForm = () => {
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
@@ -592,6 +632,18 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                     </Text>
                   </TouchableOpacity>
                 ))}
+                {!!search.trim() && (
+                  <TouchableOpacity style={s.customDestinationItem} onPress={useSearchAsCustomDestination}>
+                    <Text style={s.customDestinationTitle}>
+                      {i18n.language?.startsWith('zh') ? `使用“${search.trim()}”创建目的地` : `Use “${search.trim()}” as destination`}
+                    </Text>
+                    <Text style={s.customDestinationHint}>
+                      {i18n.language?.startsWith('zh')
+                        ? '适合城市、小镇、小岛、景区或自定义地点'
+                        : 'For cities, towns, islands, attractions, or custom places'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 {!search && !selectedContinent && destinationSource.map(cont=>(
                   <TouchableOpacity key={cont.name} style={s.continentItem} onPress={()=>setSelectedContinent(cont)}>
                     <Text style={s.continentText}>{cont.name}</Text>
@@ -780,6 +832,25 @@ const s = StyleSheet.create({
   continentItem:{padding:18,borderBottomWidth:1,borderBottomColor:'#1A1A1A',flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   continentText:{fontSize:17,color:'#CCC'},
   continentArrow:{color:'#444',fontSize:16},
+  customDestinationItem:{
+    backgroundColor:'#111',
+    borderWidth:1,
+    borderColor:'#D4AF3740',
+    borderRadius:14,
+    padding:14,
+    marginBottom:10,
+  },
+  customDestinationTitle:{
+    color:'#D4AF37',
+    fontSize:15,
+    fontWeight:'700',
+    marginBottom:4,
+  },
+  customDestinationHint:{
+    color:'#777',
+    fontSize:12,
+    lineHeight:18,
+  },
   listItem:{padding:16,borderBottomWidth:1,borderBottomColor:'#1A1A1A'},
   listItemText:{fontSize:16,color:'#888'},
   inputLabel:{fontSize:11,color:'#555',letterSpacing:2,textTransform:'uppercase',marginBottom:10},
