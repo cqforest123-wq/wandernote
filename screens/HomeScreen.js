@@ -337,6 +337,8 @@ const ZH_TO_EN = {
 async function geocodeCity(cityName, countryName) {
   const fallback = getFallbackCityCoords(cityName, countryName);
 
+  if (fallback) return fallback;
+
   const city = String(cityName || '').trim();
   const country = String(countryName || '').trim();
 
@@ -458,12 +460,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
       const d = plannedDateObj;
       return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
     })() : null;
+    const initialCoords = getFallbackCityCoords(cityName, selectedCountry?.name || '');
+
     const newTrip = createTrip({
       city: cityName,
       country: selectedCountry?.name || '',
       emoji,
       plannedDate: plannedDateValue,
-      coords: null,
+      coords: initialCoords,
     });
     setTrips(prev => [newTrip, ...prev]);
     resetForm(); setShowAdd(false);
