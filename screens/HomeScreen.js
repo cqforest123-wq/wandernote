@@ -9,6 +9,7 @@ import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
 import { getFallbackCityCoords } from '../lib/cityFallbacks';
+import { searchPlaces } from '../lib/placeSearch';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 const CONTINENTS = [
@@ -387,6 +388,9 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [customCity, setCustomCity] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState(null);
   const [search, setSearch] = useState('');
+  const [placeResults, setPlaceResults] = useState([]);
+  const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [plannedDate, setPlannedDate] = useState('');
   const [plannedDateObj, setPlannedDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
   const [enableCountdown, setEnableCountdown] = useState(false);
@@ -417,6 +421,37 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     [destinationSource]
   );
 
+  React.useEffect(() => {
+    const query = search.trim();
+
+    if (!showAdd || step !== 1 || query.length < 2) {
+      setPlaceResults([]);
+      setPlaceSearchLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPlaceSearchLoading(true);
+
+    const timer = setTimeout(() => {
+      searchPlaces(query, i18n.language)
+        .then(results => {
+          if (!cancelled) setPlaceResults(results);
+        })
+        .catch(() => {
+          if (!cancelled) setPlaceResults([]);
+        })
+        .finally(() => {
+          if (!cancelled) setPlaceSearchLoading(false);
+        });
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search, showAdd, step, i18n.language]);
+
   // 监听城市名变化自动获取天气，不依赖步骤
   React.useEffect(() => {
     const cityName = customCity.trim() || selectedCities[0];
@@ -430,6 +465,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
       .finally(() => setForecastLoading(false));
   }, [customCity, selectedCities, i18n.language]);
 
+  const useOnlinePlaceDestination = (place) => {
+    if (!place) return;
+
+    setSelectedCountry(place.country ? { name: place.country, cities: [] } : null);
+    setSelectedCities([]);
+    setSelectedPlace(place);
+    setCustomCity(place.name || search.trim());
+    setStep(3);
+  };
+
   const useSearchAsCustomDestination = () => {
     const destinationName = search.trim();
     if (!destinationName) return;
@@ -438,13 +483,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
     setSelectedCountry(firstMatchedCountry);
     setSelectedCities([]);
+    setSelectedPlace(null);
     setCustomCity(destinationName);
     setStep(3);
   };
 
   const resetForm = () => {
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
-    setSelectedCities([]); setCustomCity(''); setSelectedEmoji(null);
+    setSelectedCities([]); setCustomCity(''); setSelectedEmoji(null); setSelectedPlace(null);
     setSearch('');
     setPlannedDate('');
     setPlannedDateObj(new Date(Date.now() + 7*24*60*60*1000));
@@ -460,11 +506,12 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
       const d = plannedDateObj;
       return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
     })() : null;
-    const initialCoords = getFallbackCityCoords(cityName, selectedCountry?.name || '');
+    const initialCoords = selectedPlace?.coords || getFallbackCityCoords(cityName, selectedCountry?.name || '');
+    const countryName = selectedPlace?.country || selectedCountry?.name || '';
 
     const newTrip = createTrip({
       city: cityName,
-      country: selectedCountry?.name || '',
+      country: countryName,
       emoji,
       plannedDate: plannedDateValue,
       coords: initialCoords,
@@ -472,12 +519,14 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     setTrips(prev => [newTrip, ...prev]);
     resetForm(); setShowAdd(false);
     navigation.navigate('TripDetail', { tripId: newTrip.id });
-    // 异步获取坐标，不阻塞UI
-    geocodeCity(cityName, selectedCountry?.name || '').then(coords => {
-      if (coords) {
-        setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, coords } : t));
-      }
-    }).catch(() => {});
+    // 异步获取坐标，不阻塞UI。在线候选地点或 fallback 已有坐标时不再覆盖。
+    if (!initialCoords) {
+      geocodeCity(cityName, countryName).then(coords => {
+        if (coords) {
+          setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, coords } : t));
+        }
+      }).catch(() => {});
+    }
   };
 
   const deleteTrip = (tripId, cityName) => {
@@ -623,6 +672,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
               <ScrollView style={{maxHeight:420}} nestedScrollEnabled>
                 {searchResults && searchResults.map((item, idx)=>(
                   <TouchableOpacity key={idx} style={s.listItem} onPress={()=>{
+                    setSelectedPlace(null);
                     setSelectedCountry(item.country);
                     if (item.type === 'city') {
                       setSelectedCities([item.city]);
@@ -633,6 +683,26 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                   }}>
                     <Text style={s.listItemText}>
                       {item.type === 'city' ? `${item.city}（${item.country.name}）` : item.country.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {placeSearchLoading && (
+                  <View style={s.placeSearchLoading}>
+                    <Text style={s.placeSearchLoadingText}>
+                      {i18n.language?.startsWith('zh') ? '正在搜索真实地点...' : 'Searching places...'}
+                    </Text>
+                  </View>
+                )}
+                {placeResults.map(place => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={s.placeCandidateItem}
+                    onPress={() => useOnlinePlaceDestination(place)}>
+                    <Text style={s.placeCandidateTitle} numberOfLines={1}>
+                      {place.name}
+                    </Text>
+                    <Text style={s.placeCandidateMeta} numberOfLines={2}>
+                      {place.displayName || place.country || place.type}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -681,6 +751,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                       key={c}
                       style={[s.cityChip, selectedCities.includes(c) && s.cityChipActive]}
                       onPress={()=>{
+                        setSelectedPlace(null);
                         setCustomCity('');
                         setSelectedCities(prev =>
                           prev.includes(c) ? prev.filter(x=>x!==c) : [...prev, c]
@@ -700,7 +771,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 placeholder={t("new_trip_city_placeholder")}
                 placeholderTextColor="#444"
                 value={customCity}
-                onChangeText={t=>{setCustomCity(t); if(t) setSelectedCities([]);}}
+                onChangeText={t=>{setSelectedPlace(null); setCustomCity(t); if(t) setSelectedCities([]);}}
               />
 
               {hasSelection && (
@@ -836,6 +907,33 @@ const s = StyleSheet.create({
   continentItem:{padding:18,borderBottomWidth:1,borderBottomColor:'#1A1A1A',flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   continentText:{fontSize:17,color:'#CCC'},
   continentArrow:{color:'#444',fontSize:16},
+  placeSearchLoading:{
+    paddingVertical:10,
+    paddingHorizontal:12,
+  },
+  placeSearchLoadingText:{
+    color:'#777',
+    fontSize:12,
+  },
+  placeCandidateItem:{
+    backgroundColor:'#0F1715',
+    borderWidth:1,
+    borderColor:'#4ECDC440',
+    borderRadius:14,
+    padding:14,
+    marginBottom:10,
+  },
+  placeCandidateTitle:{
+    color:'#4ECDC4',
+    fontSize:15,
+    fontWeight:'700',
+    marginBottom:4,
+  },
+  placeCandidateMeta:{
+    color:'#888',
+    fontSize:12,
+    lineHeight:18,
+  },
   customDestinationItem:{
     backgroundColor:'#111',
     borderWidth:1,
