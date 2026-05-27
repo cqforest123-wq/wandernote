@@ -523,9 +523,13 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     if (!initialCoords) {
       geocodeCity(cityName, countryName).then(coords => {
         if (coords) {
-          setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, coords } : t));
+          setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, coords, geocodeStatus: 'resolved' } : t));
+        } else {
+          setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, geocodeStatus: 'failed' } : t));
         }
-      }).catch(() => {});
+      }).catch(() => {
+        setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, geocodeStatus: 'failed' } : t));
+      });
     }
   };
 
