@@ -140,6 +140,7 @@ export default {
   new_trip_multi_select: '(복수 선택 가능)',
   new_trip_manual_input: '또는 다른 장소 직접 입력',
   new_trip_city_placeholder: '도시, 명소, 지역...',
+  trip_location_pending_notice: '네트워크가 연결되면 위치가 자동으로 매칭됩니다.',
   new_trip_loading_weather: '목적지 날씨 불러오는 중...',
   new_trip_7day_weather: '7일 예보',
   today_short: '오늘',

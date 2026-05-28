@@ -141,6 +141,7 @@ export default {
   new_trip_multi_select: '(เลือกได้หลายรายการ)',
   new_trip_manual_input: 'หรือกรอกสถานที่อื่นเอง',
   new_trip_city_placeholder: 'เมือง สถานที่ท่องเที่ยว ภูมิภาค...',
+  trip_location_pending_notice: 'ระบบจะจับคู่ตำแหน่งเมื่อเครือข่ายพร้อมใช้งาน',
   new_trip_loading_weather: 'กำลังโหลดสภาพอากาศ...',
   new_trip_7day_weather: 'พยากรณ์ 7 วัน',
   today_short: 'วันนี้',

@@ -11,6 +11,7 @@ import { initSync, syncTripsUp } from './lib/sync';
 import { initPurchases, checkProStatus } from './lib/purchases';
 import { ENABLE_PURCHASES, BETA_UNLOCK_PRO } from './lib/featureFlags';
 import { supabase } from './lib/supabase';
+import { geocodeCity } from './lib/geocoding';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -42,6 +43,7 @@ function MainApp({ session }) {
   const [isPro, setIsPro] = useState(BETA_UNLOCK_PRO);
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallFeature, setPaywallFeature] = useState(null);
+  const [hasRetriedPendingGeocodes, setHasRetriedPendingGeocodes] = useState(false);
 
   useEffect(() => {
     const handleLangChange = (lng) => {
@@ -116,6 +118,47 @@ function MainApp({ session }) {
       console.warn('保存数据失败:', e.message);
     }
   };
+
+  useEffect(() => {
+    if (hasRetriedPendingGeocodes || !loaded || !Array.isArray(trips) || trips.length === 0) return;
+
+    const pendingTrips = trips.filter(t =>
+      !t?.coords && (t?.geocodeStatus === 'pending' || t?.geocodeStatus === 'failed')
+    );
+    if (pendingTrips.length === 0) {
+      setHasRetriedPendingGeocodes(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const retryPendingGeocodes = async () => {
+      const updates = await Promise.all(
+        pendingTrips.map(async trip => {
+          const coords = await geocodeCity(trip.city, trip.country).catch(() => null);
+          return coords ? { id: trip.id, coords } : null;
+        })
+      );
+
+      if (cancelled) return;
+
+      setHasRetriedPendingGeocodes(true);
+
+      const resolvedUpdates = updates.filter(Boolean);
+      if (resolvedUpdates.length === 0) return;
+
+      setTrips(prev => prev.map(trip => {
+        const update = resolvedUpdates.find(item => item.id === trip.id);
+        return update ? { ...trip, coords: update.coords, geocodeStatus: 'resolved' } : trip;
+      }));
+    };
+
+    retryPendingGeocodes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasRetriedPendingGeocodes, loaded, trips]);
 
   const setTrips = (newTripsOrFn) => {
     setTripsState(prev => {

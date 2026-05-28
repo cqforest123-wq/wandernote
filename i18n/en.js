@@ -255,6 +255,7 @@ export default {
   new_trip_multi_select: '(multi-select)',
   new_trip_manual_input: 'Or enter another place manually',
   new_trip_city_placeholder: 'City, attraction, region...',
+  trip_location_pending_notice: 'Location will be matched when network is available.',
   new_trip_loading_weather: 'Loading destination weather...',
   new_trip_7day_weather: '7-day forecast',
   today_short: 'Today',

@@ -255,6 +255,7 @@ export default {
   new_trip_multi_select: '（可多选）',
   new_trip_manual_input: '或手动输入其他地点',
   new_trip_city_placeholder: '城市、景点、地区...',
+  trip_location_pending_notice: '网络恢复后会自动匹配地点。',
   new_trip_loading_weather: '正在获取目的地天气...',
   new_trip_7day_weather: '目的地未来7天',
   today_short: '今',

@@ -140,6 +140,7 @@ export default {
   new_trip_multi_select: '（複数選択可）',
   new_trip_manual_input: 'または別の場所を手入力',
   new_trip_city_placeholder: '都市、観光地、地域...',
+  trip_location_pending_notice: 'Network availableになったら位置情報を照合します。',
   new_trip_loading_weather: '目的地の天気を取得中...',
   new_trip_7day_weather: '7日間の天気予報',
   today_short: '今日',

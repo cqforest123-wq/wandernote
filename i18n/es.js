@@ -141,6 +141,7 @@ export default {
   new_trip_multi_select: '(selección múltiple)',
   new_trip_manual_input: 'O introduce otro lugar',
   new_trip_city_placeholder: 'Ciudad, atracción, región...',
+  trip_location_pending_notice: 'La ubicación se asociará cuando haya conexión disponible.',
   new_trip_loading_weather: 'Cargando clima del destino...',
   new_trip_7day_weather: 'Pronóstico de 7 días',
   today_short: 'Hoy',

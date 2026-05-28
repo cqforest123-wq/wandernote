@@ -141,6 +141,7 @@ export default {
   new_trip_multi_select: '(multi-sélection)',
   new_trip_manual_input: 'Ou saisir un autre lieu',
   new_trip_city_placeholder: 'Ville, site, région...',
+  trip_location_pending_notice: 'La localisation sera associée lorsque le réseau sera disponible.',
   new_trip_loading_weather: 'Chargement de la météo...',
   new_trip_7day_weather: 'Prévisions sur 7 jours',
   today_short: 'Auj.',
