@@ -4,6 +4,8 @@ import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { ENABLE_PURCHASES } from '../lib/featureFlags';
+import { deleteCurrentAccount } from '../lib/accountDeletion';
 
 export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPaywall, navigation }) {
   const { t, i18n } = useTranslation();
@@ -37,6 +39,7 @@ const ENABLE_YEAR_REPORT = false;
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   React.useEffect(() => {
     const loadProfile = async () => {
@@ -97,6 +100,45 @@ const ENABLE_YEAR_REPORT = false;
     ]);
   };
 
+  const handleDeleteAccount = () => {
+    if (isDeletingAccount) return;
+
+    Alert.alert(
+      t('profile_delete_account_title'),
+      t('profile_delete_account_message'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('profile_delete_account_confirm'),
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              t('profile_delete_account_final_title'),
+              t('profile_delete_account_final_message'),
+              [
+                { text: t('cancel'), style: 'cancel' },
+                {
+                  text: t('profile_delete_account_final_confirm'),
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      setIsDeletingAccount(true);
+                      await deleteCurrentAccount();
+                    } catch (e) {
+                      Alert.alert(t('profile_delete_account_failed'), e?.message || t('profile_try_later'));
+                    } finally {
+                      setIsDeletingAccount(false);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
@@ -155,7 +197,7 @@ const ENABLE_YEAR_REPORT = false;
           </TouchableOpacity>
         )}
 
-        {!isPro && (
+        {ENABLE_PURCHASES && !isPro && (
           <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall(t('profile_pro_member')) : setShowPricing(true)}>
             <View>
               <Text style={s.upgradeTitle}>✦ {t('profile_upgrade_pro')}</Text>
@@ -211,6 +253,12 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity style={s.deleteAccountBtn} onPress={handleDeleteAccount} disabled={isDeletingAccount}>
+          <Text style={s.deleteAccountText}>
+            {isDeletingAccount ? t('profile_deleting_account') : t('profile_delete_account')}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
           <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
@@ -344,6 +392,8 @@ const s = StyleSheet.create({
   settingIcon:{fontSize:18,width:28},
   settingLabel:{flex:1,fontSize:15,color:'#C8C4BC'},
   settingArrow:{color:'#444',fontSize:14},
+  deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
+  deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
   logoutBtn:{borderWidth:1,borderColor:'#FF6B6B40',borderRadius:14,padding:16,alignItems:'center',marginBottom:20},
   logoutText:{color:'#FF6B6B',fontSize:15},
   version:{textAlign:'center',color:'#333',fontSize:11},
