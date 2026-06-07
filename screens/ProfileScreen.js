@@ -159,9 +159,9 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
           <Text style={s.email}>{email}</Text>
-          <TouchableOpacity style={[s.planBadge,isPro&&{backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]} onPress={()=>!isPro&&setShowPricing(true)}>
-            <Text style={[s.planText,isPro&&{color:'#D4AF37'}]}>{isPro ? t('profile_pro_member') : t('profile_free_upgrade')}</Text>
-          </TouchableOpacity>
+          <View style={[s.planBadge,isPro&&{backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]}>
+            <Text style={[s.planText,isPro&&{color:'#D4AF37'}]}>{isPro ? t('profile_pro_member') : t('profile_free')}</Text>
+          </View>
         </View>
 
         <View style={s.statsGrid}>
@@ -294,7 +294,7 @@ const ENABLE_YEAR_REPORT = false;
         </View>
       </Modal>
 
-      <Modal visible={showPricing} animationType="slide" transparent>
+      <Modal visible={ENABLE_PURCHASES && showPricing} animationType="slide" transparent>
         <View style={s.overlay}>
           <TouchableOpacity style={{flex:1}} onPress={()=>setShowPricing(false)}/>
           <View style={s.pricingSheet}>

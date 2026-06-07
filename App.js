@@ -169,10 +169,7 @@ function MainApp({ session }) {
         Alert.alert(
           t('alert_pro_limit'),
           t('alert_pro_limit_desc').replace('%d', FREE_TRIP_LIMIT),
-          [
-            {text:t('cancel'),style:'cancel'},
-            {text:t('alert_upgrade'),onPress:()=>openPaywall(t('profile_unlimited'))}
-          ]
+          [{text:t('ok')}]
         );
         return prev;
       }

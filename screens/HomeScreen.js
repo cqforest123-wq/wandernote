@@ -433,7 +433,10 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
 
   const handleNewTrip = () => {
     if (!isPro && trips.length >= (freeTripLimit||3)) {
-      Alert.alert(t('alert_pro_limit'), t('alert_pro_limit_desc').replace('%d', freeTripLimit||3), [{text:t('cancel'), style:'cancel'},{text:t('alert_upgrade'), onPress:()=>{}}]
+      Alert.alert(
+        t('alert_pro_limit'),
+        t('alert_pro_limit_desc').replace('%d', freeTripLimit || 3),
+        [{ text: t('ok') }]
       );
       return;
     }

@@ -757,13 +757,13 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
               {!showAIGen ? (
                 <TouchableOpacity
                   style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16,flexDirection:'row',alignItems:'center',gap:12}}
-                  onPress={()=>{ if(!isPro){ setShowTemplate(false); openPaywall&&openPaywall(t('memo_ai_checklist')); return; } setShowAIGen(true); }}>
+                  onPress={()=>setShowAIGen(true)}>
                   <Text style={{fontSize:28}}>✦</Text>
                   <View style={{flex:1}}>
                     <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>{t('memo_ai_suggestions')}</Text>
                     <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>{t('memo_ai_suggestions_desc')}</Text>
                   </View>
-                  {!isPro && <Text style={{color:'#A78BFA',fontSize:11,backgroundColor:'#A78BFA20',paddingHorizontal:8,paddingVertical:3,borderRadius:8}}>Pro</Text>}
+
                 </TouchableOpacity>
               ) : (
                 <View style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16}}>
