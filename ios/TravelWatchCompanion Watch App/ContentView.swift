@@ -21,7 +21,12 @@ struct ContentView: View {
 
                 metricRow(
                     title: WatchStrings.text("sunset"),
-                    value: glance.sunsetTime
+                    value: glance.sun.sunsetTime
+                )
+
+                metricRow(
+                    title: WatchStrings.text("daylight"),
+                    value: glance.sun.daylightRemainingText
                 )
 
                 metricRow(

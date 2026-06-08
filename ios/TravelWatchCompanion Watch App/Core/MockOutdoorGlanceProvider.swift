@@ -5,7 +5,7 @@ enum MockOutdoorGlanceProvider {
         OutdoorGlanceData(
             locationName: WatchStrings.text("mock.location"),
             altitudeMeters: 32,
-            sunsetTime: "20:31",
+            sun: MockSunEventProvider.current(),
             stepCount: 13482,
             carDistanceText: WatchStrings.text("mock.carDistance"),
             carDirectionSymbol: "↖︎"
