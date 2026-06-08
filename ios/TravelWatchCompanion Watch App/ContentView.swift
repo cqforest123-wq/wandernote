@@ -1,73 +1,37 @@
 import SwiftUI
 
-enum WatchLanguage {
-    static var code: String {
-        Locale.current.language.languageCode?.identifier ?? "en"
-    }
-
-    static func text(_ key: String) -> String {
-        let isChinese = code.hasPrefix("zh")
-
-        let en: [String: String] = [
-            "app.title": "Travel Glance",
-            "location": "Location",
-            "altitude": "Altitude",
-            "sunset": "Sunset",
-            "steps": "Steps",
-            "distance": "Distance",
-            "car": "Car",
-            "mock.location": "San Francisco",
-            "mock.sunset": "20:31",
-            "mock.distance": "0.8 km"
-        ]
-
-        let zhHans: [String: String] = [
-            "app.title": "旅行速览",
-            "location": "位置",
-            "altitude": "海拔",
-            "sunset": "日落",
-            "steps": "步数",
-            "distance": "距离",
-            "car": "停车点",
-            "mock.location": "旧金山",
-            "mock.sunset": "20:31",
-            "mock.distance": "0.8 公里"
-        ]
-
-        return (isChinese ? zhHans[key] : en[key]) ?? en[key] ?? key
-    }
-}
-
 struct ContentView: View {
+    private let glance = MockOutdoorGlanceProvider.current()
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text(WatchLanguage.text("app.title"))
+                Text(WatchStrings.text("app.title"))
                     .font(.headline)
 
                 metricRow(
-                    title: WatchLanguage.text("location"),
-                    value: WatchLanguage.text("mock.location")
+                    title: WatchStrings.text("location"),
+                    value: glance.locationName
                 )
 
                 metricRow(
-                    title: WatchLanguage.text("altitude"),
-                    value: "32 m"
+                    title: WatchStrings.text("altitude"),
+                    value: "\(glance.altitudeMeters) m"
                 )
 
                 metricRow(
-                    title: WatchLanguage.text("sunset"),
-                    value: WatchLanguage.text("mock.sunset")
+                    title: WatchStrings.text("sunset"),
+                    value: glance.sunsetTime
                 )
 
                 metricRow(
-                    title: WatchLanguage.text("steps"),
-                    value: "13,482"
+                    title: WatchStrings.text("steps"),
+                    value: Self.formatSteps(glance.stepCount)
                 )
 
                 metricRow(
-                    title: WatchLanguage.text("car"),
-                    value: "↖︎ \(WatchLanguage.text("mock.distance"))"
+                    title: WatchStrings.text("car"),
+                    value: "\(glance.carDirectionSymbol) \(glance.carDistanceText)"
                 )
             }
             .padding()
@@ -83,6 +47,12 @@ struct ContentView: View {
                 .font(.body)
                 .fontWeight(.semibold)
         }
+    }
+
+    private static func formatSteps(_ value: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }
 
