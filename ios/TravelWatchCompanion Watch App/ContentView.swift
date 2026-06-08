@@ -36,7 +36,7 @@ struct ContentView: View {
 
                 metricRow(
                     title: WatchStrings.text("car"),
-                    value: "\(glance.carDirectionSymbol) \(glance.carDistanceText)"
+                    value: "\(glance.parking.directionSymbol) \(glance.parking.distanceText)"
                 )
             }
             .padding()
