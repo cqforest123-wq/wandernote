@@ -37,5 +37,14 @@ yarn-error.*
 *.tsbuildinfo
 
 # generated native folders
-/ios
 /android
+
+# iOS native project is tracked because Watch App / WidgetKit targets live there.
+# Keep generated CocoaPods artifacts out of git.
+ios/Pods/
+ios/build/
+ios/.xcode.env.local
+
+# Xcode local user state
+ios/**/*.xcuserstate
+ios/**/*.xcuserdata/
