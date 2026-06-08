@@ -31,7 +31,7 @@ struct ContentView: View {
 
                 metricRow(
                     title: WatchStrings.text("steps"),
-                    value: Self.formatSteps(glance.stepCount)
+                    value: Self.formatSteps(glance.activity.stepCount)
                 )
 
                 metricRow(

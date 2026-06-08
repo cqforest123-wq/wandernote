@@ -4,6 +4,6 @@ struct OutdoorGlanceData {
     let locationName: String
     let altitudeMeters: Int
     let sun: SunEventData
-    let stepCount: Int
+    let activity: DailyActivityData
     let parking: ParkingLocationData
 }
