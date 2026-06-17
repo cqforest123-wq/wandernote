@@ -3,13 +3,11 @@ import './i18n';
 import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
 import { initSync, syncTripsUp } from './lib/sync';
-import { initPurchases, checkProStatus } from './lib/purchases';
-import { ENABLE_PURCHASES, BETA_UNLOCK_PRO } from './lib/featureFlags';
 import { supabase } from './lib/supabase';
 import { geocodeCity } from './lib/geocoding';
 import AuthScreen from './screens/AuthScreen';
@@ -23,7 +21,6 @@ import MapScreen from './screens/MapScreen';
 import MemoScreen from './screens/MemoScreen';
 import YearReportScreen from './screens/YearReportScreen';
 import PhotoFilterScreen from './screens/PhotoFilterScreen';
-import PaywallScreen from './screens/PaywallScreen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -40,9 +37,7 @@ function MainApp({ session }) {
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const [isPro, setIsPro] = useState(BETA_UNLOCK_PRO);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [paywallFeature, setPaywallFeature] = useState(null);
+  const isPro = false;
   const [hasRetriedPendingGeocodes, setHasRetriedPendingGeocodes] = useState(false);
 
   useEffect(() => {
@@ -53,27 +48,6 @@ function MainApp({ session }) {
     i18n.on('languageChanged', handleLangChange);
     return () => i18n.off('languageChanged', handleLangChange);
   }, [i18n]);
-
-  useEffect(() => {
-    if (BETA_UNLOCK_PRO) {
-      setIsPro(true);
-      return;
-    }
-
-    if (!ENABLE_PURCHASES) {
-      setIsPro(false);
-      return;
-    }
-
-    if (!session?.user?.id) return;
-    initPurchases(session.user.id)
-      .then(() => checkProStatus())
-      .then(status => setIsPro(Boolean(status)))
-      .catch(e => {
-        console.warn('RevenueCat init failed:', e.message);
-        setIsPro(false);
-      });
-  }, [session?.user?.id]);
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -178,12 +152,6 @@ function MainApp({ session }) {
     });
   };
 
-  const openPaywall = (featureName = null) => {
-    if (!ENABLE_PURCHASES) return;
-    setPaywallFeature(featureName);
-    setShowPaywall(true);
-  };
-
   const tabs = [
     {key:'home', icon:'🗺', label:t('tab_home')},
     {key:'map', icon:'📍', label:t('tab_map')},
@@ -207,19 +175,19 @@ function MainApp({ session }) {
             <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} openPaywall={openPaywall} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
           </>}
           {activeTab==='memo' && (
-            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} isPro={isPro} openPaywall={openPaywall} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
             <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='ai' && (
-            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'YearReport'} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'PhotoFilter'} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
           </>}
@@ -233,13 +201,6 @@ function MainApp({ session }) {
           </TouchableOpacity>
         ))}
       </View>
-      <Modal visible={ENABLE_PURCHASES && showPaywall} animationType="slide" presentationStyle="pageSheet">
-        <PaywallScreen
-          featureName={paywallFeature}
-          onSuccess={() => { setIsPro(true); setShowPaywall(false); }}
-          onClose={() => setShowPaywall(false)}
-        />
-      </Modal>
     </View>
   );
 }

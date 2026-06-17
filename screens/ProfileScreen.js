@@ -4,12 +4,10 @@ import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { ENABLE_PURCHASES } from '../lib/featureFlags';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
 
-export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPaywall, navigation }) {
+export default function ProfileScreen({ session, trips, navigation }) {
   const { t, i18n } = useTranslation();
-  const [showPricing, setShowPricing] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
   const LANGS = [
@@ -35,7 +33,6 @@ const ENABLE_YEAR_REPORT = false;
       Alert.alert(t('profile_language_switch_failed'), e.message || t('profile_try_later'));
     }
   };
-  const [selectedPlan, setSelectedPlan] = useState('annual');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
@@ -159,14 +156,14 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
           <Text style={s.email}>{email}</Text>
-          <View style={[s.planBadge,isPro&&{backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]}>
-            <Text style={[s.planText,isPro&&{color:'#D4AF37'}]}>{isPro ? t('profile_pro_member') : t('profile_free')}</Text>
+          <View style={s.planBadge}>
+            <Text style={s.planText}>{t('profile_free')}</Text>
           </View>
         </View>
 
         <View style={s.statsGrid}>
           {[
-            [String(trips.length),t('profile_stat_trips'),isPro?'∞':'3'],
+            [String(trips.length),t('profile_stat_trips'),'3'],
             [String(totalDays),t('profile_stat_days'),''],
             [String(totalMemos),t('profile_stat_memos'),''],
             [String(totalPhotos),t('profile_stat_photos'),''],
@@ -197,37 +194,6 @@ const ENABLE_YEAR_REPORT = false;
           </TouchableOpacity>
         )}
 
-        {ENABLE_PURCHASES && !isPro && (
-          <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall(t('profile_pro_member')) : setShowPricing(true)}>
-            <View>
-              <Text style={s.upgradeTitle}>✦ {t('profile_upgrade_pro')}</Text>
-              <Text style={s.upgradeDesc}>{t('profile_upgrade_desc')}</Text>
-            </View>
-            <Text style={s.upgradeArrow}>→</Text>
-          </TouchableOpacity>
-        )}
-
-        <Text style={s.sectionTitle}>{t('profile_feature_compare')}</Text>
-        <View style={s.featureList}>
-          {[
-            {icon:'🗺',label:t('profile_feature_trip_count'),free:t('profile_max_3'),pro:t('profile_unlimited')},
-            {icon:'☁️',label:t('profile_feature_cloud_backup'),free:'❌',pro:'✅'},
-            {icon:'🤖',label:t('profile_feature_ai_diary'),free:'❌',pro:'✅'},
-            {icon:'🖼',label:t('profile_feature_album'),free:'❌',pro:'✅'},
-            {icon:'📸',label:t('profile_feature_photo_storage'),free:t('profile_local'),pro:t('profile_unlimited_cloud')},
-            // {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'}, // v2.0
-            {icon:'📊',label:t('profile_feature_year_report'),free:'✅',pro:'✅'},
-            {icon:'🎨',label:t('profile_feature_photo_filter'),free:'✅',pro:'✅'},
-            {icon:'🌐',label:t('profile_feature_language'),free:'✅',pro:'✅'},
-          ].map(f=>(
-            <View key={f.label} style={s.featureRow}>
-              <Text style={s.featureIcon}>{f.icon}</Text>
-              <Text style={s.featureLabel}>{f.label}</Text>
-              <Text style={[s.featureVal,{color:'#555'}]}>{f.free}</Text>
-              <Text style={[s.featureVal,{color:'#D4AF37'}]}>{f.pro}</Text>
-            </View>
-          ))}
-        </View>
 
         <Text style={s.sectionTitle}>{t('profile_account_settings')}</Text>
         <View style={s.settingList}>
@@ -294,38 +260,6 @@ const ENABLE_YEAR_REPORT = false;
         </View>
       </Modal>
 
-      <Modal visible={ENABLE_PURCHASES && showPricing} animationType="slide" transparent>
-        <View style={s.overlay}>
-          <TouchableOpacity style={{flex:1}} onPress={()=>setShowPricing(false)}/>
-          <View style={s.pricingSheet}>
-            <Text style={s.pricingTitle}>{t('profile_upgrade_pro')}</Text>
-            <Text style={s.pricingSubtitle}>{t('profile_unlock_full')}</Text>
-            <View style={s.planToggle}>
-              {['monthly','annual'].map(p=>(
-                <TouchableOpacity key={p} style={[s.planBtn,selectedPlan===p&&s.planBtnActive]} onPress={()=>setSelectedPlan(p)}>
-                  <Text style={[s.planBtnText,selectedPlan===p&&s.planBtnTextActive]}>
-                    {p==='monthly'?t('profile_monthly'):t('profile_annual_save')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={s.priceBox}>
-              <Text style={s.priceNum}>¥{selectedPlan==='monthly'?'28':'19'}</Text>
-              <Text style={s.pricePer}>/ {t('profile_month')}{selectedPlan==='annual'?` · ${t('profile_billed_yearly')} ¥228`:''}</Text>
-            </View>
-            {[t('profile_pro_unlimited_trips'),t('profile_pro_cloud_backup'),t('profile_pro_ai_diary'),t('profile_pro_album_export'),t('profile_pro_media_cloud'),t('profile_pro_year_report')].map(f=>(
-              <View key={f} style={s.pricingFeatureRow}>
-                <Text style={s.check}>✦</Text>
-                <Text style={s.pricingFeatureText}>{f}</Text>
-              </View>
-            ))}
-            <TouchableOpacity style={s.subscribeBtn} onPress={()=>{ setShowPricing(false); openPaywall && openPaywall(t('profile_pro_member')); }}>
-              <Text style={s.subscribeBtnText}>{t('profile_subscribe_now')} →</Text>
-            </TouchableOpacity>
-            <Text style={s.pricingNote}>{t('profile_cancel_anytime')}</Text>
-          </View>
-        </View>
-      </Modal>
       {/* 语言选择弹窗 */}
       <Modal visible={showLangModal} animationType="slide" transparent>
         <View style={s.overlay}>
@@ -377,16 +311,7 @@ const s = StyleSheet.create({
   reportTitle:{fontSize:16,color:'#4ECDC4',marginBottom:4},
   reportDesc:{fontSize:12,color:'#888'},
   reportArrow:{color:'#4ECDC4',fontSize:18},
-  upgradeCard:{backgroundColor:'#D4AF3715',borderWidth:1,borderColor:'#D4AF3740',borderRadius:14,padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:24},
-  upgradeTitle:{fontSize:16,color:'#D4AF37',marginBottom:4},
-  upgradeDesc:{fontSize:12,color:'#888'},
-  upgradeArrow:{color:'#D4AF37',fontSize:18},
   sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:12},
-  featureList:{backgroundColor:'#161616',borderRadius:14,borderWidth:1,borderColor:'#242424',marginBottom:24,overflow:'hidden'},
-  featureRow:{flexDirection:'row',alignItems:'center',padding:14,borderBottomWidth:1,borderBottomColor:'#1E1E1E',gap:10},
-  featureIcon:{fontSize:16,width:24},
-  featureLabel:{flex:1,fontSize:14,color:'#888'},
-  featureVal:{width:56,fontSize:12,textAlign:'center'},
   settingList:{backgroundColor:'#161616',borderRadius:14,borderWidth:1,borderColor:'#242424',marginBottom:20,overflow:'hidden'},
   settingRow:{flexDirection:'row',alignItems:'center',padding:16,borderBottomWidth:1,borderBottomColor:'#1E1E1E',gap:12},
   settingIcon:{fontSize:18,width:28},
@@ -398,21 +323,4 @@ const s = StyleSheet.create({
   logoutText:{color:'#FF6B6B',fontSize:15},
   version:{textAlign:'center',color:'#333',fontSize:11},
   overlay:{flex:1,backgroundColor:'#000000BB',justifyContent:'flex-end'},
-  pricingSheet:{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:28,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A'},
-  pricingTitle:{fontSize:24,color:'#F0EDE8',fontWeight:'300',textAlign:'center',marginBottom:6},
-  pricingSubtitle:{fontSize:14,color:'#555',textAlign:'center',marginBottom:24},
-  planToggle:{flexDirection:'row',backgroundColor:'#1A1A1A',borderRadius:12,padding:4,marginBottom:20},
-  planBtn:{flex:1,padding:10,borderRadius:10,alignItems:'center'},
-  planBtnActive:{backgroundColor:'#D4AF37'},
-  planBtnText:{fontSize:14,color:'#555'},
-  planBtnTextActive:{color:'#0D0D0D',fontWeight:'700'},
-  priceBox:{alignItems:'center',marginBottom:20},
-  priceNum:{fontSize:48,color:'#D4AF37',fontWeight:'300'},
-  pricePer:{fontSize:13,color:'#555'},
-  pricingFeatureRow:{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:8,borderBottomWidth:1,borderBottomColor:'#1A1A1A'},
-  check:{color:'#D4AF37',fontSize:12},
-  pricingFeatureText:{fontSize:14,color:'#888'},
-  subscribeBtn:{backgroundColor:'#D4AF37',borderRadius:14,padding:16,alignItems:'center',marginTop:20,marginBottom:8},
-  subscribeBtnText:{color:'#0D0D0D',fontSize:16,fontWeight:'700'},
-  pricingNote:{textAlign:'center',color:'#444',fontSize:12},
 });

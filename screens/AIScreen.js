@@ -41,7 +41,7 @@ function getAiOutputLanguage(lang) {
 
 import { callClaude } from '../lib/claude';
 
-export default function AIScreen({ trips, isPro, openPaywall }) {
+export default function AIScreen({ trips }) {
   const { t, i18n } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
@@ -123,7 +123,6 @@ Requirements:
 
   const generate = async () => {
     if (mode === 'itinerary') {
-      // if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; } // TEST: 暂时跳过付费验证
       if (!itineraryDest.trim()) { Alert.alert(t('ai_alert_title'), t('ai_enter_destination')); return; }
       setGenerating(true);
       setResult('');
