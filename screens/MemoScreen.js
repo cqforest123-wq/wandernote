@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from '../lib/storageKeys';
 import { createMemo } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { GLOBAL_PACKING_TEMPLATES } from '../lib/globalPackingTemplates';
+import { buildLocalPackingGroups } from '../lib/travelStoryFallback';
 
 const STORAGE_KEY = STORAGE_KEYS.memos;
 
@@ -811,6 +812,9 @@ Requirements:
                         const text = await callClaude(prompt, 1500);
                         const clean = text.replace(/```json|```/g, '').trim();
                         const parsed = JSON.parse(clean);
+                        if (!parsed?.groups || typeof parsed.groups !== 'object') {
+                          throw new Error('AI packing response missing groups');
+                        }
                         const newMemo = createMemo({
                           category: 'packing',
                           title: parsed.title || `${aiDestination} ${t('memo_ai_checklist')}`,
@@ -825,7 +829,23 @@ Requirements:
                         setShowTemplate(false);
                         Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', aiDestination));
                       } catch(e) {
-                        Alert.alert(t('memo_ai_failed'), e.message || t('profile_try_later'));
+                        const fallback = buildLocalPackingGroups(aiDestination, aiDays);
+                        const newMemo = createMemo({
+                          category: 'packing',
+                          title: fallback.title,
+                          items: Object.entries(fallback.groups).flatMap(([group, items]) =>
+                            items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
+                          ),
+                          tripId: tripId || null,
+                        });
+                        const next = [...memos, newMemo];
+                        await saveMemos(next);
+                        setShowAIGen(false);
+                        setShowTemplate(false);
+                        Alert.alert(
+                          t('memo_ai_success_title'),
+                          'Generated a local packing list because the online AI service was unavailable.'
+                        );
                       } finally {
                         aiPackingGeneratingRef.current = false;
                         setAIGenerating(false);

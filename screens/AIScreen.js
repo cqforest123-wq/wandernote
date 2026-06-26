@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
+import {
+  buildLocalItinerary,
+  buildLocalTravelStory,
+  extractReadableAiText,
+} from '../lib/travelStoryFallback';
 
 const ITINERARY_STYLES = [
   { key: 'balanced', labelKey: 'ai_style_balanced' },
@@ -53,6 +58,7 @@ export default function AIScreen({ trips }) {
   const aiOutputLanguage = getAiOutputLanguage(i18n.language);
   const daysUnit = t('unit_days');
   const [mode, setMode] = useState('diary');
+  const localFallbackNotice = 'Generated a local travel story because the online AI service was unavailable.';
 
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
@@ -123,11 +129,16 @@ Requirements:
 
   const generate = async () => {
     if (mode === 'itinerary') {
-      if (!itineraryDest.trim()) { Alert.alert(t('ai_alert_title'), t('ai_enter_destination')); return; }
       setGenerating(true);
       setResult('');
+      const fallback = buildLocalItinerary({
+        destination: itineraryDest,
+        days: itineraryDays,
+        style: t(`ai_style_${itineraryStyle}`),
+      });
       try {
-        const prompt = `You are a professional travel planner. Create a detailed ${itineraryDays}-day itinerary for ${itineraryDest}.
+        const destination = itineraryDest.trim() || 'your next destination';
+        const prompt = `You are a professional travel planner. Create a detailed ${itineraryDays}-day itinerary for ${destination}.
 Travel style: ${t(`ai_style_${itineraryStyle}`)}.
 Output language for all JSON values: ${aiOutputLanguage}.
 
@@ -139,8 +150,25 @@ Strict requirements:
 5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
 6. Keep each field short and ensure valid complete JSON.`;
         const text = await callClaude(prompt, 8000, { responseMimeType: 'application/json' });
-        const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
-        const parsed = parseAiJsonObject(text);
+        if (!String(text || '').trim()) {
+          setResult(localFallbackNotice + '\n\n' + fallback);
+          return;
+        }
+
+        let parsed = null;
+        try {
+          parsed = parseAiJsonObject(text);
+        } catch (parseError) {
+          const readable = extractReadableAiText(text);
+          setResult(readable ? `${localFallbackNotice}\n\n${readable}` : `${localFallbackNotice}\n\n${fallback}`);
+          return;
+        }
+
+        if (!Array.isArray(parsed.days) || parsed.days.length === 0) {
+          setResult(localFallbackNotice + '\n\n' + fallback);
+          return;
+        }
+
         // 格式化展示
         const disclaimer = t('ai_disclaimer');
         const formatted = parsed.days.map(d => {
@@ -154,30 +182,34 @@ Strict requirements:
           dayText += '\n💡 ' + t('ai_tips') + ': ' + d.tips;
           return dayText;
         }).join('\n\n');
-        setResult('🗺 ' + parsed.title + '\n\n' + disclaimer + '\n\n' + formatted);
+        setResult('🗺 ' + (parsed.title || destination) + '\n\n' + disclaimer + '\n\n' + formatted);
       } catch (e) {
-        Alert.alert(t('ai_generate_failed'), e.message || t('ai_network_retry'));
+        setResult(localFallbackNotice + '\n\n' + fallback);
       } finally {
         setGenerating(false);
       }
       return;
     }
-    if (!selectedTrip) {
-      Alert.alert(t('ai_notice'), t('ai_select_trip_first'));
+    setGenerating(true);
+    setResult('');
+    const fallback = buildLocalTravelStory({
+      mode,
+      trip: selectedTrip,
+      day: mode === 'summary' ? null : selectedDay,
+    });
+
+    if (!selectedTrip || (mode !== 'summary' && !selectedDay)) {
+      setResult(localFallbackNotice + '\n\n' + fallback);
+      setGenerating(false);
       return;
     }
 
-    if (mode !== 'summary' && !selectedDay) {
-      Alert.alert(t('ai_notice'), t('ai_select_day_first'));
-      return;
-    }
-    setGenerating(true);
-    setResult('');
     try {
       const text = await callClaude(buildPrompt(), 1200);
-      setResult(text);
+      const readable = extractReadableAiText(text) || String(text || '').trim();
+      setResult(readable || `${localFallbackNotice}\n\n${fallback}`);
     } catch (e) {
-      Alert.alert('Generation Failed', e.message || 'Please check your network and try again');
+      setResult(localFallbackNotice + '\n\n' + fallback);
     } finally {
       setGenerating(false);
     }
@@ -320,18 +352,16 @@ Strict requirements:
           </>
         )}
 
-        {(mode==='itinerary' || (selectedTrip && (mode==='summary' || selectedDay))) && (
-          <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={()=>{Keyboard.dismiss();generate();}} disabled={generating}>
-            {generating ? (
-              <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-                <ActivityIndicator color="#0D0D0D" size="small"/>
-                <Text style={s.generateBtnText}>{t('ai_generating')}</Text>
-              </View>
-            ) : (
-              <Text style={s.generateBtnText}>✦ {t('ai_generate_action')}</Text>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={()=>{Keyboard.dismiss();generate();}} disabled={generating}>
+          {generating ? (
+            <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
+              <ActivityIndicator color="#0D0D0D" size="small"/>
+              <Text style={s.generateBtnText}>{t('ai_generating')}</Text>
+            </View>
+          ) : (
+            <Text style={s.generateBtnText}>✦ {t('ai_generate_action')}</Text>
+          )}
+        </TouchableOpacity>
 
         {result !== '' && (
           <View style={s.resultCard}>
