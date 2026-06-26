@@ -15,6 +15,8 @@
 		A68EA9222FD666170015944F /* TravelWatchCompanion Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A68EA9182FD666150015944F /* TravelWatchCompanion Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		BDF61EED68FEFB57170E9367 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DF0524F3A3A5646AC05EADA6 /* PrivacyInfo.xcprivacy */; };
+		C8B495E9A8FDC19AC8E860AF /* OutdoorGlanceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */; };
+		D5E7129A7D66B1F29728BE30 /* OutdoorGlanceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -47,6 +49,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = WanderNote/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = WanderNote/Info.plist; sourceTree = "<group>"; };
 		1E33A9721A3C26C0A6837B44 /* Pods-WanderNote.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WanderNote.debug.xcconfig"; path = "Target Support Files/Pods-WanderNote/Pods-WanderNote.debug.xcconfig"; sourceTree = "<group>"; };
+		411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceSnapshot.swift; sourceTree = "<group>"; };
 		86EE861785B23D5A1D6A27FE /* Pods-WanderNote.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WanderNote.release.xcconfig"; path = "Target Support Files/Pods-WanderNote/Pods-WanderNote.release.xcconfig"; sourceTree = "<group>"; };
 		9F1B9074F63DCF4A44A9CEEF /* libPods-WanderNote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-WanderNote.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A68EA9182FD666150015944F /* TravelWatchCompanion Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TravelWatchCompanion Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -106,6 +109,15 @@
 			name = WanderNote;
 			sourceTree = "<group>";
 		};
+		1ECFDB9EB0CC6D77C13178C4 /* OutdoorGlanceContract */ = {
+			isa = PBXGroup;
+			children = (
+				411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */,
+			);
+			name = OutdoorGlanceContract;
+			path = OutdoorGlanceContract;
+			sourceTree = "<group>";
+		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -131,6 +143,15 @@
 			name = WanderNote;
 			sourceTree = "<group>";
 		};
+		701D49D1A8E7BD86843EC237 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				1ECFDB9EB0CC6D77C13178C4 /* OutdoorGlanceContract */,
+			);
+			name = Shared;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -148,6 +169,7 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				A9042720AF7B88A04B3C5D16 /* Pods */,
 				4F083E027FDD242E91DA671F /* ExpoModulesProviders */,
+				701D49D1A8E7BD86843EC237 /* Shared */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -423,6 +445,7 @@
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				73BD0B12CEAEF99109E30AE9 /* ExpoModulesProvider.swift in Sources */,
+				C8B495E9A8FDC19AC8E860AF /* OutdoorGlanceSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -430,6 +453,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D5E7129A7D66B1F29728BE30 /* OutdoorGlanceSnapshot.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
