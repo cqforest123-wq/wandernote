@@ -8,11 +8,16 @@ The iPhone generates the snapshot. The Watch receives, caches, evaluates freshne
 
 ## Data flow
 
-iPhone outdoor services
-→ OutdoorGlanceSnapshot v1
-→ WatchConnectivity application context
-→ Watch local cache
-→ SwiftUI views
+WanderNote JS app state
+-> OutdoorGlanceSnapshot v1 composer
+-> OutdoorGlanceWatchBridge
+-> OutdoorGlanceWatchSender
+-> WCSession.updateApplicationContext
+-> WatchConnectivitySnapshotReceiver
+-> OutdoorGlanceSnapshotStore
+-> SwiftUI views
+
+The native sender is started once from AppDelegate through OutdoorGlanceWatchRuntime. The React Native bridge publishes JSON to the same long-lived sender instance, and the sender revalidates the payload by decoding it with the shared Swift contract before calling WatchConnectivity.
 
 ## Architecture boundaries
 
@@ -30,6 +35,33 @@ iPhone outdoor services
 ## Transport
 
 Version 1 uses WCSession.updateApplicationContext because the Watch needs the latest complete state rather than every intermediate update.
+
+The sender keeps only the latest pending snapshot. If the session is not active, the watch is not paired, or the watch app is not installed, the latest snapshot remains pending and is retried after activation or watch-state changes. Non-iOS runtimes and iOS runtimes without the native bridge safely no-op.
+
+## iPhone Snapshot Sources
+
+- trip: selected from existing WanderNote trips. The selector matches the Home countdown behavior by preferring the nearest upcoming planned trip; if there is no upcoming trip, it uses the newest trip by trip month.
+- location: the active trip destination coordinates from `trip.coords`. This is destination data, not live device location.
+- weather: current destination weather from the existing Open-Meteo helper.
+- altitude: null until a real altitude provider exists.
+- sun: null until a real sun event provider exists.
+- activity: null until a real activity provider exists.
+- parking: null until a real return-to-car data source exists.
+
+The composer normalizes invalid, missing, or non-finite values to null instead of sending fabricated values.
+
+## Sync Triggers
+
+The iPhone schedules a snapshot after trip state loads, when trip data changes, when destination weather resolves, and when the app returns to the foreground.
+
+Publishing is debounced and deduplicated by a stable fingerprint that ignores generatedAt while preserving data changes. Foreground sync can force a fresh publish to refresh the Watch cache freshness window.
+
+## Validation
+
+- JavaScript/TypeScript check: `npm run check`
+- Snapshot sync tests: `npm run test:watch-snapshot`
+- iPhone native bridge build: `xcodebuild -workspace ios/WanderNote.xcworkspace -scheme WanderNote -configuration Debug -sdk iphonesimulator ... build`
+- Watch target build: `xcodebuild -project ios/WanderNote.xcodeproj -target "TravelWatchCompanion Watch App" -configuration Debug -sdk watchsimulator ... build`
 
 ## Non-goals for v1
 

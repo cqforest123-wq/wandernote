@@ -23,16 +23,19 @@ The watch app starts as a WanderNote companion, but its architecture should rema
 
 - Native iOS project is now tracked because Watch App and future WidgetKit targets live under ios/.
 - TravelWatchCompanion Watch App target has been created.
-- Initial SwiftUI mock screen has been added.
+- Shared OutdoorGlanceSnapshot v1 contract is compiled into both iPhone and Watch targets.
+- Watch app receives snapshots through WatchConnectivity, caches the latest valid snapshot, evaluates freshness, and renders fresh/stale/unavailable states.
+- Watch UI uses OutdoorGlanceSnapshotStore at runtime. Mock providers remain available for preview and test support only.
+- iPhone starts one OutdoorGlanceWatchRuntime from AppDelegate and publishes through a narrow React Native bridge.
+- JavaScript app state now composes real OutdoorGlanceSnapshot v1 payloads and schedules debounced/deduplicated syncs after load, app foreground, trip changes, and weather updates.
 - Watch localization currently supports en, zh-Hans, and zh-Hant.
-- Local watchOS SDK is not installed yet, so watchOS compilation is pending.
+- Watch target and iPhone scheme compilation have been verified locally with code signing disabled.
 
 ## Pending
 
-- Install watchOS platform in Xcode Components.
-- Run watch target build.
 - Add real location altitude provider.
 - Add HealthKit steps provider.
 - Add Sun Events provider.
 - Add Return to Car storage and distance calculation.
+- Verify end-to-end delivery on a paired physical iPhone and Apple Watch.
 - Add WidgetKit complication later.
