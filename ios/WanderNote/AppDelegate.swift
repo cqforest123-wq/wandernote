@@ -8,7 +8,7 @@ public class AppDelegate: ExpoAppDelegate {
 
   var reactNativeDelegate: ExpoReactNativeFactoryDelegate?
   var reactNativeFactory: RCTReactNativeFactory?
-  private let outdoorGlanceWatchSender = OutdoorGlanceWatchSender()
+  private let outdoorGlanceWatchRuntime = OutdoorGlanceWatchRuntime.shared
 
   public override func application(
     _ application: UIApplication,
@@ -21,7 +21,7 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeDelegate = delegate
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
-    outdoorGlanceWatchSender.start()
+    outdoorGlanceWatchRuntime.start()
 
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)

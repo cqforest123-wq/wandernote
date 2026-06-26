@@ -6,6 +6,34 @@ enum OutdoorGlanceWatchSenderError: Error, Equatable {
     case encodingFailed(String)
     case invalidEncodedSnapshot(String)
     case applicationContextUpdateFailed(String)
+
+    var bridgeCode: String {
+        switch self {
+        case .watchConnectivityUnsupported:
+            return "ERR_OUTDOOR_GLANCE_WATCH_CONNECTIVITY_UNSUPPORTED"
+        case .encodingFailed:
+            return "ERR_OUTDOOR_GLANCE_ENCODING_FAILED"
+        case .invalidEncodedSnapshot:
+            return "ERR_OUTDOOR_GLANCE_INVALID_SNAPSHOT"
+        case .applicationContextUpdateFailed:
+            return "ERR_OUTDOOR_GLANCE_CONTEXT_UPDATE_FAILED"
+        }
+    }
+}
+
+extension OutdoorGlanceWatchSenderError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .watchConnectivityUnsupported:
+            return "WatchConnectivity is not supported on this device."
+        case let .encodingFailed(message):
+            return "Outdoor glance snapshot encoding failed: \(message)"
+        case let .invalidEncodedSnapshot(message):
+            return "Outdoor glance snapshot validation failed: \(message)"
+        case let .applicationContextUpdateFailed(message):
+            return "Outdoor glance snapshot context update failed: \(message)"
+        }
+    }
 }
 
 final class OutdoorGlanceWatchSender: NSObject {

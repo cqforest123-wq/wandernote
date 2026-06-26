@@ -49,6 +49,14 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
         process(applicationContext: applicationContext)
     }
 
+    #if os(iOS)
+    func sessionDidBecomeInactive(_ session: WCSession) {}
+
+    func sessionDidDeactivate(_ session: WCSession) {
+        session.activate()
+    }
+    #endif
+
     private func process(
         applicationContext: [String: Any]
     ) {

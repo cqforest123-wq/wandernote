@@ -45,8 +45,7 @@ struct ContentView: View {
                 WatchStrings.text("status.waiting"),
                 systemImage: "iphone"
             )
-            .font(.body)
-            .fontWeight(.semibold)
+            .font(.body.weight(.semibold))
 
             Text(WatchStrings.text("status.waitingDetail"))
                 .font(.caption2)
@@ -123,8 +122,7 @@ struct ContentView: View {
                 .foregroundStyle(.secondary)
 
             Text(value)
-                .font(.body)
-                .fontWeight(.semibold)
+                .font(.body.weight(.semibold))
         }
     }
 
