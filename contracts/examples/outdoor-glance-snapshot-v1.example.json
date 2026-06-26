@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "snapshotId": "2c012801-7fbf-4d90-ab21-44db2552f319",
+  "generatedAt": "2026-06-27T02:50:00Z",
+  "freshness": {
+    "validUntil": "2026-06-27T03:05:00Z"
+  },
+  "trip": {
+    "id": "trip-honolulu-2026",
+    "name": "Honolulu",
+    "dayNumber": 3
+  },
+  "location": {
+    "name": "Waikiki",
+    "latitude": 21.2793,
+    "longitude": -157.8294,
+    "horizontalAccuracyMeters": 8.5,
+    "capturedAt": "2026-06-27T02:49:45Z"
+  },
+  "altitude": {
+    "meters": 12.4,
+    "verticalAccuracyMeters": 4.0,
+    "capturedAt": "2026-06-27T02:49:45Z"
+  },
+  "weather": {
+    "temperatureCelsius": 27.0,
+    "apparentTemperatureCelsius": 29.0,
+    "conditionCode": "partly-cloudy",
+    "precipitationProbability": 0.15,
+    "updatedAt": "2026-06-27T02:45:00Z"
+  },
+  "sun": {
+    "sunriseAt": "2026-06-27T15:52:00Z",
+    "sunsetAt": "2026-06-28T05:17:00Z"
+  },
+  "activity": {
+    "steps": 8421,
+    "distanceMeters": 6210.5,
+    "updatedAt": "2026-06-27T02:49:00Z"
+  },
+  "parking": {
+    "savedAt": "2026-06-27T01:20:00Z",
+    "latitude": 21.2781,
+    "longitude": -157.8312,
+    "distanceMeters": 245.0,
+    "bearingDegrees": 231.5
+  }
+}
