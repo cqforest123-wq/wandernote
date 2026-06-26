@@ -75,6 +75,10 @@ enum OutdoorGlanceContractError: Error, Equatable {
     case unsupportedSchemaVersion(Int)
 }
 
+enum OutdoorGlanceTransport {
+    static let snapshotDataKey = "outdoorGlanceSnapshotV1"
+}
+
 enum OutdoorGlanceCodec {
     static func encode(_ snapshot: OutdoorGlanceSnapshot) throws -> Data {
         try makeEncoder().encode(snapshot)
