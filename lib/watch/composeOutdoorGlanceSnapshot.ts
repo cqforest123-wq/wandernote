@@ -55,13 +55,15 @@ export function composeOutdoorGlanceSnapshot(
 export function fingerprintOutdoorGlanceInput(
   input: ComposeOutdoorGlanceSnapshotInput = {}
 ): string {
+  const stableDate = new Date(0);
+
   return stableStringify({
     trip: normalizeTrip(input.trip),
-    location: normalizeLocation(input.location, null),
-    altitude: normalizeAltitude(input.altitude, null),
-    weather: normalizeWeather(input.weather, null),
+    location: normalizeLocation(input.location, stableDate),
+    altitude: normalizeAltitude(input.altitude, stableDate),
+    weather: normalizeWeather(input.weather, stableDate),
     sun: normalizeSun(input.sun),
-    activity: normalizeActivity(input.activity, null),
+    activity: normalizeActivity(input.activity, stableDate),
     parking: normalizeParking(input.parking),
   });
 }
