@@ -31,6 +31,8 @@ PODS:
     - Yoga
   - ExpoAsset (12.0.13):
     - ExpoModulesCore
+  - ExpoClipboard (8.0.8):
+    - ExpoModulesCore
   - ExpoFileSystem (19.0.22):
     - ExpoModulesCore
   - ExpoFont (14.0.11):
@@ -42,6 +44,10 @@ PODS:
   - ExpoImagePicker (17.0.11):
     - ExpoModulesCore
   - ExpoKeepAwake (15.0.8):
+    - ExpoModulesCore
+  - ExpoLocalization (17.0.8):
+    - ExpoModulesCore
+  - ExpoLocation (19.0.8):
     - ExpoModulesCore
   - ExpoMediaLibrary (18.2.1):
     - ExpoModulesCore
@@ -71,6 +77,8 @@ PODS:
     - Yoga
   - ExpoSecureStore (15.0.8):
     - ExpoModulesCore
+  - ExpoSplashScreen (31.0.13):
+    - ExpoModulesCore
   - FBLazyVector (0.81.5)
   - hermes-engine (0.81.5):
     - hermes-engine/Pre-built (= 0.81.5)
@@ -87,6 +95,8 @@ PODS:
   - libwebp/sharpyuv (1.5.0)
   - libwebp/webp (1.5.0):
     - libwebp/sharpyuv
+  - PurchasesHybridCommon (18.4.0):
+    - RevenueCat (= 5.70.0)
   - RCTDeprecation (0.81.5)
   - RCTRequired (0.81.5)
   - RCTTypeSafety (0.81.5):
@@ -1809,6 +1819,7 @@ PODS:
     - React-utils (= 0.81.5)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.81.5)
+  - RevenueCat (5.70.0)
   - RNCAsyncStorage (2.2.0):
     - hermes-engine
     - RCTRequired
@@ -1853,6 +1864,9 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
+  - RNPurchases (10.1.0):
+    - PurchasesHybridCommon (= 18.4.0)
+    - React-Core
   - RNScreens (4.16.0):
     - hermes-engine
     - RCTRequired
@@ -1956,14 +1970,18 @@ DEPENDENCIES:
   - EXImageLoader (from `../node_modules/expo-image-loader/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo/node_modules/expo-asset/ios`)
+  - ExpoClipboard (from `../node_modules/expo-clipboard/ios`)
   - ExpoFileSystem (from `../node_modules/expo/node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo/node_modules/expo-font/ios`)
   - ExpoImageManipulator (from `../node_modules/expo-image-manipulator/ios`)
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../node_modules/expo/node_modules/expo-keep-awake/ios`)
+  - ExpoLocalization (from `../node_modules/expo-localization/ios`)
+  - ExpoLocation (from `../node_modules/expo-location/ios`)
   - ExpoMediaLibrary (from `../node_modules/expo-media-library/ios`)
   - ExpoModulesCore (from `../node_modules/expo-modules-core`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
+  - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - FBLazyVector (from `../node_modules/react-native/Libraries/FBLazyVector`)
   - hermes-engine (from `../node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)
   - RCTDeprecation (from `../node_modules/react-native/ReactApple/Libraries/RCTFoundation/RCTDeprecation`)
@@ -2036,6 +2054,7 @@ DEPENDENCIES:
   - ReactNativeDependencies (from `../node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
+  - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
@@ -2043,6 +2062,8 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - libwebp
+    - PurchasesHybridCommon
+    - RevenueCat
     - SDWebImage
     - SDWebImageWebPCoder
 
@@ -2055,6 +2076,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/expo/node_modules/expo-asset/ios"
+  ExpoClipboard:
+    :path: "../node_modules/expo-clipboard/ios"
   ExpoFileSystem:
     :path: "../node_modules/expo/node_modules/expo-file-system/ios"
   ExpoFont:
@@ -2065,12 +2088,18 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-image-picker/ios"
   ExpoKeepAwake:
     :path: "../node_modules/expo/node_modules/expo-keep-awake/ios"
+  ExpoLocalization:
+    :path: "../node_modules/expo-localization/ios"
+  ExpoLocation:
+    :path: "../node_modules/expo-location/ios"
   ExpoMediaLibrary:
     :path: "../node_modules/expo-media-library/ios"
   ExpoModulesCore:
     :path: "../node_modules/expo-modules-core"
   ExpoSecureStore:
     :path: "../node_modules/expo-secure-store/ios"
+  ExpoSplashScreen:
+    :path: "../node_modules/expo-splash-screen/ios"
   FBLazyVector:
     :path: "../node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2214,6 +2243,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNDateTimePicker:
     :path: "../node_modules/@react-native-community/datetimepicker"
+  RNPurchases:
+    :path: "../node_modules/react-native-purchases"
   RNScreens:
     :path: "../node_modules/react-native-screens"
   RNSVG:
@@ -2226,17 +2257,22 @@ SPEC CHECKSUMS:
   EXImageLoader: 189e3476581efe3ad4d1d3fb4735b7179eb26f05
   Expo: 514ae3ec54a086aab509f255abfbf37be0fcc0e2
   ExpoAsset: 9e5a7c9c0a9fb83ad5b2bb365141f2bd7f289b66
+  ExpoClipboard: b36b287d8356887844bb08ed5c84b5979bb4dd1e
   ExpoFileSystem: ad991457efaa14253723f1dda997eac6024c700d
   ExpoFont: f543ce20a228dd702813668b1a07b46f51878d47
   ExpoImageManipulator: 607a5c8c88085381639458a46cc55fb9d3869148
   ExpoImagePicker: ade85e148f735fc7e6f27dfe3eef28eb3887e90a
   ExpoKeepAwake: 55f75eca6499bb9e4231ebad6f3e9cb8f99c0296
+  ExpoLocalization: d9168d5300a5b03e5e78b986124d11fb6ec3ebbd
+  ExpoLocation: d5b61cb4970fa982e39ca94246a206a0c3b812ca
   ExpoMediaLibrary: a3093b04365b245bb23b25b6eba84eb6ab55fecb
   ExpoModulesCore: 9e6a5514828e7dd5ded9e99d33557be2d284e660
   ExpoSecureStore: d32f751874a2ceb5aaeebeb3578e165c1ba2b24a
+  ExpoSplashScreen: bc3cffefca2716e5f22350ca109badd7e50ec14d
   FBLazyVector: e95a291ad2dadb88e42b06e0c5fb8262de53ec12
   hermes-engine: 9f4dfe93326146a1c99eb535b1cb0b857a3cd172
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
+  PurchasesHybridCommon: 2cd3e4b74c60f5a61603d78e4071274217cd9f6b
   RCTDeprecation: 943572d4be82d480a48f4884f670135ae30bf990
   RCTRequired: 8f3cfc90cc25cf6e420ddb3e7caaaabc57df6043
   RCTTypeSafety: 16a4144ca3f959583ab019b57d5633df10b5e97c
@@ -2304,14 +2340,16 @@ SPEC CHECKSUMS:
   ReactCodegen: 7d4593f7591f002d137fe40cef3f6c11f13c88cc
   ReactCommon: 08810150b1206cc44aecf5f6ae19af32f29151a8
   ReactNativeDependencies: 71ce9c28beb282aa720ea7b46980fff9669f428a
+  RevenueCat: f30d8ee4fd36ce56afa40923d314239761eb58a2
   RNCAsyncStorage: 3a4f5e2777dae1688b781a487923a08569e27fe4
   RNDateTimePicker: be0e44bcb9ed0607c7c5f47dbedd88cf091f6791
+  RNPurchases: d62a8adb6ab45858042eaedfb8f4933cefcd4b1a
   RNScreens: d8d6f1792f6e7ac12b0190d33d8d390efc0c1845
   RNSVG: 31d6639663c249b7d5abc9728dde2041eb2a3c34
   SDWebImage: e9fc87c1aab89a8ab1bbd74eba378c6f53be8abf
   SDWebImageWebPCoder: 0e06e365080397465cc73a7a9b472d8a3bd0f377
   Yoga: 5934998fbeaef7845dbf698f698518695ab4cd1a
 
-PODFILE CHECKSUM: 0e4848c3e135a5aa8ab3c202a4876da0df89ac2d
+PODFILE CHECKSUM: 12e92fb66e0235739ad5038493100d2d409bdfe7
 
 COCOAPODS: 1.16.2
