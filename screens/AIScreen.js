@@ -249,15 +249,6 @@ Strict requirements:
           {MODES.map(m=>(
             <TouchableOpacity key={m.key} style={[s.modeCard, mode===m.key&&s.modeCardActive]}
               onPress={()=>{
-                if (m.key !== 'itinerary') {
-                  if (trips.length === 0) {
-                    Alert.alert(t('ai_notice'), t('ai_create_trip_first'));
-                  } else if (!selectedTrip) {
-                    Alert.alert(t('ai_notice'), t('ai_select_trip_first'));
-                  } else if (m.key !== 'summary' && !selectedDay) {
-                    Alert.alert(t('ai_notice'), t('ai_select_day_first'));
-                  }
-                }
                 setMode(m.key);
                 setResult('');
                 if (m.key === 'summary' || m.key === 'itinerary') {

@@ -793,19 +793,19 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
                   </View>
                   <TouchableOpacity
                     style={{backgroundColor: aiGenerating?'#555':'#A78BFA',borderRadius:12,padding:14,alignItems:'center'}}
-                    disabled={aiGenerating || !aiDestination.trim()}
+                    disabled={aiGenerating}
                     onPress={async()=>{
                       if (aiPackingGeneratingRef.current) return;
-                      if (!aiDestination.trim()) return;
+                      const destination = aiDestination.trim() || tripName || t('memo_ai_checklist');
 
                       aiPackingGeneratingRef.current = true;
                       setAIGenerating(true);
                       try {
                         const { callClaude } = require('../lib/claude');
-                        const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${aiDestination}.
+                        const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${destination}.
 Requirements:
 1. Return pure JSON only, with no extra text.
-2. Format: {"title":"${aiDestination} ${aiDays}-day packing list","groups":{"Category name":["item 1","item 2"]}}
+2. Format: {"title":"${destination} ${aiDays}-day packing list","groups":{"Category name":["item 1","item 2"]}}
 3. Use these groups: Documents, Money, Electronics, Clothing, Toiletries, Special items.
 4. Each group should include 5-8 items, each with a suitable emoji.
 5. Adapt the suggestions to the destination.`;
@@ -817,7 +817,7 @@ Requirements:
                         }
                         const newMemo = createMemo({
                           category: 'packing',
-                          title: parsed.title || `${aiDestination} ${t('memo_ai_checklist')}`,
+                          title: parsed.title || `${destination} ${t('memo_ai_checklist')}`,
                           items: Object.entries(parsed.groups).flatMap(([group, items]) =>
                             items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
                           ),
@@ -827,9 +827,9 @@ Requirements:
                         await saveMemos(next);
                         setShowAIGen(false);
                         setShowTemplate(false);
-                        Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', aiDestination));
+                        Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', destination));
                       } catch(e) {
-                        const fallback = buildLocalPackingGroups(aiDestination, aiDays);
+                        const fallback = buildLocalPackingGroups(destination, aiDays);
                         const newMemo = createMemo({
                           category: 'packing',
                           title: fallback.title,
