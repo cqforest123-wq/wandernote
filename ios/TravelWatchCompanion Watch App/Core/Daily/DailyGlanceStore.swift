@@ -1,6 +1,14 @@
 import Combine
 import Foundation
 
+private enum DailyGlanceDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 @MainActor
 final class DailyGlanceStore: ObservableObject {
     @Published private(set) var data: DailyGlanceData
@@ -30,6 +38,9 @@ final class DailyGlanceStore: ObservableObject {
     }
 
     func start() {
+        DailyGlanceDiagnostics.log(
+            "Daily fallback store starting"
+        )
         refreshClock()
         refreshParking()
         locationAltitudeProvider?.start()
@@ -60,6 +71,9 @@ final class DailyGlanceStore: ObservableObject {
         guard data.locationAuthorization == .authorized,
               let latitude = data.latitude,
               let longitude = data.longitude else {
+            DailyGlanceDiagnostics.log(
+                "parking save skipped because current watch location is unavailable"
+            )
             return false
         }
 
@@ -74,11 +88,17 @@ final class DailyGlanceStore: ObservableObject {
             distanceMeters: 0,
             savedAt: date
         )
+        DailyGlanceDiagnostics.log(
+            "parking saved from current watch location"
+        )
 
         return true
     }
 
     func refreshParking() {
+        DailyGlanceDiagnostics.log(
+            "parking refresh requested"
+        )
         data = applyingParkingSnapshot(to: data)
     }
 
@@ -92,6 +112,9 @@ final class DailyGlanceStore: ObservableObject {
             altitudeMeters: update.altitudeMeters
         )
 
+        DailyGlanceDiagnostics.log(
+            "location update applied with authorization=\(update.authorization)"
+        )
         data = applyingParkingSnapshot(
             to: applyingSunEvents(to: nextData)
         )
@@ -101,12 +124,20 @@ final class DailyGlanceStore: ObservableObject {
         activityUpdate update: ActivityStepUpdate
     ) {
         data = data.updatingSteps(update.stepsToday)
+        DailyGlanceDiagnostics.log(
+            update.stepsToday == nil
+                ? "HealthKit steps unavailable"
+                : "HealthKit steps updated"
+        )
     }
 
     private func applyingParkingSnapshot(
         to data: DailyGlanceData
     ) -> DailyGlanceData {
         guard let parking = parkingStore.load() else {
+            DailyGlanceDiagnostics.log(
+                "parking unavailable because no local parking point is saved"
+            )
             return data.updatingParking(
                 latitude: nil,
                 longitude: nil,
@@ -127,6 +158,9 @@ final class DailyGlanceStore: ObservableObject {
             )
         } else {
             distance = nil
+            DailyGlanceDiagnostics.log(
+                "parking distance unavailable because current location is missing"
+            )
         }
 
         return data.updatingParking(
@@ -142,6 +176,9 @@ final class DailyGlanceStore: ObservableObject {
         at date: Date = Date()
     ) -> DailyGlanceData {
         guard data.locationAuthorization == .authorized else {
+            DailyGlanceDiagnostics.log(
+                "sun unavailable because location authorization=\(data.locationAuthorization)"
+            )
             return data.updatingSun(
                 sunrise: nil,
                 sunset: nil,
@@ -154,6 +191,16 @@ final class DailyGlanceStore: ObservableObject {
             latitude: data.latitude,
             longitude: data.longitude
         )
+
+        if events.sunrise == nil || events.sunset == nil {
+            DailyGlanceDiagnostics.log(
+                "sun unavailable for latest location"
+            )
+        } else {
+            DailyGlanceDiagnostics.log(
+                "sun events updated"
+            )
+        }
 
         return data.updatingSun(
             sunrise: events.sunrise,

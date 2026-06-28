@@ -1,6 +1,14 @@
 import Combine
 import Foundation
 
+private enum SnapshotStoreDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 enum OutdoorGlanceSnapshotAvailability: Equatable {
     case unavailable
     case fresh
@@ -31,23 +39,39 @@ final class OutdoorGlanceSnapshotStore: ObservableObject {
             return .unavailable
         }
 
-        return snapshot.isStale(at: date) ? .stale : .fresh
+        if snapshot.isStale(at: date) {
+            SnapshotStoreDiagnostics.log(
+                "snapshot considered stale"
+            )
+            return .stale
+        }
+
+        return .fresh
     }
 
     func load() {
         guard let data = defaults.data(forKey: cacheKey) else {
             snapshot = nil
             lastErrorDescription = nil
+            SnapshotStoreDiagnostics.log(
+                "no cached snapshot found"
+            )
             return
         }
 
         do {
             snapshot = try OutdoorGlanceCodec.decode(data)
             lastErrorDescription = nil
+            SnapshotStoreDiagnostics.log(
+                "cached snapshot loaded"
+            )
         } catch {
             snapshot = nil
             lastErrorDescription = String(describing: error)
             defaults.removeObject(forKey: cacheKey)
+            SnapshotStoreDiagnostics.log(
+                "cached snapshot invalid and removed"
+            )
         }
     }
 
@@ -64,6 +88,9 @@ final class OutdoorGlanceSnapshotStore: ObservableObject {
 
         self.snapshot = snapshot
         lastErrorDescription = nil
+        SnapshotStoreDiagnostics.log(
+            "snapshot cache saved"
+        )
     }
 
     func save(encodedData data: Data) throws {
@@ -72,6 +99,9 @@ final class OutdoorGlanceSnapshotStore: ObservableObject {
 
         self.snapshot = snapshot
         lastErrorDescription = nil
+        SnapshotStoreDiagnostics.log(
+            "snapshot cache saved from encoded payload"
+        )
     }
 
     func clear() {

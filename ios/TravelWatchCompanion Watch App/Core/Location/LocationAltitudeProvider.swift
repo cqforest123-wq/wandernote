@@ -1,6 +1,14 @@
 import CoreLocation
 import Foundation
 
+private enum LocationAltitudeDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 struct LocationAltitudeUpdate: Equatable {
     let authorization: GlanceLocationAuthorization
     let latitude: Double?
@@ -26,6 +34,9 @@ final class LocationAltitudeProvider: NSObject {
 
     func start() {
         guard CLLocationManager.locationServicesEnabled() else {
+            LocationAltitudeDiagnostics.log(
+                "altitude unavailable because location services are disabled"
+            )
             publish(
                 authorization: .unavailable
             )
@@ -52,20 +63,35 @@ final class LocationAltitudeProvider: NSObject {
     ) {
         switch status {
         case .notDetermined:
+            LocationAltitudeDiagnostics.log(
+                "location authorization not determined; requesting permission"
+            )
             publish(authorization: .notDetermined)
             manager.requestWhenInUseAuthorization()
 
         case .authorizedAlways, .authorizedWhenInUse:
+            LocationAltitudeDiagnostics.log(
+                "location authorization granted; requesting location"
+            )
             publish(authorization: .authorized)
             manager.requestLocation()
 
         case .denied:
+            LocationAltitudeDiagnostics.log(
+                "location authorization denied"
+            )
             publish(authorization: .denied)
 
         case .restricted:
+            LocationAltitudeDiagnostics.log(
+                "location authorization restricted"
+            )
             publish(authorization: .restricted)
 
         @unknown default:
+            LocationAltitudeDiagnostics.log(
+                "location authorization unavailable"
+            )
             publish(authorization: .unavailable)
         }
     }
@@ -89,6 +115,11 @@ final class LocationAltitudeProvider: NSObject {
                 longitude: location?.coordinate.longitude,
                 altitudeMeters: altitudeMeters
             )
+        )
+        LocationAltitudeDiagnostics.log(
+            altitudeMeters == nil
+                ? "altitude unavailable for latest location update"
+                : "altitude updated from latest location"
         )
     }
 }
@@ -123,6 +154,9 @@ extension LocationAltitudeProvider: CLLocationManagerDelegate {
         didFailWithError error: Error
     ) {
         Task { @MainActor [weak self] in
+            LocationAltitudeDiagnostics.log(
+                "location request failed: \(String(describing: error))"
+            )
             self?.publish(
                 authorization: .unavailable
             )

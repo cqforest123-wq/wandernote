@@ -1,6 +1,14 @@
 import Foundation
 import WatchConnectivity
 
+enum OutdoorGlanceWatchDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[OutdoorGlance] \(message())")
+        #endif
+    }
+}
+
 enum OutdoorGlanceWatchSenderError: Error, Equatable {
     case watchConnectivityUnsupported
     case encodingFailed(String)
@@ -63,14 +71,23 @@ final class OutdoorGlanceWatchSender: NSObject {
             }
 
             guard WCSession.isSupported() else {
+                OutdoorGlanceWatchDiagnostics.log(
+                    "WatchConnectivity unsupported on sender device"
+                )
                 return
             }
 
             guard self.state == .notStarted else {
+                OutdoorGlanceWatchDiagnostics.log(
+                    "sender start skipped because runtime already started"
+                )
                 return
             }
 
             self.state = .activating
+            OutdoorGlanceWatchDiagnostics.log(
+                "WatchConnectivity sender activating"
+            )
 
             DispatchQueue.main.async { [weak self] in
                 guard let self else {
@@ -114,10 +131,16 @@ final class OutdoorGlanceWatchSender: NSObject {
     private func publishValidated(encodedData data: Data) throws {
         try stateQueue.sync {
             guard WCSession.isSupported() else {
+                OutdoorGlanceWatchDiagnostics.log(
+                    "publish failed because WatchConnectivity is unsupported"
+                )
                 throw OutdoorGlanceWatchSenderError.watchConnectivityUnsupported
             }
 
             pendingSnapshotData = data
+            OutdoorGlanceWatchDiagnostics.log(
+                "payload queued for WatchConnectivity send"
+            )
             try sendPendingIfPossible()
         }
     }
@@ -128,6 +151,9 @@ final class OutdoorGlanceWatchSender: NSObject {
               session.isPaired,
               session.isWatchAppInstalled,
               let data = pendingSnapshotData else {
+            OutdoorGlanceWatchDiagnostics.log(
+                "payload pending; state=\(state), activation=\(session.activationState.rawValue), paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)"
+            )
             return
         }
 
@@ -137,7 +163,13 @@ final class OutdoorGlanceWatchSender: NSObject {
             ])
 
             pendingSnapshotData = nil
+            OutdoorGlanceWatchDiagnostics.log(
+                "payload sent with updateApplicationContext"
+            )
         } catch {
+            OutdoorGlanceWatchDiagnostics.log(
+                "payload send failed: \(String(describing: error))"
+            )
             throw OutdoorGlanceWatchSenderError.applicationContextUpdateFailed(
                 String(describing: error)
             )
@@ -151,10 +183,16 @@ final class OutdoorGlanceWatchSender: NSObject {
             }
 
             self.state = .active
+            OutdoorGlanceWatchDiagnostics.log(
+                "WatchConnectivity sender activated"
+            )
 
             do {
                 try self.sendPendingIfPossible()
             } catch {
+                OutdoorGlanceWatchDiagnostics.log(
+                    "pending payload retained after activation flush failure"
+                )
                 // Keep the latest pending snapshot for the next state change.
             }
         }
@@ -174,6 +212,9 @@ extension OutdoorGlanceWatchSender: WCSessionDelegate {
         error: Error?
     ) {
         guard error == nil, activationState == .activated else {
+            OutdoorGlanceWatchDiagnostics.log(
+                "sender activation incomplete: state=\(activationState.rawValue), error=\(String(describing: error))"
+            )
             return
         }
 
@@ -190,6 +231,9 @@ extension OutdoorGlanceWatchSender: WCSessionDelegate {
     }
 
     func sessionWatchStateDidChange(_ session: WCSession) {
+        OutdoorGlanceWatchDiagnostics.log(
+            "watch state changed; paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)"
+        )
         markActivatedAndFlush()
     }
 }

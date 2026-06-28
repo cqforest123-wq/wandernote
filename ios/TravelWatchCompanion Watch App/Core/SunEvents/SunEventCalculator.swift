@@ -1,5 +1,13 @@
 import Foundation
 
+private enum SunEventDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 struct SunEventSnapshot: Equatable {
     let sunrise: Date?
     let sunset: Date?
@@ -17,6 +25,9 @@ enum SunEventCalculator {
               let longitude,
               (-90...90).contains(latitude),
               (-180...180).contains(longitude) else {
+            SunEventDiagnostics.log(
+                "sun unavailable because coordinates are missing or invalid"
+            )
             return SunEventSnapshot(
                 sunrise: nil,
                 sunset: nil,
@@ -44,6 +55,15 @@ enum SunEventCalculator {
             daylightRemaining = sunset.timeIntervalSince(date)
         } else {
             daylightRemaining = nil
+            SunEventDiagnostics.log(
+                "daylight remaining unavailable because sunset has passed or is missing"
+            )
+        }
+
+        if sunrise == nil || sunset == nil {
+            SunEventDiagnostics.log(
+                "sunrise or sunset unavailable for this date/location"
+            )
         }
 
         return SunEventSnapshot(
@@ -64,6 +84,9 @@ enum SunEventCalculator {
             matchingLocalDateOf: date,
             calendar: calendar
         ) else {
+            SunEventDiagnostics.log(
+                "sun event unavailable because UTC date could not be resolved"
+            )
             return nil
         }
 
@@ -75,6 +98,9 @@ enum SunEventCalculator {
             in: .year,
             for: utcMidnight
         ) else {
+            SunEventDiagnostics.log(
+                "sun event unavailable because day-of-year could not be resolved"
+            )
             return nil
         }
 
@@ -105,6 +131,9 @@ enum SunEventCalculator {
         ) / (cosDeclination * cosDegrees(latitude))
 
         guard (-1...1).contains(cosHourAngle) else {
+            SunEventDiagnostics.log(
+                "sun event unavailable for polar daylight edge case"
+            )
             return nil
         }
 

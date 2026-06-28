@@ -1,6 +1,14 @@
 import Foundation
 import HealthKit
 
+private enum ActivityStepDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 struct ActivityStepUpdate: Equatable {
     let stepsToday: Int?
 }
@@ -43,6 +51,9 @@ final class ActivityStepProvider {
               let stepType = HKQuantityType.quantityType(
                 forIdentifier: .stepCount
               ) else {
+            ActivityStepDiagnostics.log(
+                "HealthKit unavailable for step count"
+            )
             publish(stepsToday: nil)
             return
         }
@@ -59,8 +70,14 @@ final class ActivityStepProvider {
         ) { [weak self] success, _ in
             Task { @MainActor in
                 if success {
+                    ActivityStepDiagnostics.log(
+                        "HealthKit authorization granted for step count"
+                    )
                     self?.querySteps()
                 } else {
+                    ActivityStepDiagnostics.log(
+                        "HealthKit authorization denied for step count"
+                    )
                     self?.publish(stepsToday: nil)
                 }
             }
@@ -74,6 +91,9 @@ final class ActivityStepProvider {
               let stepType = HKQuantityType.quantityType(
                 forIdentifier: .stepCount
               ) else {
+            ActivityStepDiagnostics.log(
+                "HealthKit unavailable during step refresh"
+            )
             publish(stepsToday: nil)
             return
         }
@@ -93,12 +113,18 @@ final class ActivityStepProvider {
             Task { @MainActor in
                 guard error == nil,
                       let quantity = statistics?.sumQuantity() else {
+                    ActivityStepDiagnostics.log(
+                        "HealthKit step query returned no data"
+                    )
                     self?.publish(stepsToday: nil)
                     return
                 }
 
                 let steps = Int(
                     quantity.doubleValue(for: .count()).rounded()
+                )
+                ActivityStepDiagnostics.log(
+                    "HealthKit step query succeeded"
                 )
                 self?.publish(stepsToday: steps)
             }

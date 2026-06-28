@@ -23,6 +23,18 @@ type PendingPublish = {
   fingerprint: string;
 };
 
+function isOutdoorGlanceDebugEnabled(): boolean {
+  return Boolean(
+    (globalThis as unknown as { __DEV__?: boolean }).__DEV__
+  );
+}
+
+function logOutdoorGlanceDebug(message: string): void {
+  if (isOutdoorGlanceDebugEnabled()) {
+    console.debug(`[OutdoorGlance] ${message}`);
+  }
+}
+
 export class OutdoorGlanceSyncCoordinator {
   private readonly publisher: OutdoorGlanceSnapshotPublisher;
   private readonly debounceMs: number;
@@ -48,8 +60,15 @@ export class OutdoorGlanceSyncCoordinator {
     const fingerprint = fingerprintOutdoorGlanceInput(input);
 
     if (!options.force && fingerprint === this.lastPublishedFingerprint) {
+      logOutdoorGlanceDebug('payload skipped due to duplicate fingerprint');
       return;
     }
+
+    logOutdoorGlanceDebug(
+      options.force
+        ? 'snapshot send scheduled with foreground force'
+        : 'snapshot send scheduled'
+    );
 
     this.pending = {
       input,
@@ -76,10 +95,13 @@ export class OutdoorGlanceSyncCoordinator {
 
     try {
       const snapshot = composeOutdoorGlanceSnapshot(pending.input);
+      logOutdoorGlanceDebug('snapshot composed');
       await this.publisher(JSON.stringify(snapshot));
+      logOutdoorGlanceDebug('payload sent to native bridge');
       this.lastPublishedFingerprint = pending.fingerprint;
     } catch (error) {
       this.pending = pending;
+      logOutdoorGlanceDebug('payload retained after send failure');
       this.onError?.(error);
     }
   }

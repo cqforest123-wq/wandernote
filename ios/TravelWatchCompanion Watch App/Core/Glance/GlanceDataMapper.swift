@@ -1,5 +1,13 @@
 import Foundation
 
+private enum GlanceMapperDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 enum GlanceDataMapper {
     static func make(
         snapshot: OutdoorGlanceSnapshot?,
@@ -9,6 +17,9 @@ enum GlanceDataMapper {
     ) -> GlanceData {
         guard let snapshot else {
             if let dailyData {
+                GlanceMapperDiagnostics.log(
+                    "Daily fallback selected because no iPhone snapshot is available"
+                )
                 return makeDailyGlance(
                     dailyData,
                     at: date
@@ -23,6 +34,12 @@ enum GlanceDataMapper {
         let tripTitle = title(for: snapshot.trip)
         let locationName = snapshot.location?.name
         let mode: GlanceMode = isStale ? .stale : .travel
+
+        if isStale {
+            GlanceMapperDiagnostics.log(
+                "stale travel snapshot selected"
+            )
+        }
 
         return GlanceData(
             mode: mode,

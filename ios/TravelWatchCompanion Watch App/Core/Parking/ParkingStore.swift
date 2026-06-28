@@ -1,5 +1,13 @@
 import Foundation
 
+private enum ParkingStoreDiagnostics {
+    static func log(_ message: @autoclosure () -> String) {
+        #if DEBUG
+        print("[WatchGlance] \(message())")
+        #endif
+    }
+}
+
 struct ParkingSnapshot: Codable, Equatable {
     let latitude: Double
     let longitude: Double
@@ -20,13 +28,23 @@ final class ParkingStore {
 
     func load() -> ParkingSnapshot? {
         guard let data = defaults.data(forKey: key) else {
+            ParkingStoreDiagnostics.log(
+                "parking loaded: none saved"
+            )
             return nil
         }
 
-        return try? JSONDecoder().decode(
+        let snapshot = try? JSONDecoder().decode(
             ParkingSnapshot.self,
             from: data
         )
+        ParkingStoreDiagnostics.log(
+            snapshot == nil
+                ? "parking load failed; saved data is invalid"
+                : "parking loaded from local watch storage"
+        )
+
+        return snapshot
     }
 
     func save(
@@ -41,6 +59,9 @@ final class ParkingStore {
         )
 
         guard let data = try? JSONEncoder().encode(snapshot) else {
+            ParkingStoreDiagnostics.log(
+                "parking save failed during encoding"
+            )
             return
         }
 
@@ -48,9 +69,15 @@ final class ParkingStore {
             data,
             forKey: key
         )
+        ParkingStoreDiagnostics.log(
+            "parking saved to local watch storage"
+        )
     }
 
     func clear() {
         defaults.removeObject(forKey: key)
+        ParkingStoreDiagnostics.log(
+            "parking cleared from local watch storage"
+        )
     }
 }
