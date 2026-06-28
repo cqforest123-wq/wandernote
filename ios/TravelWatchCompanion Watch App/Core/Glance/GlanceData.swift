@@ -12,6 +12,7 @@ struct GlanceData: Equatable {
     let title: String
     let subtitle: String?
     let currentLocationName: String?
+    let locationAuthorization: GlanceLocationAuthorization
     let latitude: Double?
     let longitude: Double?
     let altitudeMeters: Double?
@@ -37,6 +38,7 @@ struct GlanceData: Equatable {
             title: "Daily Glance",
             subtitle: nil,
             currentLocationName: nil,
+            locationAuthorization: .unavailable,
             latitude: nil,
             longitude: nil,
             altitudeMeters: nil,
@@ -60,4 +62,8 @@ struct GlanceData: Equatable {
 enum GlanceStatusLine: Equatable {
     case waitingForData
     case staleSnapshot
+    case locationPermissionNotDetermined
+    case locationPermissionDenied
+    case locationPermissionRestricted
+    case locationUnavailable
 }

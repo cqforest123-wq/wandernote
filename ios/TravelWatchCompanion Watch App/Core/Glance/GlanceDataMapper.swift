@@ -4,9 +4,17 @@ enum GlanceDataMapper {
     static func make(
         snapshot: OutdoorGlanceSnapshot?,
         availability: OutdoorGlanceSnapshotAvailability,
+        dailyData: DailyGlanceData? = nil,
         at date: Date = Date()
     ) -> GlanceData {
         guard let snapshot else {
+            if let dailyData {
+                return makeDailyGlance(
+                    dailyData,
+                    at: date
+                )
+            }
+
             return GlanceData.unavailable(at: date)
         }
 
@@ -21,6 +29,7 @@ enum GlanceDataMapper {
             title: tripTitle ?? "WanderNote",
             subtitle: locationName,
             currentLocationName: locationName,
+            locationAuthorization: .authorized,
             latitude: snapshot.location?.latitude,
             longitude: snapshot.location?.longitude,
             altitudeMeters: snapshot.altitude?.meters,
@@ -41,6 +50,52 @@ enum GlanceDataMapper {
             isStale: isStale,
             warnings: isStale ? [.staleSnapshot] : []
         )
+    }
+
+    private static func makeDailyGlance(
+        _ dailyData: DailyGlanceData,
+        at date: Date
+    ) -> GlanceData {
+        GlanceData(
+            mode: .daily,
+            title: "Daily Glance",
+            subtitle: dailyData.currentLocationName,
+            currentLocationName: dailyData.currentLocationName,
+            locationAuthorization: dailyData.locationAuthorization,
+            latitude: dailyData.latitude,
+            longitude: dailyData.longitude,
+            altitudeMeters: dailyData.altitudeMeters,
+            temperatureCelsius: nil,
+            weatherSummary: nil,
+            sunrise: dailyData.sunrise,
+            sunset: dailyData.sunset,
+            daylightRemaining: dailyData.daylightRemaining,
+            parkingLatitude: dailyData.parkingLatitude,
+            parkingLongitude: dailyData.parkingLongitude,
+            parkingDistanceMeters: dailyData.parkingDistanceMeters,
+            parkingSavedAt: dailyData.parkingSavedAt,
+            stepsToday: dailyData.stepsToday,
+            lastUpdatedAt: dailyData.generatedAt,
+            isStale: false,
+            warnings: dailyWarnings(for: dailyData)
+        )
+    }
+
+    private static func dailyWarnings(
+        for data: DailyGlanceData
+    ) -> [GlanceStatusLine] {
+        switch data.locationAuthorization {
+        case .authorized:
+            return []
+        case .notDetermined:
+            return [.locationPermissionNotDetermined]
+        case .denied:
+            return [.locationPermissionDenied]
+        case .restricted:
+            return [.locationPermissionRestricted]
+        case .unavailable:
+            return [.locationUnavailable]
+        }
     }
 
     private static func title(

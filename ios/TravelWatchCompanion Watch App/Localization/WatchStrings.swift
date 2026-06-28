@@ -49,6 +49,7 @@ enum WatchStrings {
 
     private static let english: [String: String] = [
         "app.title": "Travel Glance",
+        "mode.daily": "Daily Glance",
         "trip": "Trip",
         "trip.dayFormat": "%@ · Day %d",
         "location": "Location",
@@ -63,6 +64,10 @@ enum WatchStrings {
         "status.waiting": "Waiting for iPhone",
         "status.waitingDetail": "Open WanderNote on your iPhone to sync travel data.",
         "value.unavailable": "Unavailable",
+        "location.permissionNeeded": "Location permission needed",
+        "location.permissionDenied": "Location permission denied",
+        "location.permissionRestricted": "Location restricted",
+        "location.unavailable": "Location unavailable",
         "duration.hoursMinutes": "%dh %dm",
         "mock.location": "San Francisco",
         "mock.carDistance": "0.8 km"
@@ -70,6 +75,7 @@ enum WatchStrings {
 
     private static let simplifiedChinese: [String: String] = [
         "app.title": "旅行速览",
+        "mode.daily": "日常速览",
         "trip": "旅程",
         "trip.dayFormat": "%@ · 第%d天",
         "location": "位置",
@@ -84,6 +90,10 @@ enum WatchStrings {
         "status.waiting": "等待 iPhone 同步",
         "status.waitingDetail": "请在 iPhone 上打开 WanderNote 同步旅行数据。",
         "value.unavailable": "暂无数据",
+        "location.permissionNeeded": "需要位置权限",
+        "location.permissionDenied": "位置权限已关闭",
+        "location.permissionRestricted": "位置权限受限",
+        "location.unavailable": "无法获取位置",
         "duration.hoursMinutes": "%d小时%d分",
         "mock.location": "旧金山",
         "mock.carDistance": "0.8 公里"
@@ -91,6 +101,7 @@ enum WatchStrings {
 
     private static let traditionalChinese: [String: String] = [
         "app.title": "旅行速覽",
+        "mode.daily": "日常速覽",
         "trip": "旅程",
         "trip.dayFormat": "%@ · 第%d天",
         "location": "位置",
@@ -105,6 +116,10 @@ enum WatchStrings {
         "status.waiting": "等待 iPhone 同步",
         "status.waitingDetail": "請在 iPhone 上開啟 WanderNote 同步旅行資料。",
         "value.unavailable": "暫無資料",
+        "location.permissionNeeded": "需要位置權限",
+        "location.permissionDenied": "位置權限已關閉",
+        "location.permissionRestricted": "位置權限受限",
+        "location.unavailable": "無法取得位置",
         "duration.hoursMinutes": "%d小時%d分",
         "mock.location": "舊金山",
         "mock.carDistance": "0.8 公里"

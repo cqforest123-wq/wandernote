@@ -8,6 +8,7 @@ struct TravelWatchCompanionApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(runtime.store)
+                .environmentObject(runtime.dailyStore)
                 .task {
                     runtime.start()
                 }

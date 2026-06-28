@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var store: OutdoorGlanceSnapshotStore
+    @EnvironmentObject private var dailyStore: DailyGlanceStore
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
@@ -17,6 +18,7 @@ struct ContentView: View {
         let glance = GlanceDataMapper.make(
             snapshot: store.snapshot,
             availability: store.availability(at: date),
+            dailyData: dailyStore.data,
             at: date
         )
 
@@ -54,8 +56,7 @@ struct ContentView: View {
 
             metricRow(
                 title: WatchStrings.text("location"),
-                value: glance.currentLocationName ??
-                    WatchStrings.text("value.unavailable")
+                value: formatLocation(glance)
             )
 
             metricRow(
@@ -116,9 +117,30 @@ struct ContentView: View {
     ) -> String {
         switch glance.mode {
         case .daily, .unavailable:
-            return "Daily Glance"
+            return WatchStrings.text("mode.daily")
         case .travel, .stale:
             return WatchStrings.text("app.title")
+        }
+    }
+
+    private func formatLocation(
+        _ glance: GlanceData
+    ) -> String {
+        if let locationName = glance.currentLocationName {
+            return locationName
+        }
+
+        switch glance.locationAuthorization {
+        case .authorized:
+            return WatchStrings.text("value.unavailable")
+        case .notDetermined:
+            return WatchStrings.text("location.permissionNeeded")
+        case .denied:
+            return WatchStrings.text("location.permissionDenied")
+        case .restricted:
+            return WatchStrings.text("location.permissionRestricted")
+        case .unavailable:
+            return WatchStrings.text("location.unavailable")
         }
     }
 

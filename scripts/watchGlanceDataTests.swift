@@ -29,6 +29,7 @@ struct WatchGlanceDataTests {
         let glance = GlanceDataMapper.make(
             snapshot: snapshot,
             availability: .fresh,
+            dailyData: nil,
             at: now
         )
 
@@ -52,6 +53,7 @@ struct WatchGlanceDataTests {
         let glance = GlanceDataMapper.make(
             snapshot: snapshot,
             availability: .stale,
+            dailyData: nil,
             at: now
         )
 
@@ -68,6 +70,7 @@ struct WatchGlanceDataTests {
         let glance = GlanceDataMapper.make(
             snapshot: nil,
             availability: .unavailable,
+            dailyData: nil,
             at: now
         )
 
@@ -100,6 +103,7 @@ struct WatchGlanceDataTests {
         let glance = GlanceDataMapper.make(
             snapshot: snapshot,
             availability: .fresh,
+            dailyData: nil,
             at: now
         )
 
@@ -107,6 +111,19 @@ struct WatchGlanceDataTests {
         assert(glance.currentLocationName == nil, "missing location is nil")
         assert(glance.altitudeMeters == nil, "missing altitude is nil")
         assert(glance.parkingDistanceMeters == nil, "missing parking is nil")
+
+        let daily = GlanceDataMapper.make(
+            snapshot: nil,
+            availability: .unavailable,
+            dailyData: .empty(at: now),
+            at: now
+        )
+
+        assert(daily.mode == .daily, "daily data should produce daily mode")
+        assert(
+            daily.warnings.contains(.locationPermissionNotDetermined),
+            "daily mode should expose location permission status"
+        )
     }
 
     private static func makeSnapshot(
