@@ -8,7 +8,8 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "check": "tsc --noEmit",
-    "test:watch-snapshot": "rm -rf /tmp/wandernote-watch-snapshot-tests && tsc -p tsconfig.watch-tests.json && node /tmp/wandernote-watch-snapshot-tests/scripts/watchSnapshotTests.js"
+    "test:watch-snapshot": "rm -rf /tmp/wandernote-watch-snapshot-tests && tsc -p tsconfig.watch-tests.json && node /tmp/wandernote-watch-snapshot-tests/scripts/watchSnapshotTests.js",
+    "test:watch-glance": "swiftc ios/Shared/OutdoorGlanceContract/OutdoorGlanceSnapshot.swift 'ios/TravelWatchCompanion Watch App/Core/Storage/OutdoorGlanceSnapshotStore.swift' 'ios/TravelWatchCompanion Watch App/Core/Glance/GlanceData.swift' 'ios/TravelWatchCompanion Watch App/Core/Glance/GlanceDataMapper.swift' 'ios/TravelWatchCompanion Watch App/Localization/WatchStrings.swift' scripts/watchGlanceDataTests.swift -o /tmp/wandernote-watch-glance-tests && /tmp/wandernote-watch-glance-tests"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

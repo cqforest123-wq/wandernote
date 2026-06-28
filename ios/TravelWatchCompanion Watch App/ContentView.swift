@@ -14,28 +14,86 @@ struct ContentView: View {
 
     @ViewBuilder
     private func content(at date: Date) -> some View {
+        let glance = GlanceDataMapper.make(
+            snapshot: store.snapshot,
+            availability: store.availability(at: date),
+            at: date
+        )
+
         VStack(alignment: .leading, spacing: 10) {
-            Text(WatchStrings.text("app.title"))
+            Text(title(for: glance))
                 .font(.headline)
 
-            switch store.availability(at: date) {
-            case .unavailable:
-                unavailableView
-
-            case .fresh, .stale:
-                if store.availability(at: date) == .stale {
-                    Label(
-                        WatchStrings.text("status.stale"),
-                        systemImage: "exclamationmark.triangle"
-                    )
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                }
-
-                if let snapshot = store.snapshot {
-                    snapshotView(snapshot, at: date)
-                }
+            if glance.isStale {
+                Label(
+                    WatchStrings.text("status.stale"),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             }
+
+            glanceView(glance, at: date)
+        }
+    }
+
+    @ViewBuilder
+    private func glanceView(
+        _ glance: GlanceData,
+        at date: Date
+    ) -> some View {
+        switch glance.mode {
+        case .unavailable:
+            unavailableView
+
+        case .travel, .daily, .stale:
+            metricRow(
+                title: WatchStrings.text("trip"),
+                value: glance.title
+            )
+
+            metricRow(
+                title: WatchStrings.text("location"),
+                value: glance.currentLocationName ??
+                    WatchStrings.text("value.unavailable")
+            )
+
+            metricRow(
+                title: WatchStrings.text("altitude"),
+                value: formatAltitude(glance.altitudeMeters)
+            )
+
+            metricRow(
+                title: WatchStrings.text("weather"),
+                value: formatTemperature(
+                    glance.temperatureCelsius
+                )
+            )
+
+            metricRow(
+                title: WatchStrings.text("sunset"),
+                value: formatTime(glance.sunset)
+            )
+
+            metricRow(
+                title: WatchStrings.text("daylight"),
+                value: formatDuration(glance.daylightRemaining)
+            )
+
+            metricRow(
+                title: WatchStrings.text("steps"),
+                value: formatSteps(glance.stepsToday)
+            )
+
+            metricRow(
+                title: WatchStrings.text("car"),
+                value: formatParking(glance)
+            )
+
+            metricRow(
+                title: WatchStrings.text("updated"),
+                value: formatTime(glance.lastUpdatedAt)
+            )
         }
     }
 
@@ -53,63 +111,15 @@ struct ContentView: View {
         }
     }
 
-    @ViewBuilder
-    private func snapshotView(
-        _ snapshot: OutdoorGlanceSnapshot,
-        at date: Date
-    ) -> some View {
-        if let trip = snapshot.trip {
-            metricRow(
-                title: WatchStrings.text("trip"),
-                value: tripTitle(trip)
-            )
+    private func title(
+        for glance: GlanceData
+    ) -> String {
+        switch glance.mode {
+        case .daily, .unavailable:
+            return "Daily Glance"
+        case .travel, .stale:
+            return WatchStrings.text("app.title")
         }
-
-        metricRow(
-            title: WatchStrings.text("location"),
-            value: snapshot.location?.name ??
-                WatchStrings.text("value.unavailable")
-        )
-
-        metricRow(
-            title: WatchStrings.text("altitude"),
-            value: formatAltitude(snapshot.altitude?.meters)
-        )
-
-        metricRow(
-            title: WatchStrings.text("weather"),
-            value: formatTemperature(
-                snapshot.weather?.temperatureCelsius
-            )
-        )
-
-        metricRow(
-            title: WatchStrings.text("sunset"),
-            value: formatTime(snapshot.sun?.sunsetAt)
-        )
-
-        metricRow(
-            title: WatchStrings.text("daylight"),
-            value: formatDaylight(
-                until: snapshot.sun?.sunsetAt,
-                from: date
-            )
-        )
-
-        metricRow(
-            title: WatchStrings.text("steps"),
-            value: formatSteps(snapshot.activity?.steps)
-        )
-
-        metricRow(
-            title: WatchStrings.text("car"),
-            value: formatParking(snapshot.parking)
-        )
-
-        metricRow(
-            title: WatchStrings.text("updated"),
-            value: formatTime(snapshot.generatedAt)
-        )
     }
 
     private func metricRow(
@@ -124,20 +134,6 @@ struct ContentView: View {
             Text(value)
                 .font(.body.weight(.semibold))
         }
-    }
-
-    private func tripTitle(
-        _ trip: OutdoorGlanceTrip
-    ) -> String {
-        guard let dayNumber = trip.dayNumber else {
-            return trip.name
-        }
-
-        return WatchStrings.format(
-            "trip.dayFormat",
-            trip.name,
-            dayNumber
-        )
     }
 
     private func formatAltitude(
@@ -173,16 +169,15 @@ struct ContentView: View {
         )
     }
 
-    private func formatDaylight(
-        until sunset: Date?,
-        from date: Date
+    private func formatDuration(
+        _ duration: TimeInterval?
     ) -> String {
-        guard let sunset, sunset > date else {
+        guard let duration, duration > 0 else {
             return WatchStrings.text("value.unavailable")
         }
 
         let totalMinutes = Int(
-            sunset.timeIntervalSince(date) / 60
+            duration / 60
         )
 
         return WatchStrings.format(
@@ -208,10 +203,9 @@ struct ContentView: View {
     }
 
     private func formatParking(
-        _ parking: OutdoorGlanceParking?
+        _ glance: GlanceData
     ) -> String {
-        guard let parking,
-              let distance = parking.distanceMeters else {
+        guard let distance = glance.parkingDistanceMeters else {
             return WatchStrings.text("value.unavailable")
         }
 
@@ -226,21 +220,6 @@ struct ContentView: View {
             )
         }
 
-        guard let bearing = parking.bearingDegrees else {
-            return distanceText
-        }
-
-        return "\(directionSymbol(for: bearing)) \(distanceText)"
-    }
-
-    private func directionSymbol(
-        for bearing: Double
-    ) -> String {
-        let symbols = ["↑", "↗", "→", "↘", "↓", "↙", "←", "↖"]
-        let normalized = bearing.truncatingRemainder(dividingBy: 360)
-        let positive = normalized >= 0 ? normalized : normalized + 360
-        let index = Int((positive + 22.5) / 45.0) % symbols.count
-
-        return symbols[index]
+        return distanceText
     }
 }
