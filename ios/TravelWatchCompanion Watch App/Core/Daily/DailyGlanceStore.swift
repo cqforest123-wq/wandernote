@@ -31,7 +31,10 @@ final class DailyGlanceStore: ObservableObject {
     func refreshClock(
         at date: Date = Date()
     ) {
-        data = data.updatingClock(at: date)
+        data = applyingSunEvents(
+            to: data.updatingClock(at: date),
+            at: date
+        )
     }
 
     func refreshLocation() {
@@ -77,7 +80,9 @@ final class DailyGlanceStore: ObservableObject {
             altitudeMeters: update.altitudeMeters
         )
 
-        data = applyingParkingSnapshot(to: nextData)
+        data = applyingParkingSnapshot(
+            to: applyingSunEvents(to: nextData)
+        )
     }
 
     private func applyingParkingSnapshot(
@@ -111,6 +116,31 @@ final class DailyGlanceStore: ObservableObject {
             longitude: parking.longitude,
             distanceMeters: distance,
             savedAt: parking.savedAt
+        )
+    }
+
+    private func applyingSunEvents(
+        to data: DailyGlanceData,
+        at date: Date = Date()
+    ) -> DailyGlanceData {
+        guard data.locationAuthorization == .authorized else {
+            return data.updatingSun(
+                sunrise: nil,
+                sunset: nil,
+                daylightRemaining: nil
+            )
+        }
+
+        let events = SunEventCalculator.events(
+            on: date,
+            latitude: data.latitude,
+            longitude: data.longitude
+        )
+
+        return data.updatingSun(
+            sunrise: events.sunrise,
+            sunset: events.sunset,
+            daylightRemaining: events.daylightRemaining
         )
     }
 }

@@ -54,6 +54,8 @@ Daily Glance altitude is sourced on the Watch with CoreLocation when permission 
 
 Daily Glance parking is stored locally on the Watch. The user can save the current watch location as the parking point, view distance from the latest watch location, and open Apple Maps directions. This does not require syncing trip, journal, packing, memo, or AI data to the Watch.
 
+Daily Glance sun events are calculated locally on the Watch from the latest authorized location. The calculator has no network dependency and returns empty sunrise/sunset values for invalid coordinates or polar edge cases instead of blocking the UI.
+
 ## Sync Triggers
 
 The iPhone schedules a snapshot after trip state loads, when trip data changes, when destination weather resolves, and when the app returns to the foreground.

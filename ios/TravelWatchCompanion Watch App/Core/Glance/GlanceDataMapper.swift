@@ -69,7 +69,10 @@ enum GlanceDataMapper {
             weatherSummary: nil,
             sunrise: dailyData.sunrise,
             sunset: dailyData.sunset,
-            daylightRemaining: dailyData.daylightRemaining,
+            daylightRemaining: daylightRemaining(
+                until: dailyData.sunset,
+                from: date
+            ) ?? dailyData.daylightRemaining,
             parkingLatitude: dailyData.parkingLatitude,
             parkingLongitude: dailyData.parkingLongitude,
             parkingDistanceMeters: dailyData.parkingDistanceMeters,

@@ -174,6 +174,27 @@ struct WatchGlanceDataTests {
             parkingGlance.parkingSavedAt == now,
             "parking timestamp should map into daily glance"
         )
+
+        let dailyWithSun = dailyWithParking.updatingSun(
+            sunrise: Date(timeIntervalSince1970: 100),
+            sunset: Date(timeIntervalSince1970: 10_000),
+            daylightRemaining: nil
+        )
+        let sunGlance = GlanceDataMapper.make(
+            snapshot: nil,
+            availability: .unavailable,
+            dailyData: dailyWithSun,
+            at: now
+        )
+
+        assert(
+            sunGlance.sunset == Date(timeIntervalSince1970: 10_000),
+            "daily sunset should map"
+        )
+        assert(
+            sunGlance.daylightRemaining == 8_200,
+            "daily daylight remaining should calculate from render time"
+        )
     }
 
     private static func makeSnapshot(

@@ -113,4 +113,27 @@ struct DailyGlanceData: Equatable {
             stepsToday: stepsToday
         )
     }
+
+    nonisolated func updatingSun(
+        sunrise: Date?,
+        sunset: Date?,
+        daylightRemaining: TimeInterval?
+    ) -> DailyGlanceData {
+        DailyGlanceData(
+            generatedAt: Date(),
+            locationAuthorization: locationAuthorization,
+            currentLocationName: currentLocationName,
+            latitude: latitude,
+            longitude: longitude,
+            altitudeMeters: altitudeMeters,
+            sunrise: sunrise,
+            sunset: sunset,
+            daylightRemaining: daylightRemaining,
+            parkingLatitude: parkingLatitude,
+            parkingLongitude: parkingLongitude,
+            parkingDistanceMeters: parkingDistanceMeters,
+            parkingSavedAt: parkingSavedAt,
+            stepsToday: stepsToday
+        )
+    }
 }
