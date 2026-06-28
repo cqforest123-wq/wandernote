@@ -23,18 +23,8 @@ struct ContentView: View {
             at: date
         )
 
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title(for: glance))
-                .font(.headline)
-
-            if glance.isStale {
-                Label(
-                    WatchStrings.text("status.stale"),
-                    systemImage: "exclamationmark.triangle"
-                )
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-            }
+        VStack(alignment: .leading, spacing: 12) {
+            headerView(glance)
 
             glanceView(glance, at: date)
         }
@@ -82,6 +72,8 @@ struct ContentView: View {
                 value: formatDuration(glance.daylightRemaining)
             )
 
+            Divider()
+
             metricRow(
                 title: WatchStrings.text("steps"),
                 value: formatSteps(glance.stepsToday)
@@ -94,10 +86,45 @@ struct ContentView: View {
 
             parkingControls(glance)
 
+            Divider()
+
             metricRow(
                 title: WatchStrings.text("updated"),
                 value: formatTime(glance.lastUpdatedAt)
             )
+        }
+    }
+
+    private func headerView(
+        _ glance: GlanceData
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title(for: glance))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            Text(glance.title)
+                .font(.headline)
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+
+            if let subtitle = glance.subtitle,
+               subtitle != glance.title {
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            if glance.isStale {
+                Label(
+                    WatchStrings.text("status.stale"),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
         }
     }
 
@@ -160,13 +187,18 @@ struct ContentView: View {
         title: String,
         value: String
     ) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)
 
+            Spacer(minLength: 6)
+
             Text(value)
                 .font(.body.weight(.semibold))
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
         }
     }
 
@@ -175,17 +207,29 @@ struct ContentView: View {
     ) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Button(
-                WatchStrings.text("parking.save")
-            ) {
-                dailyStore.recordParkingAtCurrentLocation()
-            }
+                action: {
+                    dailyStore.recordParkingAtCurrentLocation()
+                },
+                label: {
+                    Label(
+                        WatchStrings.text("parking.save"),
+                        systemImage: "parkingsign.circle"
+                    )
+                }
+            )
             .disabled(!canRecordParking)
 
             Button(
-                WatchStrings.text("parking.directions")
-            ) {
-                openParkingDirections(glance)
-            }
+                action: {
+                    openParkingDirections(glance)
+                },
+                label: {
+                    Label(
+                        WatchStrings.text("parking.directions"),
+                        systemImage: "map"
+                    )
+                }
+            )
             .disabled(!hasParkingCoordinate(glance))
         }
     }
