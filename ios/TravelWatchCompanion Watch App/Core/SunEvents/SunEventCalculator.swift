@@ -68,7 +68,7 @@ enum SunEventCalculator {
         }
 
         var utcCalendar = Calendar(identifier: .gregorian)
-        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         guard let dayOfYear = utcCalendar.ordinality(
             of: .day,
@@ -138,7 +138,7 @@ enum SunEventCalculator {
             from: date
         )
         var utcCalendar = Calendar(identifier: .gregorian)
-        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0) ?? .gmt
+        utcCalendar.timeZone = TimeZone(secondsFromGMT: 0)!
 
         return utcCalendar.date(from: components)
     }
