@@ -36,9 +36,10 @@ The watch app starts as a WanderNote companion, but its architecture should rema
 - JavaScript app state now composes real OutdoorGlanceSnapshot v1 payloads and schedules debounced/deduplicated syncs after load, app foreground, trip changes, and weather updates.
 - Watch localization currently supports en, zh-Hans, and zh-Hant.
 - Watch target and iPhone scheme compilation have been verified locally with code signing disabled.
+- Real-device readiness now includes Watch HealthKit entitlement configuration, iPhone/Watch location privacy strings, debug-only diagnostics, and a paired-device checklist.
 
 ## Pending
 
 - Verify end-to-end delivery on a paired physical iPhone and Apple Watch.
-- Enable and verify HealthKit capability/provisioning before physical-device distribution.
+- Verify HealthKit capability/provisioning in Apple Developer/Xcode before physical-device distribution.
 - Add WidgetKit complication later.

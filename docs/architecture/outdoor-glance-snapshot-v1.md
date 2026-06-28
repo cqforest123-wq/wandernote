@@ -70,6 +70,18 @@ Daily Glance sun events are calculated locally on the Watch from the latest auth
 
 Daily Glance steps are read locally on the Watch through HealthKit when health data is available and the user authorizes read access to step count. If HealthKit is unavailable, unauthorized, or not enabled for the target, the Watch shows an unavailable value and continues rendering. Before device distribution, confirm the Watch target has the HealthKit capability and matching provisioning profile.
 
+## Real-Device Readiness
+
+- The Watch target has `NSLocationWhenInUseUsageDescription` for Watch-local altitude, sun, and parking distance.
+- The Watch target has `NSHealthShareUsageDescription` and a HealthKit entitlement file for Daily Steps.
+- The iPhone app has `NSLocationWhenInUseUsageDescription` because the existing trip detail flow can request foreground location for trip coordinates.
+- WatchConnectivity does not need a separate entitlement, but paired-device testing must verify activation, foreground resync, pending payload delivery, duplicate skipping, and stale-cache rendering.
+- Apple Maps deep links do not need an extra entitlement or URL scheme for the current Back to Parking flow.
+- The Watch app uses standard Watch app storage for cached snapshots and local parking. No App Group is required unless a future feature shares files directly between targets.
+- Provisioning profiles for physical-device builds still need to be checked in Apple Developer/Xcode so the Watch app entitlement is accepted by signing.
+
+Debug builds include lightweight `[OutdoorGlance]` iPhone logs and `[WatchGlance]` Watch logs for real-device testing. Logs avoid full location coordinates and are not displayed in the UI.
+
 ## Bridge Alignment
 
 The React Native bridge still publishes only `OutdoorGlanceSnapshot v1` JSON. No bridge change is needed for Daily Glance because Watch-local altitude, parking, sun, and steps are not part of the iPhone payload. Future iPhone providers can populate the existing v1 optional fields without changing the transport or schema.
