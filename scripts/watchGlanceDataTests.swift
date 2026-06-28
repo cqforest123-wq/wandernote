@@ -152,6 +152,28 @@ struct WatchGlanceDataTests {
             altitudeGlance.altitudeMeters == 18.4,
             "altitude should map into daily glance"
         )
+
+        let dailyWithParking = dailyWithAltitude.updatingParking(
+            latitude: 37.775,
+            longitude: -122.419,
+            distanceMeters: 42,
+            savedAt: now
+        )
+        let parkingGlance = GlanceDataMapper.make(
+            snapshot: nil,
+            availability: .unavailable,
+            dailyData: dailyWithParking,
+            at: now
+        )
+
+        assert(
+            parkingGlance.parkingDistanceMeters == 42,
+            "parking distance should map into daily glance"
+        )
+        assert(
+            parkingGlance.parkingSavedAt == now,
+            "parking timestamp should map into daily glance"
+        )
     }
 
     private static func makeSnapshot(

@@ -70,6 +70,10 @@ enum WatchStrings {
         "location.permissionDenied": "Location permission denied",
         "location.permissionRestricted": "Location restricted",
         "location.unavailable": "Location unavailable",
+        "parking.save": "Save Parking",
+        "parking.directions": "Back to Parking",
+        "parking.saved": "Parking saved",
+        "parking.notSaved": "No parking saved",
         "duration.hoursMinutes": "%dh %dm",
         "mock.location": "San Francisco",
         "mock.carDistance": "0.8 km"
@@ -98,6 +102,10 @@ enum WatchStrings {
         "location.permissionDenied": "位置权限已关闭",
         "location.permissionRestricted": "位置权限受限",
         "location.unavailable": "无法获取位置",
+        "parking.save": "保存停车点",
+        "parking.directions": "返回停车点",
+        "parking.saved": "已保存停车点",
+        "parking.notSaved": "未保存停车点",
         "duration.hoursMinutes": "%d小时%d分",
         "mock.location": "旧金山",
         "mock.carDistance": "0.8 公里"
@@ -126,6 +134,10 @@ enum WatchStrings {
         "location.permissionDenied": "位置權限已關閉",
         "location.permissionRestricted": "位置權限受限",
         "location.unavailable": "無法取得位置",
+        "parking.save": "儲存停車點",
+        "parking.directions": "返回停車點",
+        "parking.saved": "已儲存停車點",
+        "parking.notSaved": "未儲存停車點",
         "duration.hoursMinutes": "%d小時%d分",
         "mock.location": "舊金山",
         "mock.carDistance": "0.8 公里"

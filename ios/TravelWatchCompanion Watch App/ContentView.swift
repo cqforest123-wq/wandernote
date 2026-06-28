@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    @Environment(\.openURL) private var openURL
     @EnvironmentObject private var store: OutdoorGlanceSnapshotStore
     @EnvironmentObject private var dailyStore: DailyGlanceStore
 
@@ -91,6 +92,8 @@ struct ContentView: View {
                 value: formatParking(glance)
             )
 
+            parkingControls(glance)
+
             metricRow(
                 title: WatchStrings.text("updated"),
                 value: formatTime(glance.lastUpdatedAt)
@@ -167,6 +170,39 @@ struct ContentView: View {
         }
     }
 
+    private func parkingControls(
+        _ glance: GlanceData
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button(
+                WatchStrings.text("parking.save")
+            ) {
+                dailyStore.recordParkingAtCurrentLocation()
+            }
+            .disabled(!canRecordParking)
+
+            Button(
+                WatchStrings.text("parking.directions")
+            ) {
+                openParkingDirections(glance)
+            }
+            .disabled(!hasParkingCoordinate(glance))
+        }
+    }
+
+    private var canRecordParking: Bool {
+        dailyStore.data.locationAuthorization == .authorized &&
+            dailyStore.data.latitude != nil &&
+            dailyStore.data.longitude != nil
+    }
+
+    private func hasParkingCoordinate(
+        _ glance: GlanceData
+    ) -> Bool {
+        glance.parkingLatitude != nil &&
+            glance.parkingLongitude != nil
+    }
+
     private func formatAltitude(
         _ meters: Double?
     ) -> String {
@@ -240,7 +276,11 @@ struct ContentView: View {
         _ glance: GlanceData
     ) -> String {
         guard let distance = glance.parkingDistanceMeters else {
-            return WatchStrings.text("value.unavailable")
+            if hasParkingCoordinate(glance) {
+                return WatchStrings.text("parking.saved")
+            }
+
+            return WatchStrings.text("parking.notSaved")
         }
 
         let distanceText: String
@@ -255,5 +295,19 @@ struct ContentView: View {
         }
 
         return distanceText
+    }
+
+    private func openParkingDirections(
+        _ glance: GlanceData
+    ) {
+        guard let latitude = glance.parkingLatitude,
+              let longitude = glance.parkingLongitude,
+              let url = URL(
+                string: "http://maps.apple.com/?daddr=\(latitude),\(longitude)"
+              ) else {
+            return
+        }
+
+        openURL(url)
     }
 }
