@@ -7,18 +7,25 @@ final class DailyGlanceStore: ObservableObject {
 
     private let locationAltitudeProvider: LocationAltitudeProvider?
     private let parkingStore: ParkingStore
+    private let activityStepProvider: ActivityStepProvider?
 
     init(
         data: DailyGlanceData = .empty(),
         locationAltitudeProvider: LocationAltitudeProvider? = nil,
-        parkingStore: ParkingStore? = nil
+        parkingStore: ParkingStore? = nil,
+        activityStepProvider: ActivityStepProvider? = nil
     ) {
         self.data = data
         self.locationAltitudeProvider =
             locationAltitudeProvider ?? LocationAltitudeProvider()
         self.parkingStore = parkingStore ?? ParkingStore()
+        self.activityStepProvider =
+            activityStepProvider ?? ActivityStepProvider()
         self.locationAltitudeProvider?.onUpdate = { [weak self] update in
             self?.apply(locationUpdate: update)
+        }
+        self.activityStepProvider?.onUpdate = { [weak self] update in
+            self?.apply(activityUpdate: update)
         }
     }
 
@@ -26,6 +33,7 @@ final class DailyGlanceStore: ObservableObject {
         refreshClock()
         refreshParking()
         locationAltitudeProvider?.start()
+        activityStepProvider?.start()
     }
 
     func refreshClock(
@@ -39,6 +47,10 @@ final class DailyGlanceStore: ObservableObject {
 
     func refreshLocation() {
         locationAltitudeProvider?.refresh()
+    }
+
+    func refreshActivity() {
+        activityStepProvider?.refresh()
     }
 
     @discardableResult
@@ -83,6 +95,12 @@ final class DailyGlanceStore: ObservableObject {
         data = applyingParkingSnapshot(
             to: applyingSunEvents(to: nextData)
         )
+    }
+
+    private func apply(
+        activityUpdate update: ActivityStepUpdate
+    ) {
+        data = data.updatingSteps(update.stepsToday)
     }
 
     private func applyingParkingSnapshot(

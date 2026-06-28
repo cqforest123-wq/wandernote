@@ -195,6 +195,19 @@ struct WatchGlanceDataTests {
             sunGlance.daylightRemaining == 8_200,
             "daily daylight remaining should calculate from render time"
         )
+
+        let dailyWithSteps = dailyWithSun.updatingSteps(1_234)
+        let stepsGlance = GlanceDataMapper.make(
+            snapshot: nil,
+            availability: .unavailable,
+            dailyData: dailyWithSteps,
+            at: now
+        )
+
+        assert(
+            stepsGlance.stepsToday == 1_234,
+            "daily steps should map"
+        )
     }
 
     private static func makeSnapshot(

@@ -45,7 +45,7 @@ The sender keeps only the latest pending snapshot. If the session is not active,
 - weather: current destination weather from the existing Open-Meteo helper.
 - altitude: null until a real altitude provider exists.
 - sun: null until a real sun event provider exists.
-- activity: null until a real activity provider exists.
+- activity: null in the iPhone-generated snapshot for now.
 - parking: null until a real return-to-car data source exists.
 
 The composer normalizes invalid, missing, or non-finite values to null instead of sending fabricated values.
@@ -55,6 +55,8 @@ Daily Glance altitude is sourced on the Watch with CoreLocation when permission 
 Daily Glance parking is stored locally on the Watch. The user can save the current watch location as the parking point, view distance from the latest watch location, and open Apple Maps directions. This does not require syncing trip, journal, packing, memo, or AI data to the Watch.
 
 Daily Glance sun events are calculated locally on the Watch from the latest authorized location. The calculator has no network dependency and returns empty sunrise/sunset values for invalid coordinates or polar edge cases instead of blocking the UI.
+
+Daily Glance steps are read locally on the Watch through HealthKit when health data is available and the user authorizes read access to step count. If HealthKit is unavailable, unauthorized, or not enabled for the target, the Watch shows an unavailable value and continues rendering. Before device distribution, confirm the Watch target has the HealthKit capability and matching provisioning profile.
 
 ## Sync Triggers
 
