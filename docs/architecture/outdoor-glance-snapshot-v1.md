@@ -50,6 +50,8 @@ The sender keeps only the latest pending snapshot. If the session is not active,
 
 The composer normalizes invalid, missing, or non-finite values to null instead of sending fabricated values.
 
+Daily Glance altitude is sourced on the Watch with CoreLocation when permission and device data are available. Simulators, denied permissions, and locations without vertical accuracy show an unavailable value instead of a fabricated altitude.
+
 ## Sync Triggers
 
 The iPhone schedules a snapshot after trip state loads, when trip data changes, when destination weather resolves, and when the app returns to the foreground.

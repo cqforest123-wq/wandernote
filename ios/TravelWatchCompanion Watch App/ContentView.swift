@@ -130,6 +130,15 @@ struct ContentView: View {
             return locationName
         }
 
+        if let latitude = glance.latitude,
+           let longitude = glance.longitude {
+            return String(
+                format: "%.4f, %.4f",
+                latitude,
+                longitude
+            )
+        }
+
         switch glance.locationAuthorization {
         case .authorized:
             return WatchStrings.text("value.unavailable")
@@ -162,10 +171,13 @@ struct ContentView: View {
         _ meters: Double?
     ) -> String {
         guard let meters else {
-            return WatchStrings.text("value.unavailable")
+            return WatchStrings.text("altitude.unavailable")
         }
 
-        return "\(Int(meters.rounded())) m"
+        return WatchStrings.format(
+            "altitude.format",
+            Int(meters.rounded())
+        )
     }
 
     private func formatTemperature(

@@ -124,6 +124,34 @@ struct WatchGlanceDataTests {
             daily.warnings.contains(.locationPermissionNotDetermined),
             "daily mode should expose location permission status"
         )
+
+        let dailyWithAltitude = DailyGlanceData
+            .empty(at: now)
+            .updatingLocation(
+                authorization: .authorized,
+                latitude: 37.7749,
+                longitude: -122.4194,
+                altitudeMeters: 18.4
+            )
+        let altitudeGlance = GlanceDataMapper.make(
+            snapshot: nil,
+            availability: .unavailable,
+            dailyData: dailyWithAltitude,
+            at: now
+        )
+
+        assert(
+            altitudeGlance.locationAuthorization == .authorized,
+            "authorized location should map"
+        )
+        assert(
+            altitudeGlance.latitude == 37.7749,
+            "latitude should map"
+        )
+        assert(
+            altitudeGlance.altitudeMeters == 18.4,
+            "altitude should map into daily glance"
+        )
     }
 
     private static func makeSnapshot(
