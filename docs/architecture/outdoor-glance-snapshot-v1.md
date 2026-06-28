@@ -15,6 +15,7 @@ WanderNote JS app state
 -> WCSession.updateApplicationContext
 -> WatchConnectivitySnapshotReceiver
 -> OutdoorGlanceSnapshotStore
+-> GlanceDataMapper
 -> SwiftUI views
 
 The native sender is started once from AppDelegate through OutdoorGlanceWatchRuntime. The React Native bridge publishes JSON to the same long-lived sender instance, and the sender revalidates the payload by decoding it with the shared Swift contract before calling WatchConnectivity.
@@ -50,6 +51,17 @@ The sender keeps only the latest pending snapshot. If the session is not active,
 
 The composer normalizes invalid, missing, or non-finite values to null instead of sending fabricated values.
 
+## Watch Display Model
+
+The Watch renders a local `GlanceData` display model instead of binding views directly to `OutdoorGlanceSnapshot`. This keeps the transport contract stable while allowing the Watch to choose the right display mode:
+
+- Travel: a fresh iPhone snapshot is available.
+- Stale: the last valid iPhone snapshot is expired but still useful.
+- Daily: no iPhone snapshot is available, so Watch-local sources power the glance.
+- Unavailable: no snapshot and no local daily data are available.
+
+`GlanceData` is Watch-internal and does not require a JavaScript or React Native bridge change.
+
 Daily Glance altitude is sourced on the Watch with CoreLocation when permission and device data are available. Simulators, denied permissions, and locations without vertical accuracy show an unavailable value instead of a fabricated altitude.
 
 Daily Glance parking is stored locally on the Watch. The user can save the current watch location as the parking point, view distance from the latest watch location, and open Apple Maps directions. This does not require syncing trip, journal, packing, memo, or AI data to the Watch.
@@ -57,6 +69,10 @@ Daily Glance parking is stored locally on the Watch. The user can save the curre
 Daily Glance sun events are calculated locally on the Watch from the latest authorized location. The calculator has no network dependency and returns empty sunrise/sunset values for invalid coordinates or polar edge cases instead of blocking the UI.
 
 Daily Glance steps are read locally on the Watch through HealthKit when health data is available and the user authorizes read access to step count. If HealthKit is unavailable, unauthorized, or not enabled for the target, the Watch shows an unavailable value and continues rendering. Before device distribution, confirm the Watch target has the HealthKit capability and matching provisioning profile.
+
+## Bridge Alignment
+
+The React Native bridge still publishes only `OutdoorGlanceSnapshot v1` JSON. No bridge change is needed for Daily Glance because Watch-local altitude, parking, sun, and steps are not part of the iPhone payload. Future iPhone providers can populate the existing v1 optional fields without changing the transport or schema.
 
 ## Sync Triggers
 
@@ -68,6 +84,9 @@ Publishing is debounced and deduplicated by a stable fingerprint that ignores ge
 
 - JavaScript/TypeScript check: `npm run check`
 - Snapshot sync tests: `npm run test:watch-snapshot`
+- Watch display mapping tests: `npm run test:watch-glance`
+- Watch parking tests: `npm run test:watch-parking`
+- Watch sun event tests: `npm run test:watch-sun`
 - iPhone native bridge build: `xcodebuild -workspace ios/WanderNote.xcworkspace -scheme WanderNote -configuration Debug -sdk iphonesimulator ... build`
 - Watch target build: `xcodebuild -project ios/WanderNote.xcodeproj -target "TravelWatchCompanion Watch App" -configuration Debug -sdk watchsimulator ... build`
 

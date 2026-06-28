@@ -26,6 +26,12 @@ The watch app starts as a WanderNote companion, but its architecture should rema
 - Shared OutdoorGlanceSnapshot v1 contract is compiled into both iPhone and Watch targets.
 - Watch app receives snapshots through WatchConnectivity, caches the latest valid snapshot, evaluates freshness, and renders fresh/stale/unavailable states.
 - Watch UI uses OutdoorGlanceSnapshotStore at runtime. Mock providers remain available for preview and test support only.
+- Watch UI now renders through a `GlanceData` display model so Travel, Stale, Daily, and Unavailable modes share one presentation path.
+- Daily Glance fallback is available when no iPhone snapshot has arrived.
+- Watch-local altitude uses CoreLocation with permission and unavailable-state fallbacks.
+- Return to Car stores the parking point locally on Watch, calculates distance from the latest Watch location, and opens Apple Maps directions.
+- Sun Events are calculated locally on Watch from the latest authorized location without network access.
+- Daily Steps reads HealthKit step count when available and authorized, with a safe unavailable fallback.
 - iPhone starts one OutdoorGlanceWatchRuntime from AppDelegate and publishes through a narrow React Native bridge.
 - JavaScript app state now composes real OutdoorGlanceSnapshot v1 payloads and schedules debounced/deduplicated syncs after load, app foreground, trip changes, and weather updates.
 - Watch localization currently supports en, zh-Hans, and zh-Hant.
@@ -33,9 +39,6 @@ The watch app starts as a WanderNote companion, but its architecture should rema
 
 ## Pending
 
-- Add real location altitude provider.
-- Add HealthKit steps provider.
-- Add Sun Events provider.
-- Add Return to Car storage and distance calculation.
 - Verify end-to-end delivery on a paired physical iPhone and Apple Watch.
+- Enable and verify HealthKit capability/provisioning before physical-device distribution.
 - Add WidgetKit complication later.
