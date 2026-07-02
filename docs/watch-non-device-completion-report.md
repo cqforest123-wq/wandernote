@@ -8,6 +8,7 @@ Simulator destinations only.
 Repo: `/Users/litao/Developer/wandernote-watch`
 Branch: `feature/watch-companion-v1-integration`
 Base commit for this pass: `0147c35` (chore: add watch diagnostics for device testing)
+Re-verified as of commit `1806854` (docs: add watch non-device completion report) — see §11.
 
 ## 1. Current Functional Scope
 
@@ -175,3 +176,25 @@ Real iPhone + Apple Watch end-to-end testing: **not completed.** Nothing in this
 should be read as claiming Watch Companion works on real hardware — only that it type-checks,
 unit-tests, and builds cleanly (Debug and Release, iPhone and Watch, Simulator destinations)
 on this Mac.
+
+## 11. Re-Verification Pass (commit `1806854`)
+
+Ran again, after the `GlanceContentView` preview refactor landed, to confirm nothing
+regressed:
+
+- `npm run test:watch-snapshot`, `test:watch-glance`, `test:watch-parking`,
+  `test:watch-sun`, `npm run check`, `git diff --check` — all passed / clean, same results
+  as §2.
+- `xcodebuild -list` (via `-workspace`) re-confirmed the two app schemes:
+  `WanderNote` and `TravelWatchCompanion Watch App`.
+- All four Simulator builds from §3 (`WanderNote` Debug/Release,
+  `TravelWatchCompanion Watch App` Debug/Release) re-ran and **BUILD SUCCEEDED** again, with
+  no `-allowProvisioningUpdates` used or required.
+- Preview coverage was re-audited: `GlanceContentView.swift` is the only view with
+  renderable state variation, and its 7 `#Preview` cases already cover Travel, Daily,
+  Stale, Unavailable, Location-denied, Parking Saved, and No Parking Saved. `ContentView`
+  and `TravelWatchCompanionApp` are thin environment-object wrappers with no independent
+  visual state, so no further preview files were needed.
+
+No code changes were required in this re-verification pass — it confirmed the prior pass's
+result still holds. Real-device testing remains **not completed** (see §5, §8).
