@@ -19,6 +19,7 @@ final class ActivityStepProvider {
 
     private let healthStore: HKHealthStore?
     private var hasRequestedAuthorization = false
+    private var observerQuery: HKObserverQuery?
 
     init(
         healthStore: HKHealthStore? = nil,
@@ -34,6 +35,9 @@ final class ActivityStepProvider {
     }
 
     func start() {
+        ActivityStepDiagnostics.log(
+            "HealthKit step provider starting"
+        )
         requestAuthorizationIfNeeded()
     }
 
@@ -68,20 +72,65 @@ final class ActivityStepProvider {
             toShare: [],
             read: [stepType]
         ) { [weak self] success, _ in
+            guard let self else {
+                return
+            }
+
             Task { @MainActor in
                 if success {
                     ActivityStepDiagnostics.log(
-                        "HealthKit authorization granted for step count"
+                        "HealthKit authorization request completed for step count"
                     )
-                    self?.querySteps()
+                    self.startObservingSteps(
+                        stepType: stepType
+                    )
+                    self.querySteps()
                 } else {
                     ActivityStepDiagnostics.log(
                         "HealthKit authorization denied for step count"
                     )
-                    self?.publish(stepsToday: nil)
+                    self.publish(stepsToday: nil)
                 }
             }
         }
+    }
+
+    private func startObservingSteps(
+        stepType: HKQuantityType
+    ) {
+        guard observerQuery == nil,
+              let healthStore else {
+            return
+        }
+
+        let query = HKObserverQuery(
+            sampleType: stepType,
+            predicate: nil
+        ) { [weak self] _, completionHandler, error in
+            if let error {
+                ActivityStepDiagnostics.log(
+                    "HealthKit step observer failed: \(String(describing: error))"
+                )
+                completionHandler()
+                return
+            }
+
+            guard let self else {
+                completionHandler()
+                return
+            }
+
+            Task { @MainActor in
+                self.querySteps()
+                completionHandler()
+            }
+        }
+
+        observerQuery = query
+        healthStore.execute(query)
+        ActivityStepDiagnostics.log(
+            "HealthKit step observer started"
+        )
     }
 
     private func querySteps(
@@ -110,13 +159,24 @@ final class ActivityStepProvider {
             quantitySamplePredicate: predicate,
             options: .cumulativeSum
         ) { [weak self] _, statistics, error in
+            guard let self else {
+                return
+            }
+
             Task { @MainActor in
-                guard error == nil,
-                      let quantity = statistics?.sumQuantity() else {
+                guard error == nil else {
                     ActivityStepDiagnostics.log(
-                        "HealthKit step query returned no data"
+                        "HealthKit step query failed"
                     )
-                    self?.publish(stepsToday: nil)
+                    self.publish(stepsToday: nil)
+                    return
+                }
+
+                guard let quantity = statistics?.sumQuantity() else {
+                    ActivityStepDiagnostics.log(
+                        "HealthKit step query returned no samples"
+                    )
+                    self.publish(stepsToday: 0)
                     return
                 }
 
@@ -126,7 +186,7 @@ final class ActivityStepProvider {
                 ActivityStepDiagnostics.log(
                     "HealthKit step query succeeded"
                 )
-                self?.publish(stepsToday: steps)
+                self.publish(stepsToday: steps)
             }
         }
 

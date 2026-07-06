@@ -21,6 +21,7 @@ final class LocationAltitudeProvider: NSObject {
     var onUpdate: ((LocationAltitudeUpdate) -> Void)?
 
     private let manager: CLLocationManager
+    private var isUpdatingLocation = false
 
     init(
         manager: CLLocationManager = CLLocationManager()
@@ -33,6 +34,13 @@ final class LocationAltitudeProvider: NSObject {
     }
 
     func start() {
+        LocationAltitudeDiagnostics.log(
+            "location provider starting"
+        )
+        refresh()
+    }
+
+    func refresh() {
         guard CLLocationManager.locationServicesEnabled() else {
             LocationAltitudeDiagnostics.log(
                 "altitude unavailable because location services are disabled"
@@ -46,16 +54,6 @@ final class LocationAltitudeProvider: NSObject {
         handleAuthorization(
             manager.authorizationStatus
         )
-    }
-
-    func refresh() {
-        guard manager.authorizationStatus == .authorizedAlways ||
-                manager.authorizationStatus == .authorizedWhenInUse else {
-            handleAuthorization(manager.authorizationStatus)
-            return
-        }
-
-        manager.requestLocation()
     }
 
     private func handleAuthorization(
@@ -74,26 +72,58 @@ final class LocationAltitudeProvider: NSObject {
                 "location authorization granted; requesting location"
             )
             publish(authorization: .authorized)
-            manager.requestLocation()
+            requestCurrentLocation()
 
         case .denied:
             LocationAltitudeDiagnostics.log(
                 "location authorization denied"
             )
+            stopUpdatingLocation()
             publish(authorization: .denied)
 
         case .restricted:
             LocationAltitudeDiagnostics.log(
                 "location authorization restricted"
             )
+            stopUpdatingLocation()
             publish(authorization: .restricted)
 
         @unknown default:
             LocationAltitudeDiagnostics.log(
                 "location authorization unavailable"
             )
+            stopUpdatingLocation()
             publish(authorization: .unavailable)
         }
+    }
+
+    private func requestCurrentLocation() {
+        startUpdatingLocationIfNeeded()
+        manager.requestLocation()
+    }
+
+    private func startUpdatingLocationIfNeeded() {
+        guard !isUpdatingLocation else {
+            return
+        }
+
+        isUpdatingLocation = true
+        manager.startUpdatingLocation()
+        LocationAltitudeDiagnostics.log(
+            "continuous location updates started"
+        )
+    }
+
+    private func stopUpdatingLocation() {
+        guard isUpdatingLocation else {
+            return
+        }
+
+        isUpdatingLocation = false
+        manager.stopUpdatingLocation()
+        LocationAltitudeDiagnostics.log(
+            "continuous location updates stopped"
+        )
     }
 
     private func publish(
@@ -157,6 +187,16 @@ extension LocationAltitudeProvider: CLLocationManagerDelegate {
             LocationAltitudeDiagnostics.log(
                 "location request failed: \(String(describing: error))"
             )
+
+            let status = manager.authorizationStatus
+
+            if status == .authorizedAlways || status == .authorizedWhenInUse {
+                self?.publish(
+                    authorization: .authorized
+                )
+                return
+            }
+
             self?.publish(
                 authorization: .unavailable
             )

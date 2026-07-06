@@ -16,6 +16,8 @@ final class DailyGlanceStore: ObservableObject {
     private let locationAltitudeProvider: LocationAltitudeProvider?
     private let parkingStore: ParkingStore
     private let activityStepProvider: ActivityStepProvider?
+    private var refreshCancellable: AnyCancellable?
+    private var hasStarted = false
 
     init(
         data: DailyGlanceData = .empty(),
@@ -38,13 +40,29 @@ final class DailyGlanceStore: ObservableObject {
     }
 
     func start() {
+        guard !hasStarted else {
+            refresh()
+            return
+        }
+
+        hasStarted = true
         DailyGlanceDiagnostics.log(
             "Daily fallback store starting"
         )
-        refreshClock()
-        refreshParking()
         locationAltitudeProvider?.start()
         activityStepProvider?.start()
+        refreshClock()
+        refreshParking()
+        startRefreshTimer()
+    }
+
+    func refresh(
+        at date: Date = Date()
+    ) {
+        refreshClock(at: date)
+        refreshParking()
+        refreshLocation()
+        refreshActivity()
     }
 
     func refreshClock(
@@ -62,6 +80,17 @@ final class DailyGlanceStore: ObservableObject {
 
     func refreshActivity() {
         activityStepProvider?.refresh()
+    }
+
+    private func startRefreshTimer() {
+        refreshCancellable = Timer
+            .publish(every: 60, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] date in
+                Task { @MainActor in
+                    self?.refresh(at: date)
+                }
+            }
     }
 
     @discardableResult

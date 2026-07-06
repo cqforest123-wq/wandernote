@@ -32,4 +32,8 @@ final class WatchCompanionRuntime: ObservableObject {
         receiver.start()
         dailyStore.start()
     }
+
+    func refreshActiveData() {
+        dailyStore.refresh()
+    }
 }
