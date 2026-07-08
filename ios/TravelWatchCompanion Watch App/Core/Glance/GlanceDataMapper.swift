@@ -41,15 +41,41 @@ enum GlanceDataMapper {
             )
         }
 
+        let resolvedLocation = mergedLocation(
+            snapshotLocation: snapshot.location,
+            locationName: locationName,
+            dailyData: dailyData
+        )
+        let resolvedAltitude = snapshot.altitude?.meters ??
+            dailyData?.altitudeMeters
+        let resolvedSteps = snapshot.activity?.steps ??
+            dailyData?.stepsToday
+
+        if snapshot.altitude == nil {
+            GlanceMapperDiagnostics.log(
+                resolvedAltitude == nil
+                    ? "travel snapshot missing altitude; watch local altitude also unavailable"
+                    : "travel snapshot missing altitude; using watch local altitude"
+            )
+        }
+
+        if snapshot.activity?.steps == nil {
+            GlanceMapperDiagnostics.log(
+                resolvedSteps == nil
+                    ? "travel snapshot missing steps; watch local steps also unavailable"
+                    : "travel snapshot missing steps; using watch local steps"
+            )
+        }
+
         return GlanceData(
             mode: mode,
             title: tripTitle ?? "WanderNote",
-            subtitle: locationName,
-            currentLocationName: locationName,
-            locationAuthorization: .authorized,
-            latitude: snapshot.location?.latitude,
-            longitude: snapshot.location?.longitude,
-            altitudeMeters: snapshot.altitude?.meters,
+            subtitle: resolvedLocation.name,
+            currentLocationName: resolvedLocation.name,
+            locationAuthorization: resolvedLocation.authorization,
+            latitude: resolvedLocation.latitude,
+            longitude: resolvedLocation.longitude,
+            altitudeMeters: resolvedAltitude,
             temperatureCelsius: snapshot.weather?.temperatureCelsius,
             weatherSummary: snapshot.weather?.conditionCode,
             sunrise: snapshot.sun?.sunriseAt,
@@ -62,10 +88,50 @@ enum GlanceDataMapper {
             parkingLongitude: snapshot.parking?.longitude,
             parkingDistanceMeters: snapshot.parking?.distanceMeters,
             parkingSavedAt: snapshot.parking?.savedAt,
-            stepsToday: snapshot.activity?.steps,
+            stepsToday: resolvedSteps,
             lastUpdatedAt: snapshot.generatedAt,
             isStale: isStale,
             warnings: isStale ? [.staleSnapshot] : []
+        )
+    }
+
+    private static func mergedLocation(
+        snapshotLocation: OutdoorGlanceLocation?,
+        locationName: String?,
+        dailyData: DailyGlanceData?
+    ) -> (
+        name: String?,
+        latitude: Double?,
+        longitude: Double?,
+        authorization: GlanceLocationAuthorization
+    ) {
+        if let snapshotLocation {
+            return (
+                locationName,
+                snapshotLocation.latitude,
+                snapshotLocation.longitude,
+                .authorized
+            )
+        }
+
+        guard let dailyData else {
+            GlanceMapperDiagnostics.log(
+                "travel snapshot missing location; watch local location also unavailable"
+            )
+            return (nil, nil, nil, .unavailable)
+        }
+
+        GlanceMapperDiagnostics.log(
+            dailyData.latitude == nil
+                ? "travel snapshot missing location; watch local location also unavailable (authorization=\(dailyData.locationAuthorization))"
+                : "travel snapshot missing location; using watch local location"
+        )
+
+        return (
+            dailyData.currentLocationName,
+            dailyData.latitude,
+            dailyData.longitude,
+            dailyData.locationAuthorization
         )
     }
 

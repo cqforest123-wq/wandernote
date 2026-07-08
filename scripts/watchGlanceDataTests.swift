@@ -16,6 +16,8 @@ struct WatchGlanceDataTests {
         testStaleSnapshotMapsToStaleGlance()
         testMissingSnapshotMapsToUnavailableGlance()
         testMissingOptionalFieldsDoNotCrash()
+        testTravelSnapshotMergesWatchLocalDataWhenFieldsMissing()
+        testTravelSnapshotKeepsLocalDeniedAuthorizationWhenBothMissing()
         print("watch glance data tests passed")
     }
 
@@ -208,6 +210,103 @@ struct WatchGlanceDataTests {
             stepsGlance.stepsToday == 1_234,
             "daily steps should map"
         )
+    }
+
+    private static func testTravelSnapshotMergesWatchLocalDataWhenFieldsMissing() {
+        let now = Date(timeIntervalSince1970: 1_800)
+        let snapshot = OutdoorGlanceSnapshot(
+            schemaVersion: OutdoorGlanceSnapshot.currentSchemaVersion,
+            snapshotId: UUID(),
+            generatedAt: now,
+            freshness: OutdoorGlanceFreshness(
+                validUntil: Date(timeIntervalSince1970: 3_600)
+            ),
+            trip: OutdoorGlanceTrip(
+                id: "trip-1",
+                name: "Yellowstone",
+                dayNumber: 1
+            ),
+            location: nil,
+            altitude: nil,
+            weather: nil,
+            sun: nil,
+            activity: nil,
+            parking: nil
+        )
+
+        let watchLocalData = DailyGlanceData
+            .empty(at: now)
+            .updatingLocation(
+                authorization: .authorized,
+                latitude: 29.6332,
+                longitude: 106.4740,
+                altitudeMeters: 238
+            )
+            .updatingSteps(4_072)
+
+        let glance = GlanceDataMapper.make(
+            snapshot: snapshot,
+            availability: .fresh,
+            dailyData: watchLocalData,
+            at: now
+        )
+
+        assert(glance.mode == .travel, "travel snapshot without location/steps should stay travel")
+        assert(
+            glance.locationAuthorization == .authorized,
+            "watch local authorization should be used when snapshot has no location"
+        )
+        assert(glance.latitude == 29.6332, "watch local latitude should fill travel mode")
+        assert(glance.longitude == 106.4740, "watch local longitude should fill travel mode")
+        assert(glance.altitudeMeters == 238, "watch local altitude should fill travel mode")
+        assert(glance.stepsToday == 4_072, "watch local steps should fill travel mode")
+    }
+
+    private static func testTravelSnapshotKeepsLocalDeniedAuthorizationWhenBothMissing() {
+        let now = Date(timeIntervalSince1970: 1_800)
+        let snapshot = OutdoorGlanceSnapshot(
+            schemaVersion: OutdoorGlanceSnapshot.currentSchemaVersion,
+            snapshotId: UUID(),
+            generatedAt: now,
+            freshness: OutdoorGlanceFreshness(
+                validUntil: Date(timeIntervalSince1970: 3_600)
+            ),
+            trip: OutdoorGlanceTrip(
+                id: "trip-1",
+                name: "Yellowstone",
+                dayNumber: 1
+            ),
+            location: nil,
+            altitude: nil,
+            weather: nil,
+            sun: nil,
+            activity: nil,
+            parking: nil
+        )
+
+        let deniedLocalData = DailyGlanceData
+            .empty(at: now)
+            .updatingLocation(
+                authorization: .denied,
+                latitude: nil,
+                longitude: nil,
+                altitudeMeters: nil
+            )
+
+        let glance = GlanceDataMapper.make(
+            snapshot: snapshot,
+            availability: .fresh,
+            dailyData: deniedLocalData,
+            at: now
+        )
+
+        assert(glance.mode == .travel, "travel snapshot without location should stay travel")
+        assert(
+            glance.locationAuthorization == .denied,
+            "travel mode should surface the real local denial instead of a hardcoded authorized state"
+        )
+        assert(glance.latitude == nil, "denied local authorization should not fabricate coordinates")
+        assert(glance.stepsToday == nil, "steps stay nil when neither snapshot nor watch has data")
     }
 
     private static func makeSnapshot(
