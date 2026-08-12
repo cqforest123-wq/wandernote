@@ -22,7 +22,6 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
     { code: 'th', label: 'ภาษาไทย' },
   ];
 
-const ENABLE_YEAR_REPORT = false;
   const [showLangModal, setShowLangModal] = useState(false);
   const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
   const selectLanguage = async (code) => {
@@ -90,7 +89,6 @@ const ENABLE_YEAR_REPORT = false;
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
   const totalMemos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0);
   const totalPhotos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0);
-  const totalVideos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0);
 
   const handleLogout = () => {
     Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
@@ -169,7 +167,6 @@ const ENABLE_YEAR_REPORT = false;
             [String(totalDays),t('profile_stat_days'),''],
             [String(totalMemos),t('profile_stat_memos'),''],
             [String(totalPhotos),t('profile_stat_photos'),''],
-            [String(totalVideos),t('profile_stat_videos'),''],
           ].map(([n,l,limit])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}{limit?<Text style={s.statLimit}>/{limit}</Text>:null}</Text>
@@ -177,17 +174,6 @@ const ENABLE_YEAR_REPORT = false;
             </View>
           ))}
         </View>
-
-        {ENABLE_YEAR_REPORT && (
-          <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
-          <View>
-            <Text style={s.reportTitle}>📊 {t('profile_year_report')}</Text>
-            <Text style={s.reportDesc}>{t('profile_year_report_desc')}</Text>
-          </View>
-          <Text style={s.reportArrow}>→</Text>
-          </TouchableOpacity>
-        )}
-
 
         <Text style={s.sectionTitle}>{t('profile_account_settings')}</Text>
         <View style={s.settingList}>

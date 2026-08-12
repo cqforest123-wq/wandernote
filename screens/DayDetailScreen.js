@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { createPhoto, createVideo } from '../lib/models';
+import { createPhoto } from '../lib/models';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 8) / 3;
@@ -132,30 +132,6 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       {text:t('delete'),style:'destructive',onPress:()=>{
         updateDay(d=>({...d,photos:d.photos.filter(p=>p.id!==photoId)}));
         setPreviewPhoto(null);
-      }},
-    ]);
-  };
-
-  const pickVideos = async () => {
-    const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status!=='granted') { Alert.alert(t('alert_need_permission'), t('alert_permission_album')); return; }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['videos'],
-      allowsMultipleSelection: true,
-      quality: 1,
-      selectionLimit: 5,
-    });
-    if (!result.canceled) {
-      const newVideos = result.assets.map(a => createVideo({ uri: a.uri, duration: a.duration }));
-      updateDay(d=>({...d, videos:[...(d.videos||[]),...newVideos]}));
-    }
-  };
-
-  const deleteVideo = (videoId) => {
-    Alert.alert(t('alert_delete_video'), t('alert_delete_video_confirm'),[
-      {text:t('cancel'),style:'cancel'},
-      {text:t('delete'),style:'destructive',onPress:()=>{
-        updateDay(d=>({...d,videos:(d.videos||[]).filter(v=>v.id!==videoId)}));
       }},
     ]);
   };
@@ -346,10 +322,6 @@ const s = StyleSheet.create({
   tagChip:{paddingHorizontal:14,paddingVertical:8,borderRadius:20,backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A'},
   tagChipText:{fontSize:14,color:'#666'},
   input:{backgroundColor:'#1A1A1A',borderRadius:12,padding:14,color:'#F0EDE8',fontSize:15,marginBottom:20,borderWidth:1,borderColor:'#2A2A2A'},
-  videoCard:{backgroundColor:'#161616',borderRadius:12,padding:12,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:'#2A2A2A'},
-  videoThumb:{width:56,height:56,borderRadius:10,backgroundColor:'#1A1A1A',alignItems:'center',justifyContent:'center'},
-  videoName:{fontSize:14,color:'#F0EDE8'},
-  videoDuration:{fontSize:12,color:'#555',marginTop:4},
   cancelBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#1A1A1A',alignItems:'center'},
   cancelText:{color:'#555',fontSize:15},
   confirmBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#D4AF37',alignItems:'center'},

@@ -39,3 +39,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local working assets and build logs (screenshots, exported icons, xcodebuild output)
+/downloaded-assets
+/review-assets
+*build*.log
