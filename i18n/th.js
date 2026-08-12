@@ -67,8 +67,6 @@ export default {
   alert_delete_photo: 'ลบรูปภาพ', alert_delete_photo_confirm: 'ลบรูปภาพนี้?',
   alert_delete_memo_confirm: 'ลบบันทึกนี้?', alert_coming_soon: 'เร็วๆ นี้',
   alert_coming_soon_desc: 'กำลังพัฒนาฟีเจอร์',
-  alert_pro_limit: 'ถึงขีดจำกัดเวอร์ชันฟรี',
-  alert_pro_limit_desc: 'เวอร์ชันปัจจุบันสร้างได้สูงสุด %d ทริป',
 alert_logout_confirm: 'ออกจากระบบ?',
   alert_trip_future_date: 'ไม่สามารถบันทึกวันที่ในอนาคต',
   tab_home: 'ทริป',
@@ -219,7 +217,6 @@ alert_logout_confirm: 'ออกจากระบบ?',
   memo_cat_other: '📌 Other',
   memo_later: 'Later',
   memo_remind_later: 'Later',
-  memo_free_packing_limit: 'เวอร์ชันปัจจุบันสร้างรายการสัมภาระได้สูงสุด %d รายการ',
   memo_delete_bound_confirm: 'Delete “%s”?\\n\\n⚠️ This list is linked to a trip and cannot be restored after deletion.',
   memo_delete_confirm: 'Delete “%s”?',
   memo_default_packing_title: 'Travel Packing List',
@@ -339,4 +336,10 @@ alert_logout_confirm: 'ออกจากระบบ?',
   // AI 兜底提示
   ai_offline_notice: 'ไม่สามารถเชื่อมต่อบริการ AI ออนไลน์ได้ เนื้อหานี้จึงถูกสร้างขึ้นบนเครื่องของคุณ',
   ai_sample_notice: 'นี่คือตัวอย่างจากข้อมูลที่คุณมีตอนนี้ เพิ่มการเดินทาง วัน และบันทึก แล้วสร้างอีกครั้งเพื่อได้เรื่องราวการเดินทางของคุณเอง',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: 'ล้มเหลว',
+  day_delete_photo: 'ลบรูปภาพ',
+  share: 'แชร์',
+  trip_icon: 'ไอคอนการเดินทาง',
 };

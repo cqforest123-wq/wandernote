@@ -23,7 +23,6 @@ import MemoScreen from './screens/MemoScreen';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
-const FREE_TRIP_LIMIT = 3;
 const STORAGE_KEY = STORAGE_KEYS.trips;
 const GUEST_MODE_KEY = '@wandernote_guest_mode';
 
@@ -36,7 +35,6 @@ function MainApp({ session, onRequestSignIn }) {
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const isPro = false;
   const [hasRetriedPendingGeocodes, setHasRetriedPendingGeocodes] = useState(false);
 
   useEffect(() => {
@@ -138,14 +136,6 @@ function MainApp({ session, onRequestSignIn }) {
       const next = typeof newTripsOrFn === 'function'
         ? newTripsOrFn(prev)
         : newTripsOrFn;
-      if (!isPro && next.length > prev.length && prev.length >= FREE_TRIP_LIMIT) {
-        Alert.alert(
-          t('alert_pro_limit'),
-          t('alert_pro_limit_desc').replace('%d', FREE_TRIP_LIMIT),
-          [{text:t('ok')}]
-        );
-        return prev;
-      }
       persistTrips(next);
       return next;
     });
@@ -171,13 +161,13 @@ function MainApp({ session, onRequestSignIn }) {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
-            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           </>}
           {activeTab==='memo' && (
-            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
             <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>

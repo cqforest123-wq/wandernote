@@ -176,8 +176,6 @@ export default {
   alert_delete_memo_confirm: '确定删除这条感言？',
   alert_coming_soon: '即将推出',
   alert_coming_soon_desc: '功能开发中',
-  alert_pro_limit: '已达数量上限',
-  alert_pro_limit_desc: '当前版本最多创建 %d 个旅程。',
   alert_logout_confirm: '确定要退出吗？',
   alert_trip_future_date: '不能记录未来的日期',
   tab_home: '旅程',
@@ -328,7 +326,6 @@ export default {
   memo_cat_other: '📌 其他',
   memo_later: '稍后',
   memo_remind_later: '稍后',
-  memo_free_packing_limit: '当前版本最多创建 %d 个打包清单。',
   memo_delete_bound_confirm: '确定删除「%s」？\\n\\n⚠️ 此清单已绑定旅程，删除后无法恢复。',
   memo_delete_confirm: '确定删除「%s」？',
   memo_default_packing_title: '旅行打包清单',
@@ -446,4 +443,10 @@ export default {
   // AI 兜底提示
   ai_offline_notice: '暂时连不上在线 AI 服务，这份内容由本机生成。',
   ai_sample_notice: '这是根据你目前的内容生成的示例。添加旅程、日期和记录后再生成一次，就能得到属于你自己旅程的故事。',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: '操作失败',
+  day_delete_photo: '删除照片',
+  share: '分享',
+  trip_icon: '旅程图标',
 };

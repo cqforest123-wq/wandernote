@@ -66,8 +66,6 @@ export default {
   alert_delete_photo: '写真を削除', alert_delete_photo_confirm: 'この写真を削除しますか？',
   alert_delete_memo_confirm: 'この感想を削除しますか？', alert_coming_soon: '近日公開',
   alert_coming_soon_desc: '機能開発中',
-  alert_pro_limit: '無料版の上限に達しました',
-  alert_pro_limit_desc: '現在のバージョンでは最大%d件の旅を作成できます。',
 alert_logout_confirm: 'ログアウトしますか？',
   alert_trip_future_date: '未来の日付は記録できません',
   tab_home: '旅行',
@@ -218,7 +216,6 @@ alert_logout_confirm: 'ログアウトしますか？',
   memo_cat_other: '📌 Other',
   memo_later: 'Later',
   memo_remind_later: 'Later',
-  memo_free_packing_limit: '現在のバージョンでは最大%d件の持ち物リストを作成できます。',
   memo_delete_bound_confirm: 'Delete “%s”?\\n\\n⚠️ This list is linked to a trip and cannot be restored after deletion.',
   memo_delete_confirm: 'Delete “%s”?',
   memo_default_packing_title: 'Travel Packing List',
@@ -338,4 +335,10 @@ alert_logout_confirm: 'ログアウトしますか？',
   // AI 兜底提示
   ai_offline_notice: 'オンライン AI サービスに接続できなかったため、この端末で作成しました。',
   ai_sample_notice: '現在の内容をもとにしたサンプルです。旅程や日付、メモを追加してもう一度生成すると、あなた自身の旅の物語になります。',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: '失敗しました',
+  day_delete_photo: '写真を削除',
+  share: '共有',
+  trip_icon: '旅のアイコン',
 };

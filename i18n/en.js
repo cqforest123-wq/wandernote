@@ -176,8 +176,6 @@ export default {
   alert_delete_memo_confirm: 'Are you sure you want to delete this memo?',
   alert_coming_soon: 'Coming Soon',
   alert_coming_soon_desc: 'This feature is under development',
-  alert_pro_limit: 'Limit Reached',
-  alert_pro_limit_desc: 'Current version supports up to %d trips.',
   alert_logout_confirm: 'Are you sure you want to sign out?',
   alert_trip_future_date: 'Cannot record a future date',
   tab_home: 'Trips',
@@ -328,7 +326,6 @@ export default {
   memo_cat_other: '📌 Other',
   memo_later: 'Later',
   memo_remind_later: 'Later',
-  memo_free_packing_limit: 'Current version supports up to %d packing lists.',
   memo_delete_bound_confirm: 'Delete “%s”?\\n\\n⚠️ This list is linked to a trip and cannot be restored after deletion.',
   memo_delete_confirm: 'Delete “%s”?',
   memo_default_packing_title: 'Travel Packing List',
@@ -446,4 +443,10 @@ export default {
   // AI 兜底提示
   ai_offline_notice: 'The online AI service could not be reached, so this was written on your device instead.',
   ai_sample_notice: 'Here is a sample based on what you have so far. Add trips, days, and notes and generate again for a story about your own journey.',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: 'Failed',
+  day_delete_photo: 'Delete photo',
+  share: 'Share',
+  trip_icon: 'Trip icon',
 };

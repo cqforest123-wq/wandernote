@@ -67,8 +67,6 @@ export default {
   alert_delete_photo: 'Supprimer la photo', alert_delete_photo_confirm: 'Supprimer cette photo ?',
   alert_delete_memo_confirm: 'Supprimer cette note ?', alert_coming_soon: 'Bientôt disponible',
   alert_coming_soon_desc: 'Fonctionnalité en développement',
-  alert_pro_limit: 'Limite gratuite atteinte',
-  alert_pro_limit_desc: 'La version actuelle permet jusqu’à %d voyages.',
 alert_logout_confirm: 'Se déconnecter ?',
   alert_trip_future_date: 'Impossible de saisir une date future',
   tab_home: 'Voyages',
@@ -219,7 +217,6 @@ alert_logout_confirm: 'Se déconnecter ?',
   memo_cat_other: '📌 Other',
   memo_later: 'Later',
   memo_remind_later: 'Later',
-  memo_free_packing_limit: 'La version actuelle permet jusqu’à %d listes de bagages.',
   memo_delete_bound_confirm: 'Delete “%s”?\\n\\n⚠️ This list is linked to a trip and cannot be restored after deletion.',
   memo_delete_confirm: 'Delete “%s”?',
   memo_default_packing_title: 'Travel Packing List',
@@ -339,4 +336,10 @@ alert_logout_confirm: 'Se déconnecter ?',
   // AI 兜底提示
   ai_offline_notice: 'Le service IA en ligne est injoignable, ce texte a donc été rédigé sur votre appareil.',
   ai_sample_notice: 'Voici un exemple basé sur ce que vous avez pour l’instant. Ajoutez des voyages, des journées et des notes, puis relancez la génération pour obtenir le récit de votre propre voyage.',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: 'Échec',
+  day_delete_photo: 'Supprimer la photo',
+  share: 'Partager',
+  trip_icon: 'Icône du voyage',
 };

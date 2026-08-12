@@ -67,8 +67,6 @@ export default {
   alert_delete_photo: 'Eliminar foto', alert_delete_photo_confirm: '¿Eliminar esta foto?',
   alert_delete_memo_confirm: '¿Eliminar esta nota?', alert_coming_soon: 'Próximamente',
   alert_coming_soon_desc: 'Función en desarrollo',
-  alert_pro_limit: 'Límite gratuito alcanzado',
-  alert_pro_limit_desc: 'La versión actual permite hasta %d viajes.',
 alert_logout_confirm: '¿Cerrar sesión?',
   alert_trip_future_date: 'No se puede registrar una fecha futura',
   tab_home: 'Viajes',
@@ -219,7 +217,6 @@ alert_logout_confirm: '¿Cerrar sesión?',
   memo_cat_other: '📌 Other',
   memo_later: 'Later',
   memo_remind_later: 'Later',
-  memo_free_packing_limit: 'La versión actual permite hasta %d listas de equipaje.',
   memo_delete_bound_confirm: 'Delete “%s”?\\n\\n⚠️ This list is linked to a trip and cannot be restored after deletion.',
   memo_delete_confirm: 'Delete “%s”?',
   memo_default_packing_title: 'Travel Packing List',
@@ -339,4 +336,10 @@ alert_logout_confirm: '¿Cerrar sesión?',
   // AI 兜底提示
   ai_offline_notice: 'No se pudo conectar con el servicio de IA en línea, así que esto se escribió en tu dispositivo.',
   ai_sample_notice: 'Este es un ejemplo basado en lo que tienes hasta ahora. Añade viajes, días y notas y vuelve a generar para obtener la historia de tu propio viaje.',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: 'Error',
+  day_delete_photo: 'Eliminar foto',
+  share: 'Compartir',
+  trip_icon: 'Icono del viaje',
 };

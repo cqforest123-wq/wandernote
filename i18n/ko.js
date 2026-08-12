@@ -66,8 +66,6 @@ export default {
   alert_delete_photo: '사진 삭제', alert_delete_photo_confirm: '이 사진을 삭제하시겠습니까？',
   alert_delete_memo_confirm: '이 감상을 삭제하시겠습니까？', alert_coming_soon: '곧 출시',
   alert_coming_soon_desc: '기능 개발 중',
-  alert_pro_limit: '무료 버전 한도 초과',
-  alert_pro_limit_desc: '현재 버전에서는 최대 %d개의 여행을 만들 수 있습니다.',
 alert_logout_confirm: '로그아웃하시겠습니까？',
   alert_trip_future_date: '미래 날짜는 기록할 수 없습니다',
   tab_home: '여행',
@@ -218,7 +216,6 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   memo_cat_other: '📌 Other',
   memo_later: 'Later',
   memo_remind_later: 'Later',
-  memo_free_packing_limit: '현재 버전에서는 최대 %d개의 짐 목록을 만들 수 있습니다.',
   memo_delete_bound_confirm: 'Delete “%s”?\\n\\n⚠️ This list is linked to a trip and cannot be restored after deletion.',
   memo_delete_confirm: 'Delete “%s”?',
   memo_default_packing_title: 'Travel Packing List',
@@ -338,4 +335,10 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   // AI 兜底提示
   ai_offline_notice: '온라인 AI 서비스에 연결할 수 없어 이 기기에서 작성했습니다.',
   ai_sample_notice: '지금까지의 내용을 바탕으로 한 예시입니다. 여행, 날짜, 기록을 추가한 뒤 다시 생성하면 당신의 여행 이야기가 만들어집니다.',
+
+  // 之前缺失、界面上会直接显示成 key 的文案
+  failed: '실패',
+  day_delete_photo: '사진 삭제',
+  share: '공유',
+  trip_icon: '여행 아이콘',
 };

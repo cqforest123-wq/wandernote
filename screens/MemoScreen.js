@@ -206,7 +206,7 @@ const pg = StyleSheet.create({
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
-export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
+export default function MemoScreen({ route, navigation, trips = [] }) {
   const { t, i18n } = useTranslation();
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
@@ -245,7 +245,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
       try {
         // 先尝试云端
         const { data: { user } } = await supabase.auth.getUser();
-        if (isPro && user?.id) {
+        if (user?.id) {
           const cloudMemos = await syncMemosDown(user.id);
           if (Array.isArray(cloudMemos)) {
             setMemos(cloudMemos);
@@ -288,18 +288,16 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
       mounted = false;
       timers.forEach(clearTimeout);
     };
-  }, [tripId, isPro]);
+  }, [tripId]);
 
   const saveMemos = async (next) => {
     setMemos(next);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 同步到云端
-    if (isPro) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) syncMemosUpWithTripId(user.id, next);
-      } catch (e) {}
-    }
+    // 已登录时同步到云端。游客模式下 getUser() 拿不到 user，自然跳过。
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) syncMemosUpWithTripId(user.id, next);
+    } catch (e) {}
   };
 
   const openNew = (defaultCat = 'note') => {
@@ -318,21 +316,8 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
     setShowAdd(true);
   };
 
-  const FREE_PACKING_LIMIT = 3;
   const saveMemo = async () => {
     if (!title.trim() && items.every(i => !i.text.trim())) return;
-    // 打包清单数量限制
-    if (!isPro && category === 'packing' && !editingMemo) {
-      const packCount = memos.filter(m => m.category === 'packing').length;
-      if (packCount >= FREE_PACKING_LIMIT) {
-        Alert.alert(
-          t('alert_pro_limit'),
-          t('memo_free_packing_limit').replace('%d', FREE_PACKING_LIMIT),
-          [{ text: t('ok'), style: 'cancel' }]
-        );
-        return;
-      }
-    }
     const validItems = items.filter(i => i.text.trim());
     const now = new Date();
     const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;

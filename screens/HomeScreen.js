@@ -250,7 +250,7 @@ const cd = StyleSheet.create({
   glow:{position:'absolute',right:-20,top:-20,width:80,height:80,borderRadius:40,backgroundColor:'#4ECDC4',opacity:0.08},
 });
 
-export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
+export default function HomeScreen({ navigation, trips, setTrips }) {
   const { t, i18n } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [step, setStep] = useState(1);
@@ -432,14 +432,6 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const handleNewTrip = () => {
-    if (!isPro && trips.length >= (freeTripLimit||3)) {
-      Alert.alert(
-        t('alert_pro_limit'),
-        t('alert_pro_limit_desc').replace('%d', freeTripLimit || 3),
-        [{ text: t('ok') }]
-      );
-      return;
-    }
     resetForm(); setShowAdd(true);
   };
 
