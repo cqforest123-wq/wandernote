@@ -44,7 +44,7 @@ function getAiOutputLanguage(lang) {
   return map[code] || 'English';
 }
 
-import { callClaude } from '../lib/claude';
+import { callAI } from '../lib/ai';
 
 export default function AIScreen({ trips }) {
   const { t, i18n } = useTranslation();
@@ -154,7 +154,7 @@ Strict requirements:
 4. Keep each day concise: attractions + time + transport.
 5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
 6. Keep each field short and ensure valid complete JSON.`;
-        const text = await callClaude(prompt, 8000, { responseMimeType: 'application/json' });
+        const text = await callAI(prompt, 8000, { responseMimeType: 'application/json' });
         if (!String(text || '').trim()) {
           setResult(localFallbackNotice + '\n\n' + fallback);
           return;
@@ -210,7 +210,7 @@ Strict requirements:
     }
 
     try {
-      const text = await callClaude(buildPrompt(), 1200);
+      const text = await callAI(buildPrompt(), 1200);
       const readable = extractReadableAiText(text) || String(text || '').trim();
       setResult(readable || `${localFallbackNotice}\n\n${fallback}`);
     } catch (e) {

@@ -786,7 +786,7 @@ export default function MemoScreen({ route, navigation, trips = [] }) {
                       aiPackingGeneratingRef.current = true;
                       setAIGenerating(true);
                       try {
-                        const { callClaude } = require('../lib/claude');
+                        const { callAI } = require('../lib/ai');
                         const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${destination}.
 Requirements:
 1. Return pure JSON only, with no extra text.
@@ -794,7 +794,7 @@ Requirements:
 3. Use these groups: Documents, Money, Electronics, Clothing, Toiletries, Special items.
 4. Each group should include 5-8 items, each with a suitable emoji.
 5. Adapt the suggestions to the destination.`;
-                        const text = await callClaude(prompt, 1500);
+                        const text = await callAI(prompt, 1500);
                         const clean = text.replace(/```json|```/g, '').trim();
                         const parsed = JSON.parse(clean);
                         if (!parsed?.groups || typeof parsed.groups !== 'object') {

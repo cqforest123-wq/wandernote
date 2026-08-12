@@ -204,6 +204,7 @@ const EMOJIS = [
 
 
 function CountdownCard({ trips }) {
+  const { t } = useTranslation();
   const today = new Date();
   today.setHours(0,0,0,0);
 
@@ -226,7 +227,7 @@ function CountdownCard({ trips }) {
     <View style={cd.card}>
       <View style={cd.left}>
         <Text style={cd.days}>{diff}</Text>
-        <Text style={cd.daysLabel}>天后出发</Text>
+        <Text style={cd.daysLabel}>{t('countdown_days')}</Text>
       </View>
       <View style={cd.right}>
         <Text style={cd.emoji}>{upcoming.emoji}</Text>
