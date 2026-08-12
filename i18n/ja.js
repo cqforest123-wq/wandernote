@@ -369,4 +369,8 @@ alert_logout_confirm: 'ログアウトしますか？',
   profile_guest_title: 'ゲスト',
   profile_guest_desc: '旅の記録はこの端末にのみ保存されています。',
   profile_sign_in_to_sync: 'ログインして端末間で同期',
+
+  // AI 兜底提示
+  ai_offline_notice: 'オンライン AI サービスに接続できなかったため、この端末で作成しました。',
+  ai_sample_notice: '現在の内容をもとにしたサンプルです。旅程や日付、メモを追加してもう一度生成すると、あなた自身の旅の物語になります。',
 };

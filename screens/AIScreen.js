@@ -57,8 +57,13 @@ export default function AIScreen({ trips }) {
   const [itineraryStyle, setItineraryStyle] = useState('balanced');
   const aiOutputLanguage = getAiOutputLanguage(i18n.language);
   const daysUnit = t('unit_days');
-  const [mode, setMode] = useState('diary');
-  const localFallbackNotice = 'Generated a local travel story because the online AI service was unavailable.';
+  // 还没有任何旅程时，默认落在路书模式：它只需要输入目的地，不依赖本地记录，
+  // 新装用户（以及审核员）打开这一页就能立刻生成出东西。
+  const [mode, setMode] = useState(trips.length ? 'diary' : 'itinerary');
+  // 线上 AI 不可用时的兜底提示
+  const localFallbackNotice = t('ai_offline_notice');
+  // 本机还没有记录可写时的提示。这跟"服务挂了"是两回事，不能共用同一句话。
+  const emptyDataNotice = t('ai_sample_notice');
 
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
@@ -199,7 +204,7 @@ Strict requirements:
     });
 
     if (!selectedTrip || (mode !== 'summary' && !selectedDay)) {
-      setResult(localFallbackNotice + '\n\n' + fallback);
+      setResult(emptyDataNotice + '\n\n' + fallback);
       setGenerating(false);
       return;
     }

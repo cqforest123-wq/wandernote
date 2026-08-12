@@ -370,4 +370,8 @@ alert_logout_confirm: '¿Cerrar sesión?',
   profile_guest_title: 'Invitado',
   profile_guest_desc: 'Tus recuerdos de viaje se guardan solo en este dispositivo.',
   profile_sign_in_to_sync: 'Inicia sesión para sincronizar',
+
+  // AI 兜底提示
+  ai_offline_notice: 'No se pudo conectar con el servicio de IA en línea, así que esto se escribió en tu dispositivo.',
+  ai_sample_notice: 'Este es un ejemplo basado en lo que tienes hasta ahora. Añade viajes, días y notas y vuelve a generar para obtener la historia de tu propio viaje.',
 };

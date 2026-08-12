@@ -370,4 +370,8 @@ alert_logout_confirm: 'Se déconnecter ?',
   profile_guest_title: 'Invité',
   profile_guest_desc: 'Vos souvenirs de voyage sont enregistrés uniquement sur cet appareil.',
   profile_sign_in_to_sync: 'Se connecter pour synchroniser',
+
+  // AI 兜底提示
+  ai_offline_notice: 'Le service IA en ligne est injoignable, ce texte a donc été rédigé sur votre appareil.',
+  ai_sample_notice: 'Voici un exemple basé sur ce que vous avez pour l’instant. Ajoutez des voyages, des journées et des notes, puis relancez la génération pour obtenir le récit de votre propre voyage.',
 };

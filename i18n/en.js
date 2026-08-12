@@ -478,4 +478,8 @@ export default {
   profile_guest_title: 'Guest',
   profile_guest_desc: 'Your travel records are saved on this device only.',
   profile_sign_in_to_sync: 'Sign in to sync across devices',
+
+  // AI 兜底提示
+  ai_offline_notice: 'The online AI service could not be reached, so this was written on your device instead.',
+  ai_sample_notice: 'Here is a sample based on what you have so far. Add trips, days, and notes and generate again for a story about your own journey.',
 };

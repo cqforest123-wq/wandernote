@@ -369,4 +369,8 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   profile_guest_title: '게스트',
   profile_guest_desc: '여행 기록이 이 기기에만 저장되어 있습니다.',
   profile_sign_in_to_sync: '로그인하여 기기 간 동기화',
+
+  // AI 兜底提示
+  ai_offline_notice: '온라인 AI 서비스에 연결할 수 없어 이 기기에서 작성했습니다.',
+  ai_sample_notice: '지금까지의 내용을 바탕으로 한 예시입니다. 여행, 날짜, 기록을 추가한 뒤 다시 생성하면 당신의 여행 이야기가 만들어집니다.',
 };

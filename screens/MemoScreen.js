@@ -844,7 +844,7 @@ Requirements:
                         setShowTemplate(false);
                         Alert.alert(
                           t('memo_ai_success_title'),
-                          'Generated a local packing list because the online AI service was unavailable.'
+                          t('ai_offline_notice')
                         );
                       } finally {
                         aiPackingGeneratingRef.current = false;

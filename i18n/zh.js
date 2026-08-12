@@ -478,4 +478,8 @@ export default {
   profile_guest_title: '游客',
   profile_guest_desc: '你的旅行记录仅保存在这台设备上。',
   profile_sign_in_to_sync: '登录以在多设备间同步',
+
+  // AI 兜底提示
+  ai_offline_notice: '暂时连不上在线 AI 服务，这份内容由本机生成。',
+  ai_sample_notice: '这是根据你目前的内容生成的示例。添加旅程、日期和记录后再生成一次，就能得到属于你自己旅程的故事。',
 };
