@@ -17,7 +17,6 @@
         "NSLocationWhenInUseUsageDescription": "WanderNote uses your location to estimate distance to your travel destinations and display travel footprints on the map.",
         "NSPhotoLibraryUsageDescription": "WanderNote needs access to your photo library so you can add travel photos to your trip records.",
         "NSCameraUsageDescription": "WanderNote needs camera access so you can take travel photos and save them to your trip records.",
-        "NSPhotoLibraryAddUsageDescription": "WanderNote needs permission to save edited travel photos to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.litao0729.wandernote",

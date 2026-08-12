@@ -20,7 +20,6 @@ import AIScreen from './screens/AIScreen';
 import MapScreen from './screens/MapScreen';
 import MemoScreen from './screens/MemoScreen';
 import YearReportScreen from './screens/YearReportScreen';
-import PhotoFilterScreen from './screens/PhotoFilterScreen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -190,7 +189,6 @@ function MainApp({ session, onRequestSignIn }) {
           {activeTab==='profile' && <>
             <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} onRequestSignIn={onRequestSignIn}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'YearReport'} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'PhotoFilter'} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
           </>}
         </Stack.Navigator>
       </NavigationContainer>

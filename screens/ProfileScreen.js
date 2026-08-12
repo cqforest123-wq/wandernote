@@ -178,14 +178,6 @@ const ENABLE_YEAR_REPORT = false;
           ))}
         </View>
 
-        <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('PhotoFilter')} >
-          <View>
-            <Text style={s.reportTitle}>🎨 {t('profile_photo_filter')}</Text>
-            <Text style={s.reportDesc}>{t('profile_photo_filter_desc')}</Text>
-          </View>
-          <Text style={s.reportArrow}>→</Text>
-        </TouchableOpacity>
-
         {ENABLE_YEAR_REPORT && (
           <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
           <View>
