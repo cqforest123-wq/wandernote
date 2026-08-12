@@ -163,13 +163,13 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
 
         <View style={s.statsGrid}>
           {[
-            [String(trips.length),t('profile_stat_trips'),'3'],
-            [String(totalDays),t('profile_stat_days'),''],
-            [String(totalMemos),t('profile_stat_memos'),''],
-            [String(totalPhotos),t('profile_stat_photos'),''],
-          ].map(([n,l,limit])=>(
+            [String(trips.length),t('profile_stat_trips')],
+            [String(totalDays),t('profile_stat_days')],
+            [String(totalMemos),t('profile_stat_memos')],
+            [String(totalPhotos),t('profile_stat_photos')],
+          ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
-              <Text style={s.statNum}>{n}{limit?<Text style={s.statLimit}>/{limit}</Text>:null}</Text>
+              <Text style={s.statNum}>{n}</Text>
               <Text style={s.statLabel}>{l}</Text>
             </View>
           ))}
@@ -183,7 +183,7 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:predestina@msn.com')}>
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:cqforest123@gmail.com')}>
             <Text style={s.settingIcon}>📧</Text>
             <Text style={s.settingLabel}>{t('profile_contact')}</Text>
             <Text style={s.settingArrow}>→</Text>
@@ -293,7 +293,6 @@ const s = StyleSheet.create({
   statsGrid:{flexDirection:'row',gap:10,marginBottom:20},
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:20,color:'#D4AF37',fontWeight:'300'},
-  statLimit:{fontSize:11,color:'#555'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},
   reportCard:{backgroundColor:'#0D1A2E',borderWidth:1,borderColor:'#4ECDC440',borderRadius:14,padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12},
   reportTitle:{fontSize:16,color:'#4ECDC4',marginBottom:4},
