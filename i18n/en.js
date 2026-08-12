@@ -129,7 +129,7 @@ export default {
   auth_no_account: "Don't have an account? Sign up",
   auth_forgot: 'Forgot password',
   auth_has_account: 'Already have an account? Sign in',
-  auth_footer: 'Your travel memories, safely stored in the cloud ☁️',
+  auth_footer: 'An account is optional — it is only used to sync across devices.',
   auth_password_min: 'Password must be at least 6 characters',
 
   // Countdown
@@ -470,4 +470,12 @@ export default {
   copy: 'Copy',
   ai_copied: 'Copied to clipboard.',
   ai_generate_action: 'Generate',
+
+  // 游客模式 / 可选账号
+  auth_or: 'or',
+  auth_continue_as_guest: 'Continue without an account',
+  auth_guest_hint: 'All your trips stay on this device. Sign in later only if you want to sync across devices.',
+  profile_guest_title: 'Guest',
+  profile_guest_desc: 'Your travel records are saved on this device only.',
+  profile_sign_in_to_sync: 'Sign in to sync across devices',
 };

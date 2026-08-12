@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 
 
-export default function AuthScreen({ onAuth }) {
+export default function AuthScreen({ onAuth, onContinueAsGuest }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -113,6 +113,18 @@ export default function AuthScreen({ onAuth }) {
           </View>
         </View>
 
+        <View style={s.guestArea}>
+          <View style={s.guestDivider}>
+            <View style={s.guestLine}/>
+            <Text style={s.guestOr}>{t('auth_or')}</Text>
+            <View style={s.guestLine}/>
+          </View>
+          <TouchableOpacity style={s.guestBtn} onPress={onContinueAsGuest} disabled={loading}>
+            <Text style={s.guestBtnText}>{t('auth_continue_as_guest')}</Text>
+          </TouchableOpacity>
+          <Text style={s.guestHint}>{t('auth_guest_hint')}</Text>
+        </View>
+
         <Text style={s.footer}>{t('auth_footer')}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -135,5 +147,12 @@ const s = StyleSheet.create({
   mainBtnText:{color:'#0D0D0D',fontSize:16,fontWeight:'700'},
   switchRow:{flexDirection:'row',justifyContent:'space-between',marginTop:16},
   switchText:{color:'#D4AF37',fontSize:13},
-  footer:{textAlign:'center',color:'#333',fontSize:12},
+  guestArea:{marginTop:24},
+  guestDivider:{flexDirection:'row',alignItems:'center',marginBottom:16},
+  guestLine:{flex:1,height:1,backgroundColor:'#242424'},
+  guestOr:{color:'#555',fontSize:12,marginHorizontal:12,textTransform:'uppercase',letterSpacing:2},
+  guestBtn:{borderWidth:1,borderColor:'#D4AF3760',borderRadius:14,padding:16,alignItems:'center'},
+  guestBtnText:{color:'#D4AF37',fontSize:15,fontWeight:'600'},
+  guestHint:{textAlign:'center',color:'#555',fontSize:12,marginTop:10,lineHeight:18},
+  footer:{textAlign:'center',color:'#333',fontSize:12,marginTop:24},
 });

@@ -46,7 +46,7 @@ export default {
   auth_register_btn: '가입', auth_send_reset: '재설정 이메일 보내기',
   auth_no_account: '계정이 없으신가요? 가입', auth_forgot: '비밀번호 찾기',
   auth_has_account: '이미 계정이 있으신가요? 로그인',
-  auth_footer: '당신의 여행 기억, 클라우드에 안전하게 ☁️', auth_password_min: '비밀번호는 6자 이상',
+  auth_footer: '계정은 선택 사항이며 기기 간 동기화에만 사용됩니다.', auth_password_min: '비밀번호는 6자 이상',
   countdown_days: '일 후 출발',
   onboarding_skip: '건너뛰기', onboarding_next: '다음', onboarding_start: '시작하기 →',
   onboarding_1_title: 'WanderNote', onboarding_1_sub: '모든 여행을 기록하세요',
@@ -361,4 +361,12 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   ai_result: 'Result',
   ai_generate_action: 'Generate',
   ai_regenerate: 'Regenerate',
+
+  // 游客模式 / 可选账号
+  auth_or: '또는',
+  auth_continue_as_guest: '계정 없이 계속하기',
+  auth_guest_hint: '모든 여행 기록은 이 기기에 저장됩니다. 기기 간 동기화가 필요하면 나중에 로그인하세요.',
+  profile_guest_title: '게스트',
+  profile_guest_desc: '여행 기록이 이 기기에만 저장되어 있습니다.',
+  profile_sign_in_to_sync: '로그인하여 기기 간 동기화',
 };

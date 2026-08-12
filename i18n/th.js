@@ -47,7 +47,7 @@ export default {
   auth_register_btn: 'ลงทะเบียน', auth_send_reset: 'ส่งอีเมลรีเซ็ต',
   auth_no_account: 'ยังไม่มีบัญชี? ลงทะเบียน', auth_forgot: 'ลืมรหัสผ่าน',
   auth_has_account: 'มีบัญชีแล้ว? เข้าสู่ระบบ',
-  auth_footer: 'ความทรงจำการเดินทางของคุณ เก็บไว้อย่างปลอดภัยในคลาวด์ ☁️', auth_password_min: 'รหัสผ่านอย่างน้อย 6 ตัวอักษร',
+  auth_footer: 'บัญชีเป็นตัวเลือกเสริม ใช้สำหรับซิงค์ข้ามอุปกรณ์เท่านั้น', auth_password_min: 'รหัสผ่านอย่างน้อย 6 ตัวอักษร',
   countdown_days: 'วันก่อนออกเดินทาง',
   onboarding_skip: 'ข้าม', onboarding_next: 'ถัดไป', onboarding_start: 'เริ่มเลย →',
   onboarding_1_title: 'WanderNote', onboarding_1_sub: 'บันทึกทุกการเดินทาง',
@@ -362,4 +362,12 @@ alert_logout_confirm: 'ออกจากระบบ?',
   ai_result: 'Result',
   ai_generate_action: 'Generate',
   ai_regenerate: 'Regenerate',
+
+  // 游客模式 / 可选账号
+  auth_or: 'หรือ',
+  auth_continue_as_guest: 'ใช้งานต่อโดยไม่ต้องมีบัญชี',
+  auth_guest_hint: 'บันทึกการเดินทางทั้งหมดจะถูกเก็บไว้ในเครื่องนี้ เข้าสู่ระบบภายหลังได้หากต้องการซิงค์ข้ามอุปกรณ์',
+  profile_guest_title: 'ผู้เยี่ยมชม',
+  profile_guest_desc: 'บันทึกการเดินทางของคุณถูกเก็บไว้ในเครื่องนี้เท่านั้น',
+  profile_sign_in_to_sync: 'เข้าสู่ระบบเพื่อซิงค์ข้ามอุปกรณ์',
 };

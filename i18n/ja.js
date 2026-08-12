@@ -46,7 +46,7 @@ export default {
   auth_register_btn: '登録', auth_send_reset: 'リセットメールを送信',
   auth_no_account: 'アカウントをお持ちでない方？登録', auth_forgot: 'パスワードを忘れた',
   auth_has_account: 'すでにアカウントをお持ちの方？ログイン',
-  auth_footer: 'あなたの旅の思い出、安全にクラウドへ ☁️', auth_password_min: 'パスワードは6文字以上',
+  auth_footer: 'アカウントは任意です。端末間の同期にのみ使用します。', auth_password_min: 'パスワードは6文字以上',
   countdown_days: '日後に出発',
   onboarding_skip: 'スキップ', onboarding_next: '次へ', onboarding_start: '始める →',
   onboarding_1_title: 'WanderNote', onboarding_1_sub: '旅の記憶を残そう',
@@ -361,4 +361,12 @@ alert_logout_confirm: 'ログアウトしますか？',
   ai_result: 'Result',
   ai_generate_action: 'Generate',
   ai_regenerate: 'Regenerate',
+
+  // 游客模式 / 可选账号
+  auth_or: 'または',
+  auth_continue_as_guest: 'アカウントなしで続ける',
+  auth_guest_hint: '旅の記録はこの端末に保存されます。他の端末と同期したくなったら、後からログインできます。',
+  profile_guest_title: 'ゲスト',
+  profile_guest_desc: '旅の記録はこの端末にのみ保存されています。',
+  profile_sign_in_to_sync: 'ログインして端末間で同期',
 };

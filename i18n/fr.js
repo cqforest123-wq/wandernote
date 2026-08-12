@@ -47,7 +47,7 @@ export default {
   auth_register_btn: "S'inscrire", auth_send_reset: 'Envoyer le mail de réinitialisation',
   auth_no_account: "Pas de compte ? S'inscrire", auth_forgot: 'Mot de passe oublié',
   auth_has_account: 'Déjà un compte ? Connexion',
-  auth_footer: 'Vos souvenirs de voyage, stockés en sécurité dans le cloud ☁️', auth_password_min: '6 caractères minimum',
+  auth_footer: 'Le compte est facultatif : il sert uniquement à la synchronisation entre appareils.', auth_password_min: '6 caractères minimum',
   countdown_days: 'jours avant le départ',
   onboarding_skip: 'Passer', onboarding_next: 'Suivant', onboarding_start: 'Commencer →',
   onboarding_1_title: 'WanderNote', onboarding_1_sub: 'Enregistrez chaque voyage',
@@ -362,4 +362,12 @@ alert_logout_confirm: 'Se déconnecter ?',
   ai_result: 'Result',
   ai_generate_action: 'Generate',
   ai_regenerate: 'Regenerate',
+
+  // 游客模式 / 可选账号
+  auth_or: 'ou',
+  auth_continue_as_guest: 'Continuer sans compte',
+  auth_guest_hint: 'Tous vos voyages restent sur cet appareil. Connectez-vous plus tard uniquement pour synchroniser entre appareils.',
+  profile_guest_title: 'Invité',
+  profile_guest_desc: 'Vos souvenirs de voyage sont enregistrés uniquement sur cet appareil.',
+  profile_sign_in_to_sync: 'Se connecter pour synchroniser',
 };

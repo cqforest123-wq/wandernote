@@ -47,7 +47,7 @@ export default {
   auth_register_btn: 'Registrarse', auth_send_reset: 'Enviar email de restablecimiento',
   auth_no_account: '¿Sin cuenta? Regístrate', auth_forgot: 'Olvidé mi contraseña',
   auth_has_account: '¿Ya tienes cuenta? Inicia sesión',
-  auth_footer: 'Tus recuerdos de viaje, almacenados de forma segura en la nube ☁️', auth_password_min: 'Mínimo 6 caracteres',
+  auth_footer: 'La cuenta es opcional: solo se usa para sincronizar entre dispositivos.', auth_password_min: 'Mínimo 6 caracteres',
   countdown_days: 'días para salir',
   onboarding_skip: 'Omitir', onboarding_next: 'Siguiente', onboarding_start: 'Empezar →',
   onboarding_1_title: 'WanderNote', onboarding_1_sub: 'Registra cada viaje',
@@ -362,4 +362,12 @@ alert_logout_confirm: '¿Cerrar sesión?',
   ai_result: 'Result',
   ai_generate_action: 'Generate',
   ai_regenerate: 'Regenerate',
+
+  // 游客模式 / 可选账号
+  auth_or: 'o',
+  auth_continue_as_guest: 'Continuar sin cuenta',
+  auth_guest_hint: 'Todos tus viajes se guardan en este dispositivo. Inicia sesión más tarde solo si quieres sincronizar entre dispositivos.',
+  profile_guest_title: 'Invitado',
+  profile_guest_desc: 'Tus recuerdos de viaje se guardan solo en este dispositivo.',
+  profile_sign_in_to_sync: 'Inicia sesión para sincronizar',
 };

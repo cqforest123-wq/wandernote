@@ -129,7 +129,7 @@ export default {
   auth_no_account: '还没有账号？注册',
   auth_forgot: '忘记密码',
   auth_has_account: '已有账号？登录',
-  auth_footer: '你的旅行记忆，安全存储在云端 ☁️',
+  auth_footer: '账号是可选的，仅用于多设备同步。',
   auth_password_min: '密码至少6位',
 
   // 倒计时
@@ -470,4 +470,12 @@ export default {
   copy: '复制',
   ai_copied: '已复制到剪贴板',
   ai_generate_action: '生成',
+
+  // 游客模式 / 可选账号
+  auth_or: '或',
+  auth_continue_as_guest: '不登录，直接使用',
+  auth_guest_hint: '所有旅程都保存在本机。想在多台设备间同步时，再登录也不迟。',
+  profile_guest_title: '游客',
+  profile_guest_desc: '你的旅行记录仅保存在这台设备上。',
+  profile_sign_in_to_sync: '登录以在多设备间同步',
 };

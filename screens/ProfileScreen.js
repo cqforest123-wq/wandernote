@@ -6,7 +6,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
 
-export default function ProfileScreen({ session, trips, navigation }) {
+export default function ProfileScreen({ session, trips, navigation, onRequestSignIn }) {
+  // 游客模式：没有 session，数据只在本机，不显示登出/注销账号。
+  const isGuest = !session;
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
@@ -155,9 +157,9 @@ const ENABLE_YEAR_REPORT = false;
           <TouchableOpacity onPress={()=>setShowEditProfile(true)}>
             <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
-          <Text style={s.email}>{email}</Text>
+          <Text style={s.email}>{isGuest ? t('profile_guest_desc') : email}</Text>
           <View style={s.planBadge}>
-            <Text style={s.planText}>{t('profile_free')}</Text>
+            <Text style={s.planText}>{isGuest ? t('profile_guest_title') : t('profile_free')}</Text>
           </View>
         </View>
 
@@ -213,22 +215,30 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.settingLabel}>{t('profile_privacy_policy')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/idYOUR_APP_ID?action=write-review')}>
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/id6769281736?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
             <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={s.deleteAccountBtn} onPress={handleDeleteAccount} disabled={isDeletingAccount}>
-          <Text style={s.deleteAccountText}>
-            {isDeletingAccount ? t('profile_deleting_account') : t('profile_delete_account')}
-          </Text>
-        </TouchableOpacity>
+        {isGuest ? (
+          <TouchableOpacity style={s.signInBtn} onPress={onRequestSignIn}>
+            <Text style={s.signInText}>{t('profile_sign_in_to_sync')}</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <TouchableOpacity style={s.deleteAccountBtn} onPress={handleDeleteAccount} disabled={isDeletingAccount}>
+              <Text style={s.deleteAccountText}>
+                {isDeletingAccount ? t('profile_deleting_account') : t('profile_delete_account')}
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-          <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+              <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
+            </TouchableOpacity>
+          </>
+        )}
 
         <Text style={s.version}>WanderNote v1.0.0 · {t('profile_version_slogan')}</Text>
       </ScrollView>
@@ -319,6 +329,8 @@ const s = StyleSheet.create({
   settingArrow:{color:'#444',fontSize:14},
   deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
   deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
+  signInBtn:{borderWidth:1,borderColor:'#D4AF3760',borderRadius:14,padding:16,alignItems:'center',marginBottom:20,backgroundColor:'#D4AF3710'},
+  signInText:{color:'#D4AF37',fontSize:15,fontWeight:'600'},
   logoutBtn:{borderWidth:1,borderColor:'#FF6B6B40',borderRadius:14,padding:16,alignItems:'center',marginBottom:20},
   logoutText:{color:'#FF6B6B',fontSize:15},
   version:{textAlign:'center',color:'#333',fontSize:11},
