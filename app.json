@@ -39,8 +39,24 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "WanderNote uses your location to estimate distance to your travel destinations and display travel footprints on the map.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WanderNote needs access to your photo library so you can add travel photos to your trip records.",
+          "cameraPermission": "WanderNote needs camera access so you can take travel photos and save them to your trip records.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "eas": {
