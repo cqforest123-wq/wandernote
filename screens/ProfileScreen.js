@@ -5,6 +5,10 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
+// 直接读 app.json，避免版本号在这里再次写死后跟着 bump 漂移
+import appConfig from '../app.json';
+
+const APP_VERSION = appConfig.expo.version;
 
 export default function ProfileScreen({ session, trips, navigation, onRequestSignIn }) {
   // 游客模式：没有 session，数据只在本机，不显示登出/注销账号。
@@ -218,7 +222,7 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
           </>
         )}
 
-        <Text style={s.version}>WanderNote v1.0.0 · {t('profile_version_slogan')}</Text>
+        <Text style={s.version}>WanderNote v{APP_VERSION} · {t('profile_version_slogan')}</Text>
       </ScrollView>
 
       <Modal visible={showEditProfile} animationType="slide" transparent>
