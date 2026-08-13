@@ -11,7 +11,9 @@ import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather
 import { getFallbackCityCoords } from '../lib/cityFallbacks';
 import { geocodeCity } from '../lib/geocoding';
 import { searchPlaces } from '../lib/placeSearch';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { buildTripDraftFromPhotos } from '../lib/tripFromPhotos';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 
 const CONTINENTS = [
   { name:'🌏 亚洲', countries:[
@@ -254,6 +256,8 @@ const cd = StyleSheet.create({
 export default function HomeScreen({ navigation, trips, setTrips }) {
   const { t, i18n } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(null);
   const [step, setStep] = useState(1);
   const [selectedContinent, setSelectedContinent] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
@@ -436,6 +440,76 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
     resetForm(); setShowAdd(true);
   };
 
+  /**
+   * 从照片建旅程。
+   *
+   * 人在旅途中只会拍照，不会写日记。而每张照片本来就带着拍摄时间和 GPS ——
+   * 一份完整的旅行日志已经在相册里了，只是没人把它组织起来。
+   */
+  const handleCreateFromPhotos = async () => {
+    if (importing) return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('alert_need_permission'), t('alert_permission_album'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+        exif: true,           // 时间和 GPS 全靠它
+        selectionLimit: 0,    // 不限张数：一趟旅行几百张很正常
+      });
+      if (result.canceled || !result.assets?.length) return;
+
+      setImporting(true);
+      setImportProgress(null);
+
+      const draft = await buildTripDraftFromPhotos(result.assets, t, {
+        onProgress: (p) => setImportProgress(p),
+      });
+
+      if (draft?.error === 'NO_USABLE_PHOTOS') {
+        Alert.alert(t('photo_trip_failed'), t('photo_trip_no_usable'));
+        return;
+      }
+
+      const newTrip = createTrip({
+        city: draft.city || '',
+        country: draft.country || '',
+        emoji: '📷',
+        coords: draft.coords,
+      });
+      newTrip.days = draft.days;
+      setTrips(prev => [newTrip, ...prev]);
+
+      // 目的地是从坐标猜的，可能猜错，也可能因为照片没 GPS 而为空。
+      // 明确告诉用户结果，并提示可以改，而不是假装百分百正确。
+      const lines = [
+        t('photo_trip_summary')
+          .replace('%p', draft.stats.photoCount)
+          .replace('%d', draft.stats.dayCount),
+        draft.stats.hasLocation
+          ? t('photo_trip_located').replace('%s', [draft.city, draft.country].filter(Boolean).join(', '))
+          : t('photo_trip_no_location'),
+        draft.stats.undatedCount > 0
+          ? t('photo_trip_undated').replace('%d', draft.stats.undatedCount)
+          : null,
+      ].filter(Boolean);
+
+      Alert.alert(t('photo_trip_done'), lines.join('\n'), [
+        { text: t('ok'), onPress: () => navigation.navigate('TripDetail', { tripId: newTrip.id }) },
+      ]);
+    } catch (e) {
+      Alert.alert(t('photo_trip_failed'), e?.message || t('profile_try_later'));
+    } finally {
+      setImporting(false);
+      setImportProgress(null);
+    }
+  };
+
   const [tripSearch, setTripSearch] = useState('');
   const [sortBy, setSortBy] = useState('date'); // date | name
   const [deletingId, setDeletingId] = useState(null);
@@ -515,6 +589,30 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             </View>
           </View>
         )}
+
+        {/* 从照片建旅程。放在列表上方而不是埋进新建流程里：
+            对回来才想起整理的人来说，这是最省事的入口，值得第一眼看到。 */}
+        <TouchableOpacity
+          style={[s.photoImportBtn, importing && { opacity: 0.7 }]}
+          onPress={handleCreateFromPhotos}
+          disabled={importing}
+        >
+          {importing ? (
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <ActivityIndicator color="#4ECDC4" size="small" />
+              <Text style={s.photoImportText}>
+                {importProgress
+                  ? t('photo_trip_locating').replace('%d', importProgress.done + 1).replace('%t', importProgress.total)
+                  : t('photo_trip_reading')}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={s.photoImportText}>📷 {t('photo_trip_action')}</Text>
+              <Text style={s.photoImportHint}>{t('photo_trip_hint')}</Text>
+            </>
+          )}
+        </TouchableOpacity>
         {filteredTrips.map(trip => (
           <TouchableOpacity key={trip.id} style={s.card}
             onPress={() => navigation.navigate('TripDetail', { tripId: trip.id })}
@@ -764,6 +862,9 @@ const s = StyleSheet.create({
   emptyHint:{fontSize:13,color:'#333',marginTop:6},
   emptyBtn:{backgroundColor:'#D4AF3720',borderWidth:1,borderColor:'#D4AF3750',borderRadius:20,paddingHorizontal:20,paddingVertical:10},
   emptyBtnText:{color:'#D4AF37',fontSize:14},
+  photoImportBtn:{borderWidth:1,borderColor:'#4ECDC440',backgroundColor:'#4ECDC410',borderRadius:14,padding:16,alignItems:'center',marginBottom:16},
+  photoImportText:{color:'#4ECDC4',fontSize:15,fontWeight:'600'},
+  photoImportHint:{color:'#5A7A78',fontSize:12,marginTop:5,textAlign:'center'},
   card:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:'#242424'},
   cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center'},
   cityName:{fontSize:16,color:'#F0EDE8'},

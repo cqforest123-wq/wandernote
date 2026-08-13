@@ -308,4 +308,17 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   profile_notification: '알림',
   auth_register_btn: '가입',
   profile_local: '이 기기',
+
+  // 从照片创建旅程
+  photo_trip_action: '사진으로 여행 만들기',
+  photo_trip_hint: '여행 사진만 고르세요. 사진에 담긴 날짜와 장소가 그대로 여행의 하루하루가 됩니다',
+  photo_trip_reading: '사진을 읽는 중…',
+  photo_trip_locating: '장소 확인 중 %d / %t…',
+  photo_trip_done: '여행이 만들어졌어요',
+  photo_trip_summary: '사진 %p장, %d일로 나눴습니다.',
+  photo_trip_located: '목적지를 「%s」(으)로 추정했습니다. 여행을 열어 수정할 수 있어요.',
+  photo_trip_no_location: '이 사진들에는 위치 정보가 없어 목적지를 비워 뒀습니다. 여행을 열어 입력해 주세요.',
+  photo_trip_undated: '촬영 날짜가 없는 사진 %d장은 첫날에 넣었습니다.',
+  photo_trip_failed: '만들지 못했습니다',
+  photo_trip_no_usable: '이 사진들은 읽을 수 없었습니다.',
 };

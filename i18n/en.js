@@ -391,4 +391,17 @@ export default {
   ai_share_card: 'Save as an image',
   ai_share_card_making: 'Making the image…',
   ai_share_card_failed: 'Could not create the image',
+
+  // 从照片创建旅程
+  photo_trip_action: 'Build a trip from photos',
+  photo_trip_hint: 'Pick your travel photos — the dates and places already in them become the days of a trip',
+  photo_trip_reading: 'Reading your photos…',
+  photo_trip_locating: 'Looking up place %d of %t…',
+  photo_trip_done: 'Trip created',
+  photo_trip_summary: '%p photos across %d days.',
+  photo_trip_located: 'Destination guessed as %s — tap the trip to correct it.',
+  photo_trip_no_location: 'These photos carry no location, so the destination is blank. Open the trip to fill it in.',
+  photo_trip_undated: '%d photos had no date and were added to the first day.',
+  photo_trip_failed: 'Could not build a trip',
+  photo_trip_no_usable: 'None of those photos could be read.',
 };

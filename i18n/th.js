@@ -309,4 +309,17 @@ alert_logout_confirm: 'ออกจากระบบ?',
   profile_notification: 'การแจ้งเตือน',
   auth_register_btn: 'สมัคร',
   profile_local: 'ในเครื่องนี้',
+
+  // 从照片创建旅程
+  photo_trip_action: 'สร้างการเดินทางจากรูปภาพ',
+  photo_trip_hint: 'เลือกรูปการเดินทางของคุณ วันที่และสถานที่ที่ติดมากับรูปจะกลายเป็นแต่ละวันของทริป',
+  photo_trip_reading: 'กำลังอ่านรูปภาพ…',
+  photo_trip_locating: 'กำลังค้นหาสถานที่ %d จาก %t…',
+  photo_trip_done: 'สร้างการเดินทางแล้ว',
+  photo_trip_summary: 'รูป %p รูป แบ่งเป็น %d วัน',
+  photo_trip_located: 'คาดว่าจุดหมายคือ %s แตะที่ทริปเพื่อแก้ไขได้',
+  photo_trip_no_location: 'รูปเหล่านี้ไม่มีข้อมูลตำแหน่ง จุดหมายจึงว่างไว้ เปิดทริปเพื่อกรอกได้เลย',
+  photo_trip_undated: 'รูป %d รูปไม่มีวันที่ถ่าย จึงรวมไว้ในวันแรก',
+  photo_trip_failed: 'สร้างไม่สำเร็จ',
+  photo_trip_no_usable: 'อ่านรูปเหล่านี้ไม่ได้เลย',
 };

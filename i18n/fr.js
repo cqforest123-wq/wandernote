@@ -323,4 +323,17 @@ alert_logout_confirm: 'Se déconnecter ?',
   alert_permission_camera: 'Veuillez autoriser l’accès à l’appareil photo',
   alert_fill_fields: 'Veuillez saisir votre e-mail et votre mot de passe',
   profile_local: 'Sur l’appareil',
+
+  // 从照片创建旅程
+  photo_trip_action: 'Créer un voyage à partir de photos',
+  photo_trip_hint: 'Choisissez vos photos de voyage : les dates et lieux qu’elles contiennent deviennent les journées du voyage',
+  photo_trip_reading: 'Lecture de vos photos…',
+  photo_trip_locating: 'Recherche du lieu %d sur %t…',
+  photo_trip_done: 'Voyage créé',
+  photo_trip_summary: '%p photos réparties sur %d jours.',
+  photo_trip_located: 'Destination estimée : %s — ouvrez le voyage pour la corriger.',
+  photo_trip_no_location: 'Ces photos ne contiennent pas de localisation, la destination est donc vide. Ouvrez le voyage pour la renseigner.',
+  photo_trip_undated: '%d photos sans date ont été ajoutées au premier jour.',
+  photo_trip_failed: 'Impossible de créer le voyage',
+  photo_trip_no_usable: 'Aucune de ces photos n’a pu être lue.',
 };

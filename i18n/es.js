@@ -309,4 +309,17 @@ alert_logout_confirm: '¿Cerrar sesión?',
   profile_notification: 'Notificaciones',
   auth_register_btn: 'Registrarse',
   profile_local: 'En el dispositivo',
+
+  // 从照片创建旅程
+  photo_trip_action: 'Crear un viaje desde fotos',
+  photo_trip_hint: 'Elige tus fotos de viaje: las fechas y lugares que ya contienen se convierten en los días del viaje',
+  photo_trip_reading: 'Leyendo tus fotos…',
+  photo_trip_locating: 'Buscando el lugar %d de %t…',
+  photo_trip_done: 'Viaje creado',
+  photo_trip_summary: '%p fotos repartidas en %d días.',
+  photo_trip_located: 'Destino estimado: %s. Abre el viaje para corregirlo.',
+  photo_trip_no_location: 'Estas fotos no llevan ubicación, así que el destino quedó vacío. Ábrelo para completarlo.',
+  photo_trip_undated: '%d fotos sin fecha se añadieron al primer día.',
+  photo_trip_failed: 'No se pudo crear el viaje',
+  photo_trip_no_usable: 'No se pudo leer ninguna de esas fotos.',
 };

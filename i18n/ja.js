@@ -308,4 +308,17 @@ alert_logout_confirm: 'ログアウトしますか？',
   profile_notification: '通知',
   auth_register_btn: '登録',
   profile_local: 'この端末',
+
+  // 从照片创建旅程
+  photo_trip_action: '写真から旅を作る',
+  photo_trip_hint: '旅の写真を選ぶだけ。写真が持っている日時と場所がそのまま旅の各日になります',
+  photo_trip_reading: '写真を読み込んでいます…',
+  photo_trip_locating: '場所を照会中 %d / %t…',
+  photo_trip_done: '旅を作成しました',
+  photo_trip_summary: '写真 %p 枚、%d 日分に分けました。',
+  photo_trip_located: '行き先を「%s」と推定しました。旅を開けば変更できます。',
+  photo_trip_no_location: 'これらの写真に位置情報がないため、行き先は空のままです。旅を開いて入力してください。',
+  photo_trip_undated: '撮影日時のない写真 %d 枚は初日にまとめました。',
+  photo_trip_failed: '作成できませんでした',
+  photo_trip_no_usable: 'これらの写真は読み込めませんでした。',
 };

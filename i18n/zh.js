@@ -391,4 +391,17 @@ export default {
   ai_share_card: '生成分享图',
   ai_share_card_making: '正在生成图片…',
   ai_share_card_failed: '图片生成失败',
+
+  // 从照片创建旅程
+  photo_trip_action: '从照片创建旅程',
+  photo_trip_hint: '选一批旅行照片，照片自带的时间和地点会变成旅程的每一天',
+  photo_trip_reading: '正在读取照片…',
+  photo_trip_locating: '正在查地点 %d / %t…',
+  photo_trip_done: '旅程已创建',
+  photo_trip_summary: '%p 张照片，分成 %d 天。',
+  photo_trip_located: '目的地推测为 %s，点进旅程可以改。',
+  photo_trip_no_location: '这些照片没有位置信息，目的地留空了，进旅程填一下即可。',
+  photo_trip_undated: '有 %d 张照片没有拍摄时间，已归入第一天。',
+  photo_trip_failed: '创建失败',
+  photo_trip_no_usable: '这些照片都读不出来。',
 };
