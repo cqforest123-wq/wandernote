@@ -157,3 +157,62 @@ new Function('module', 'exports', src.replace(/export default/, 'module.exports 
 
 This produced two false alarms in one session before being caught by looking
 at the running app.
+
+## After merging the Watch app: `ios/` is tracked, prebuild is off-limits
+
+The Watch companion target is hand-written Swift living inside
+`WanderNote.xcodeproj`. `expo prebuild` cannot generate it, so from the merge
+of `feature/watch-companion-v1-integration` onward `ios/` is under version
+control and **`npx expo prebuild` must not be run on this branch** — it
+rewrites the Xcode project and drops the Watch target.
+
+The consequence that bites immediately: **`app.json` is no longer the source
+of truth for permissions or plugin-injected Info.plist keys.** Editing
+`app.json` changes nothing on its own now.
+
+Change permission strings in `ios/WanderNote/Info.plist` directly, and keep
+`app.json` in sync so the two do not drift and mislead the next person.
+
+The shipped app declares exactly three, each tied to a user-initiated action:
+
+```
+NSCameraUsageDescription
+NSLocationWhenInUseUsageDescription
+NSPhotoLibraryUsageDescription
+```
+
+The merge itself demonstrated the hazard. The Watch branch's June Info.plist
+overwrote the working tree and restored three declarations that had been
+removed for the 5.1.1 privacy rejection:
+
+```
+NSFaceIDUsageDescription           (expo-secure-store — dependency deleted)
+NSMicrophoneUsageDescription       (expo-image-picker default — no video capture)
+NSPhotoLibraryAddUsageDescription  (photo filters — screen deleted)
+```
+
+They were removed again by hand. **Check this list after any merge that
+touches `ios/`:**
+
+```bash
+plutil -p ios/WanderNote/Info.plist | grep -i usagedescription
+```
+
+More than those three means something regressed.
+
+### Version numbers also stopped following app.json
+
+Same cause: with `ios/` tracked, `app.json`'s `version` and `ios.buildNumber`
+no longer reach the project. The merge left the Xcode project on 1.0.2 / 10
+while `app.json` said 1.0.4 / 12.
+
+Bump both places, and note the Watch target carries its own copy — App Store
+Connect rejects a submission whose Watch app version does not match the host
+app:
+
+```bash
+grep -oE "(MARKETING_VERSION|CURRENT_PROJECT_VERSION) = [^;]*" \
+  ios/WanderNote.xcodeproj/project.pbxproj | sort -u
+```
+
+Both keys should print exactly one value each, matching `app.json`.

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2020",
+    "outDir": "/tmp/wandernote-watch-snapshot-tests",
+    "rootDir": ".",
+    "noEmit": false,
+    "skipLibCheck": true
+  },
+  "include": [
+    "scripts/watchSnapshotTests.ts",
+    "lib/watch/OutdoorGlanceSnapshot.ts",
+    "lib/watch/composeOutdoorGlanceSnapshot.ts",
+    "lib/watch/OutdoorGlanceAppStateAdapter.ts",
+    "lib/watch/OutdoorGlanceSyncCoordinator.ts"
+  ]
+}

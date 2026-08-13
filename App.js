@@ -10,6 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initSync, syncTripsUp } from './lib/sync';
 import { supabase } from './lib/supabase';
 import { geocodeCity } from './lib/geocoding';
+import OutdoorGlanceSync from './lib/watch/OutdoorGlanceSync';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -158,6 +159,7 @@ function MainApp({ session, onRequestSignIn }) {
 
   return (
     <View key={langKey} style={{flex:1,backgroundColor:'#0D0D0D'}}>
+      <OutdoorGlanceSync trips={trips} loaded={loaded} language={i18n.language}/>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
