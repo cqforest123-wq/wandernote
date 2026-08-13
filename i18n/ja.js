@@ -341,4 +341,13 @@ alert_logout_confirm: 'ログアウトしますか？',
   day_delete_photo: '写真を削除',
   share: '共有',
   trip_icon: '旅のアイコン',
+
+  // 线上 AI 不可用时，本机生成的路书正文
+  ai_local_morning: '宿の近くのランドマークや街歩き、カフェなど、軽めのところから始めましょう。',
+  ai_local_afternoon: 'メインの観光地を一つ入れ、移動・食事・記録の時間も確保しておきます。',
+  ai_local_evening: '夜は自由に。食事や夜景、のんびり散歩など。',
+  ai_local_distance: 'ルートはコンパクトに、近い場所はまとめて回ります。',
+  ai_local_duration: '詰め込みすぎず、一日に2〜3か所を目安に。',
+  ai_local_status: '出発前に当日の開館・営業時間を確認しましょう。',
+  ai_local_tips: '住所・チケット・天気・持ち物メモは WanderNote に残しておきましょう。',
 };

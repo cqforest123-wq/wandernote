@@ -449,4 +449,13 @@ export default {
   day_delete_photo: 'Delete photo',
   share: 'Share',
   trip_icon: 'Trip icon',
+
+  // 线上 AI 不可用时，本机生成的路书正文
+  ai_local_morning: 'Start with an easy landmark, a neighbourhood walk, or a cafe near where you are staying.',
+  ai_local_afternoon: 'Visit one main attraction and leave time for transit, meals, and notes.',
+  ai_local_evening: 'Keep the evening flexible for dinner, a viewpoint, or a relaxed walk.',
+  ai_local_distance: 'Keep routes compact and group nearby places together.',
+  ai_local_duration: 'Plan 2-3 focused blocks rather than rushing the whole day.',
+  ai_local_status: 'Check opening hours locally before you set out.',
+  ai_local_tips: 'Save addresses, tickets, weather notes, and packing reminders in WanderNote.',
 };

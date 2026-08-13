@@ -449,4 +449,13 @@ export default {
   day_delete_photo: '删除照片',
   share: '分享',
   trip_icon: '旅程图标',
+
+  // 线上 AI 不可用时，本机生成的路书正文
+  ai_local_morning: '从住处附近的地标、街区散步或一家咖啡馆开始，节奏放松些。',
+  ai_local_afternoon: '安排一个主要景点，并给交通、吃饭和记录留出时间。',
+  ai_local_evening: '晚上留白，可以吃饭、看夜景，或者随便走走。',
+  ai_local_distance: '把路线排紧凑，相近的地方放在一起走。',
+  ai_local_duration: '一天安排 2-3 个重点就够，不必赶场。',
+  ai_local_status: '出发前先查一下当天的开放时间。',
+  ai_local_tips: '把地址、票务、天气和打包提醒都记进 WanderNote。',
 };

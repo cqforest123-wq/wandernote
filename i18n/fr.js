@@ -342,4 +342,13 @@ alert_logout_confirm: 'Se déconnecter ?',
   day_delete_photo: 'Supprimer la photo',
   share: 'Partager',
   trip_icon: 'Icône du voyage',
+
+  // 线上 AI 不可用时，本机生成的路书正文
+  ai_local_morning: 'Commencez tranquillement : un monument proche, une balade dans le quartier ou un café près de votre logement.',
+  ai_local_afternoon: 'Prévoyez une visite principale, en gardant du temps pour les trajets, les repas et vos notes.',
+  ai_local_evening: 'Laissez la soirée libre : dîner, point de vue, ou simple promenade.',
+  ai_local_distance: 'Gardez des itinéraires compacts et regroupez les lieux proches.',
+  ai_local_duration: 'Prévoyez 2 à 3 temps forts plutôt que de courir toute la journée.',
+  ai_local_status: 'Vérifiez les horaires sur place avant de partir.',
+  ai_local_tips: 'Notez adresses, billets, météo et rappels de bagages dans WanderNote.',
 };

@@ -341,4 +341,13 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   day_delete_photo: '사진 삭제',
   share: '공유',
   trip_icon: '여행 아이콘',
+
+  // 线上 AI 不可用时，本机生成的路书正文
+  ai_local_morning: '숙소 근처의 명소나 동네 산책, 카페처럼 가벼운 곳부터 시작하세요.',
+  ai_local_afternoon: '주요 명소 한 곳을 넣고 이동, 식사, 기록할 시간도 남겨 두세요.',
+  ai_local_evening: '저녁은 여유롭게. 식사나 야경, 가벼운 산책 정도로.',
+  ai_local_distance: '동선을 촘촘하게 잡고 가까운 곳끼리 묶어서 다니세요.',
+  ai_local_duration: '하루에 2~3곳 정도로, 무리해서 채우지 마세요.',
+  ai_local_status: '출발 전에 그날의 운영 시간을 확인하세요.',
+  ai_local_tips: '주소, 티켓, 날씨, 짐 목록은 WanderNote에 저장해 두세요.',
 };

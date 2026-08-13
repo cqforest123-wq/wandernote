@@ -140,6 +140,25 @@ Requirements:
         destination: itineraryDest,
         days: itineraryDays,
         style: t(`ai_style_${itineraryStyle}`),
+        // 复用真实 AI 分支already用的那批标签，兜底结果不会再中英混排
+        labels: {
+          title: (dest, n) => `${dest} · ${n} ${daysUnit}`,
+          dayNumber: (n) => t('ai_day_number').replace('%d', n),
+          morning: t('ai_morning'),
+          afternoon: t('ai_afternoon'),
+          evening: t('ai_evening'),
+          distance: t('ai_distance'),
+          duration: t('ai_duration'),
+          status: t('ai_opening_status'),
+          tips: t('ai_tips'),
+          morningText: t('ai_local_morning'),
+          afternoonText: t('ai_local_afternoon'),
+          eveningText: t('ai_local_evening'),
+          distanceText: t('ai_local_distance'),
+          durationText: t('ai_local_duration'),
+          statusText: t('ai_local_status'),
+          tipsText: t('ai_local_tips'),
+        },
       });
       try {
         const destination = itineraryDest.trim() || 'your next destination';
