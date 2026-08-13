@@ -5,12 +5,13 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
+import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
 // 直接读 app.json，避免版本号在这里再次写死后跟着 bump 漂移
 import appConfig from '../app.json';
 
 const APP_VERSION = appConfig.expo.version;
 
-export default function ProfileScreen({ session, trips, navigation, onRequestSignIn }) {
+export default function ProfileScreen({ session, trips, navigation, onRequestSignIn, onDataRestored }) {
   // 游客模式：没有 session，数据只在本机，不显示登出/注销账号。
   const isGuest = !session;
   const { t, i18n } = useTranslation();
@@ -42,6 +43,8 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   React.useEffect(() => {
     const loadProfile = async () => {
@@ -93,6 +96,86 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
   const totalMemos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0);
   const totalPhotos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0);
+
+  const formatMB = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
+  const runExport = async (includePhotos) => {
+    try {
+      setIsExporting(true);
+      const r = await exportBackup({ includePhotos });
+      const parts = [
+        t('backup_export_done_trips').replace('%d', r.tripCount),
+        t('backup_export_done_lists').replace('%d', r.memoCount),
+      ];
+      if (r.photoFailed > 0) {
+        parts.push(t('backup_export_photos_failed').replace('%d', r.photoFailed));
+      }
+      Alert.alert(t('backup_export_done'), parts.join('\n'));
+    } catch (e) {
+      // 用户在分享面板点取消也会走到这里，不必当成错误吓唬人
+      if (!/cancel/i.test(e?.message || '')) {
+        Alert.alert(t('backup_export_failed'), e?.message || t('profile_try_later'));
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (isExporting) return;
+    try {
+      // 相机拍的照片只在 app 沙盒里，系统相册没有副本，所以默认要带上。
+      // 但整包可能很大，先估一下体积再让用户决定。
+      const est = await estimatePhotoBytes(trips);
+      if (est.count > 0 && est.encodedBytes > PHOTO_SIZE_WARN_BYTES) {
+        Alert.alert(
+          t('backup_large_title'),
+          t('backup_large_message')
+            .replace('%d', est.count)
+            .replace('%s', formatMB(est.encodedBytes)),
+          [
+            { text: t('cancel'), style: 'cancel' },
+            { text: t('backup_without_photos'), onPress: () => runExport(false) },
+            { text: t('backup_with_photos'), onPress: () => runExport(true) },
+          ]
+        );
+        return;
+      }
+      await runExport(true);
+    } catch (e) {
+      setIsExporting(false);
+      Alert.alert(t('backup_export_failed'), e?.message || t('profile_try_later'));
+    }
+  };
+
+  const handleImport = async () => {
+    if (isImporting) return;
+    try {
+      setIsImporting(true);
+      const r = await importBackup();
+      if (!r) return; // 用户取消了选择
+      Alert.alert(
+        t('backup_import_done'),
+        [
+          t('backup_import_added').replace('%d', r.addedTrips).replace('%m', r.addedMemos),
+          r.skippedTrips + r.skippedMemos > 0
+            ? t('backup_import_skipped').replace('%d', r.skippedTrips + r.skippedMemos)
+            : null,
+          r.restoredPhotos > 0
+            ? t('backup_import_photos').replace('%d', r.restoredPhotos)
+            : null,
+        ].filter(Boolean).join('\n'),
+        [{ text: t('ok'), onPress: () => onDataRestored && onDataRestored(r.trips) }]
+      );
+    } catch (e) {
+      const key = e?.message === 'NOT_A_BACKUP' || e?.message === 'INVALID_JSON'
+        ? 'backup_import_invalid'
+        : 'backup_import_failed';
+      Alert.alert(t('backup_import_failed'), t(key));
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
@@ -178,6 +261,25 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             </View>
           ))}
         </View>
+
+        <Text style={s.sectionTitle}>{t('profile_data')}</Text>
+        <View style={s.settingList}>
+          <TouchableOpacity style={s.settingRow} onPress={handleExport} disabled={isExporting}>
+            <Text style={s.settingIcon}>📦</Text>
+            <Text style={s.settingLabel}>
+              {isExporting ? t('backup_exporting') : t('backup_export')}
+            </Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.settingRow} onPress={handleImport} disabled={isImporting}>
+            <Text style={s.settingIcon}>📥</Text>
+            <Text style={s.settingLabel}>
+              {isImporting ? t('backup_importing') : t('backup_import')}
+            </Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={s.settingHint}>{t('backup_hint')}</Text>
 
         <Text style={s.sectionTitle}>{t('profile_account_settings')}</Text>
         <View style={s.settingList}>
@@ -310,6 +412,7 @@ const s = StyleSheet.create({
   settingArrow:{color:'#444',fontSize:14},
   deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
   deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
+  settingHint:{fontSize:12,color:'#555',lineHeight:18,marginTop:8,marginBottom:4,paddingHorizontal:4},
   signInBtn:{borderWidth:1,borderColor:'#D4AF3760',borderRadius:14,padding:16,alignItems:'center',marginBottom:20,backgroundColor:'#D4AF3710'},
   signInText:{color:'#D4AF37',fontSize:15,fontWeight:'600'},
   logoutBtn:{borderWidth:1,borderColor:'#FF6B6B40',borderRadius:14,padding:16,alignItems:'center',marginBottom:20},

@@ -176,7 +176,7 @@ function MainApp({ session, onRequestSignIn }) {
             <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && (
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} onRequestSignIn={onRequestSignIn}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} onRequestSignIn={onRequestSignIn} onDataRestored={setTripsState}/>}</Stack.Screen>
           )}
         </Stack.Navigator>
       </NavigationContainer>
