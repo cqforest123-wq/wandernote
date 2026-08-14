@@ -600,7 +600,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.litao0729.wandernote.watchkitapp.complication;
+				PRODUCT_BUNDLE_IDENTIFIER = com.litao0729.wandernote.watchkitapp.glance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -638,7 +638,7 @@
 					"@executable_path/../../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.4;
-				PRODUCT_BUNDLE_IDENTIFIER = com.litao0729.wandernote.watchkitapp.complication;
+				PRODUCT_BUNDLE_IDENTIFIER = com.litao0729.wandernote.watchkitapp.glance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;

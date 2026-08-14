@@ -274,3 +274,17 @@ Distribution builds need the App Group registered on the developer portal.
 Automatic signing normally creates it; if an archive fails on a missing
 `com.apple.security.application-groups` entitlement, that registration is the
 thing to check first.
+
+### The complication's bundle identifier
+
+`com.litao0729.wandernote.watchkitapp.complication` cannot be registered — Apple
+returns "not available" for it. When that registration fails, Xcode silently
+falls back to the wildcard `iOS Team Provisioning Profile: *`, which carries no
+App Groups, so the build then reports three *additional* App Groups errors that
+are only symptoms. Fix the identifier first; the rest clear on their own.
+
+The target now uses `com.litao0729.wandernote.watchkitapp.glance`.
+
+Adding the App Groups capability itself has to happen in the Xcode GUI once per
+target — `xcodebuild -allowProvisioningUpdates` will not register a new
+capability on an App ID.
