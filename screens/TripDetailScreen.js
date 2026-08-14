@@ -7,7 +7,32 @@ import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
 import { createDay } from '../lib/models';
+import {
+  collectTripExpenses,
+  formatMoney,
+  getHomeCurrency,
+  loadRates,
+  sumByCategory,
+  sumExpenses,
+} from '../lib/currency';
 import DateTimePicker from '@react-native-community/datetimepicker';
+
+const EXPENSE_CATEGORY_LABEL_KEYS = {
+  food: 'expense_cat_food',
+  transport: 'expense_cat_transport',
+  stay: 'expense_cat_stay',
+  ticket: 'expense_cat_ticket',
+  shopping: 'expense_cat_shopping',
+  other: 'expense_cat_other',
+};
+const EXPENSE_CATEGORY_COLORS = {
+  food: '#FF8C69',
+  transport: '#64B5F6',
+  stay: '#FFB347',
+  ticket: '#9B8EC4',
+  shopping: '#F06292',
+  other: '#6BCB77',
+};
 
 const WEEKDAY_KEYS = ['weekday_sun','weekday_mon','weekday_tue','weekday_wed','weekday_thu','weekday_fri','weekday_sat'];
 
@@ -31,6 +56,17 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [weather, setWeather] = useState(null);
   const [useFahrenheit, setUseFahrenheit] = useState(false);
   const [forecast, setForecast] = useState(null);
+  const [homeCurrency, setHomeCurrency] = useState('');
+  const [rates, setRates] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getHomeCurrency().then(code => !cancelled && setHomeCurrency(code));
+    loadRates().then(result => !cancelled && setRates(result));
+
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +95,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   }, [trip?.coords, trip?.city, i18n.language]);
 
   if (!trip) return null;
+
+  const tripExpenses = collectTripExpenses(trip);
+  const tripTotal = sumExpenses(tripExpenses, homeCurrency, rates);
+  const categoryTotals = sumByCategory(tripExpenses, homeCurrency, rates);
+  const categoryRows = Object.entries(categoryTotals)
+    .filter(([, value]) => value > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const categoryTotal = categoryRows.reduce((sum, [, value]) => sum + value, 0);
 
   const today = new Date();
   today.setHours(23,59,59,999);
@@ -224,7 +268,6 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             [String(trip.days.length),t('stat_days')],
             [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),t('stat_memos')],
             [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),t('stat_photos')],
-            // [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'], // v2.0
           ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}</Text>
@@ -232,6 +275,49 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             </View>
           ))}
         </View>
+
+        {tripExpenses.length>0 && (
+          <View style={s.spendCard}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <Text style={s.spendLabel}>{t('expense_trip_total')}</Text>
+              <View style={{alignItems:'flex-end'}}>
+                <Text style={s.spendTotal}>{formatMoney(tripTotal.total, homeCurrency)}</Text>
+                {tripTotal.unconvertible.length>0 && (
+                  <Text style={s.spendWarn}>{t('expense_partial_total')}</Text>
+                )}
+                {rates?.stale && tripTotal.unconvertible.length===0 && (
+                  <Text style={s.spendWarn}>{t('expense_stale_rate')}</Text>
+                )}
+              </View>
+            </View>
+
+            {/* No rates at all: say so instead of rendering a bar of zeroes. */}
+            {categoryTotal<=0 ? (
+              <Text style={s.spendWarn}>{t('expense_no_rate_notice')}</Text>
+            ) : (
+              <>
+                <View style={s.spendBar}>
+                  {categoryRows.map(([cat,value])=>(
+                    <View key={cat} style={{
+                      flex:value,
+                      backgroundColor:EXPENSE_CATEGORY_COLORS[cat]||'#666',
+                    }}/>
+                  ))}
+                </View>
+                <View style={s.spendLegend}>
+                  {categoryRows.map(([cat,value])=>(
+                    <View key={cat} style={s.spendLegendItem}>
+                      <View style={[s.spendDot,{backgroundColor:EXPENSE_CATEGORY_COLORS[cat]||'#666'}]}/>
+                      <Text style={s.spendLegendText}>
+                        {`${t(EXPENSE_CATEGORY_LABEL_KEYS[cat]||'expense_cat_other')} ${Math.round(value/categoryTotal*100)}%`}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+          </View>
+        )}
 
         {/* 打包清单入口 */}
         <TouchableOpacity style={s.packingBtn}
@@ -432,6 +518,15 @@ const s = StyleSheet.create({
   editHint:{fontSize:16,color:'#444'},
   tripMeta:{fontSize:14,color:'#555',marginTop:4},
   statsRow:{flexDirection:'row',gap:12,marginBottom:24},
+  spendCard:{backgroundColor:'#161616',borderRadius:16,padding:18,marginBottom:24,borderWidth:1,borderColor:'#2A2A2A'},
+  spendLabel:{fontSize:11,color:'#555',letterSpacing:2,textTransform:'uppercase'},
+  spendTotal:{fontSize:24,color:'#D4AF37',fontWeight:'300'},
+  spendWarn:{fontSize:10,color:'#8A7B4A',marginTop:4},
+  spendBar:{flexDirection:'row',height:6,borderRadius:3,overflow:'hidden',marginTop:16,backgroundColor:'#222'},
+  spendLegend:{flexDirection:'row',flexWrap:'wrap',gap:12,marginTop:12},
+  spendLegendItem:{flexDirection:'row',alignItems:'center',gap:5},
+  spendDot:{width:7,height:7,borderRadius:4},
+  spendLegendText:{fontSize:11,color:'#666'},
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},

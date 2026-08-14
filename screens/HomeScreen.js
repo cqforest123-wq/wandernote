@@ -542,7 +542,8 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             <Text style={s.subtitle}>{t('home_subtitle')}</Text>
           </View>
           <TouchableOpacity style={s.addBtn} onPress={handleNewTrip}>
-            <Text style={s.addBtnText}>+ {t('home_new_trip')}</Text>
+            {/* The "+" is already part of the string in all seven languages. */}
+            <Text style={s.addBtnText}>{t('home_new_trip')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -552,7 +553,6 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             [String(trips.length),t('stat_trips')],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),t('stat_memos')],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0)),t('stat_photos')],
-            // [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0)),t('stat_videos')], // v2.0
             [String(trips.reduce((a,t)=>a+t.days.length,0)),t('stat_days')],
           ].map(([n,l]) => (
             <View key={l} style={s.statBox}>

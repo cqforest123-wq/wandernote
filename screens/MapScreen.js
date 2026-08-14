@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker, Polyline } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
 
@@ -33,11 +33,42 @@ function getCoords(cityName) {
   return key ? normalizeCoords(CITY_COORDS[key]) : null;
 }
 
+/**
+ * Photo footprints for one trip, grouped by day and ordered within the day.
+ *
+ * Only photos whose EXIF carried GPS appear. Photos taken with location off —
+ * and every photo saved by builds before coordinates were kept — simply have
+ * none, so the footprint is drawn from what is actually known rather than
+ * interpolated between city pins.
+ */
+function buildFootprint(trip) {
+  const days = [];
+
+  for (const day of trip?.days || []) {
+    const points = (day.photos || [])
+      .map(photo => {
+        const coords = normalizeCoords(photo?.coords);
+        return coords ? { coords, takenAt: photo.takenAt, uri: photo.uri } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => String(a.takenAt || '').localeCompare(String(b.takenAt || '')));
+
+    if (points.length > 0) {
+      days.push({ date: day.date, points });
+    }
+  }
+
+  return days;
+}
+
+const DAY_ROUTE_COLORS = ['#D4AF37', '#4ECDC4', '#FF8C69', '#9B8EC4', '#6BCB77', '#64B5F6'];
+
 export default function MapScreen({ trips }) {
   const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const mapRef = useRef(null);
   const [mapType, setMapType] = useState('standard');
+  const [showFootprint, setShowFootprint] = useState(true);
 
   // 获取所有有坐标的旅程
   const safeTrips = Array.isArray(trips) ? trips : [];
@@ -48,6 +79,9 @@ export default function MapScreen({ trips }) {
     })
     .filter(Boolean);
   const unmappedTrips = safeTrips.filter(t => !getCoords(t.city));
+
+  const footprint = selectedTrip ? buildFootprint(selectedTrip) : [];
+  const footprintPointCount = footprint.reduce((n, d) => n + d.points.length, 0);
 
   // 计算地图中心
   const getInitialRegion = () => {
@@ -82,11 +116,23 @@ export default function MapScreen({ trips }) {
           <Text style={s.title}>🗺 {t('map_title')}</Text>
           <Text style={s.subtitle}>{t('map_subtitle').replace('%d', mappedTrips.length)}</Text>
         </View>
-        <TouchableOpacity
-          style={s.mapTypeBtn}
-          onPress={() => setMapType(mapType === 'standard' ? 'satellite' : 'standard')}>
-          <Text style={s.mapTypeBtnText}>{mapType === 'standard' ? `🛰 ${t('map_satellite')}` : `🗺 ${t('map_standard')}`}</Text>
-        </TouchableOpacity>
+        <View style={{gap:8,alignItems:'flex-end'}}>
+          <TouchableOpacity
+            style={s.mapTypeBtn}
+            onPress={() => setMapType(mapType === 'standard' ? 'satellite' : 'standard')}>
+            <Text style={s.mapTypeBtnText}>{mapType === 'standard' ? `🛰 ${t('map_satellite')}` : `🗺 ${t('map_standard')}`}</Text>
+          </TouchableOpacity>
+          {/* Only offer the toggle when this trip actually has located photos. */}
+          {footprintPointCount > 0 && (
+            <TouchableOpacity
+              style={[s.mapTypeBtn, showFootprint && s.mapTypeBtnActive]}
+              onPress={() => setShowFootprint(!showFootprint)}>
+              <Text style={[s.mapTypeBtnText, showFootprint && {color:'#D4AF37'}]}>
+                {`👣 ${t('map_footprint')} ${footprintPointCount}`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* 地图 */}
@@ -117,6 +163,34 @@ export default function MapScreen({ trips }) {
                   <View style={s.markerTail}/>
                 </View>
               </Marker>
+            ))}
+
+            {/* 选中旅程的照片足迹 */}
+            {showFootprint && footprint.map((day, dayIndex) => (
+              <React.Fragment key={`fp_${day.date}`}>
+                {day.points.length > 1 && (
+                  <Polyline
+                    coordinates={day.points.map(p => ({
+                      latitude: p.coords.lat,
+                      longitude: p.coords.lng,
+                    }))}
+                    strokeColor={DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length]}
+                    strokeWidth={3}
+                  />
+                )}
+                {day.points.map((point, i) => (
+                  <Marker
+                    key={`fp_${day.date}_${i}`}
+                    coordinate={{ latitude: point.coords.lat, longitude: point.coords.lng }}
+                    anchor={{ x: 0.5, y: 0.5 }}
+                    tracksViewChanges={false}>
+                    <View style={[
+                      s.footDot,
+                      { borderColor: DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length] },
+                    ]}/>
+                  </Marker>
+                ))}
+              </React.Fragment>
             ))}
           </MapView>
         )}
@@ -199,6 +273,8 @@ const s = StyleSheet.create({
   title: {fontSize:22, color:'#F0EDE8', fontWeight:'300'},
   subtitle: {fontSize:13, color:'#555', marginTop:3},
   mapTypeBtn: {backgroundColor:'#1A1A1A', borderRadius:20, paddingHorizontal:14, paddingVertical:8, borderWidth:1, borderColor:'#2A2A2A'},
+  mapTypeBtnActive: {borderColor:'#D4AF3780', backgroundColor:'#D4AF3715'},
+  footDot: {width:11, height:11, borderRadius:6, borderWidth:2.5, backgroundColor:'#0D0D0D'},
   mapTypeBtnText: {color:'#888', fontSize:13},
   mapContainer: {flex:1},
   map: {flex:1},

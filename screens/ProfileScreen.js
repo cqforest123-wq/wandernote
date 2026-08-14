@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
+import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, currencySymbol, getHomeCurrency, setHomeCurrency } from '../lib/currency';
 // 直接读 app.json，避免版本号在这里再次写死后跟着 bump 漂移
 import appConfig from '../app.json';
 
@@ -28,6 +29,18 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
   ];
 
   const [showLangModal, setShowLangModal] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [homeCurrency, setHomeCurrencyState] = useState(DEFAULT_HOME_CURRENCY);
+
+  useEffect(() => {
+    getHomeCurrency().then(setHomeCurrencyState);
+  }, []);
+
+  const selectCurrency = async (code) => {
+    setHomeCurrencyState(code);
+    setShowCurrencyModal(false);
+    await setHomeCurrency(code);
+  };
   const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
   const selectLanguage = async (code) => {
     try {
@@ -289,6 +302,13 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={s.settingRow} onPress={()=>setShowCurrencyModal(true)}>
+            <Text style={s.settingIcon}>💱</Text>
+            <Text style={s.settingLabel}>{t('expense_home_currency')}</Text>
+            <Text style={s.settingValue}>{homeCurrency}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:cqforest123@gmail.com')}>
             <Text style={s.settingIcon}>📧</Text>
             <Text style={s.settingLabel}>{t('profile_contact')}</Text>
@@ -374,6 +394,29 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
           </View>
         </View>
       </Modal>
+
+      {/* 本币选择 */}
+      <Modal visible={showCurrencyModal} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowCurrencyModal(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>{t('expense_home_currency')}</Text>
+            <ScrollView style={{maxHeight:320}}>
+              {COMMON_CURRENCIES.map(item=>(
+                <TouchableOpacity key={item.code}
+                  style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#222',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                  onPress={()=>selectCurrency(item.code)}>
+                  <Text style={{color:'#F0EDE8',fontSize:16}}>{`${item.code}  ${currencySymbol(item.code)}`}</Text>
+                  {homeCurrency===item.code && <Text style={{color:'#D4AF37',fontSize:16}}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowCurrencyModal(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -410,6 +453,7 @@ const s = StyleSheet.create({
   settingIcon:{fontSize:18,width:28},
   settingLabel:{flex:1,fontSize:15,color:'#C8C4BC'},
   settingArrow:{color:'#444',fontSize:14},
+  settingValue:{color:'#666',fontSize:14},
   deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
   deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
   settingHint:{fontSize:12,color:'#555',lineHeight:18,marginTop:8,marginBottom:4,paddingHorizontal:4},

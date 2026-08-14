@@ -1,8 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
-import { createPhoto } from '../lib/models';
+import { createPhoto, createExpense, EXPENSE_CATEGORIES } from '../lib/models';
+import { parseExifCoords, parseExifDate } from '../lib/tripFromPhotos';
+import {
+  COMMON_CURRENCIES,
+  convert,
+  formatMoney,
+  getHomeCurrency,
+  loadRates,
+  sumExpenses,
+} from '../lib/currency';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 8) / 3;
@@ -43,6 +52,23 @@ function normalizeTag(tag) {
   return LEGACY_TAG_MAP[tag] || tag || 'feeling';
 }
 
+const EXPENSE_CATEGORY_LABEL_KEYS = {
+  food: 'expense_cat_food',
+  transport: 'expense_cat_transport',
+  stay: 'expense_cat_stay',
+  ticket: 'expense_cat_ticket',
+  shopping: 'expense_cat_shopping',
+  other: 'expense_cat_other',
+};
+const EXPENSE_CATEGORY_ICONS = {
+  food: '🍜',
+  transport: '🚇',
+  stay: '🏨',
+  ticket: '🎫',
+  shopping: '🛍',
+  other: '•',
+};
+
 export default function DayDetailScreen({ route, navigation, trips, setTrips }) {
   const { tripId, dayDate } = route.params;
   const trip = trips.find(t=>t.id===tripId);
@@ -54,6 +80,37 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const [memoText, setMemoText] = useState('');
   const [selectedTag, setSelectedTag] = useState('feeling');
   const [previewPhoto, setPreviewPhoto] = useState(null);
+
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseCurrency, setExpenseCurrency] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState('food');
+  const [expenseNote, setExpenseNote] = useState('');
+  const [homeCurrency, setHomeCurrencyState] = useState('');
+  const [rates, setRates] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getHomeCurrency().then(code => {
+      if (!cancelled) {
+        setHomeCurrencyState(code);
+        setExpenseCurrency(prev => prev || code);
+      }
+    });
+
+    // Missing rates are not an error: the UI just shows original currencies.
+    loadRates().then(result => {
+      if (!cancelled) {
+        setRates(result);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (!trip||!day) return null;
 
@@ -109,9 +166,16 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       allowsMultipleSelection: true,
       quality: 0.8,
       selectionLimit: 20,
+      // Needed for the map footprint. Nothing leaves the device — the
+      // coordinates are only stored alongside the photo.
+      exif: true,
     });
     if (!result.canceled) {
-      const newPhotos = result.assets.map(a => createPhoto({ uri: a.uri }));
+      const newPhotos = result.assets.map(a => createPhoto({
+        uri: a.uri,
+        coords: parseExifCoords(a.exif),
+        takenAt: parseExifDate(a.exif),
+      }));
       updateDay(d=>({...d,photos:[...(d.photos||[]),...newPhotos]}));
     }
   };
@@ -143,7 +207,79 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   ]);
 
   const photos = day.photos||[];
-  const hasContent = day.memos.length>0||photos.length>0;
+  const expenses = day.expenses||[];
+  const hasContent = day.memos.length>0||photos.length>0||expenses.length>0;
+
+  const dayTotal = sumExpenses(expenses, homeCurrency, rates);
+
+  const openNewExpense = () => {
+    setEditingExpense(null);
+    setExpenseAmount('');
+    setExpenseCurrency(homeCurrency);
+    setExpenseCategory('food');
+    setExpenseNote('');
+    setShowExpenseModal(true);
+  };
+
+  const openEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setExpenseAmount(String(expense.amount ?? ''));
+    setExpenseCurrency(expense.currency || homeCurrency);
+    setExpenseCategory(expense.category || 'other');
+    setExpenseNote(expense.note || '');
+    setShowExpenseModal(true);
+  };
+
+  const saveExpense = () => {
+    const amount = Number(String(expenseAmount).replace(/,/g, ''));
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      Alert.alert('', t('expense_invalid_amount'));
+      return;
+    }
+
+    if (editingExpense) {
+      updateDay(d => ({
+        ...d,
+        expenses: (d.expenses||[]).map(e => e.id===editingExpense.id
+          ? {...e, amount, currency:expenseCurrency, category:expenseCategory, note:expenseNote.trim()}
+          : e),
+      }));
+    } else {
+      const expense = createExpense({
+        amount,
+        currency: expenseCurrency,
+        category: expenseCategory,
+        note: expenseNote,
+      });
+      updateDay(d => ({...d, expenses:[...(d.expenses||[]), expense]}));
+    }
+
+    setShowExpenseModal(false);
+  };
+
+  const deleteExpense = (expense) => Alert.alert(
+    t('expense_delete_title'),
+    t('expense_delete_message'),
+    [
+      {text:t('cancel'),style:'cancel'},
+      {text:t('delete'),style:'destructive',onPress:()=>{
+        updateDay(d=>({...d,expenses:(d.expenses||[]).filter(e=>e.id!==expense.id)}));
+        setShowExpenseModal(false);
+      }},
+    ]
+  );
+
+  /** Home-currency equivalent, or null when no rate can back it up. */
+  const convertedText = (expense) => {
+    if (expense.currency === homeCurrency) {
+      return null;
+    }
+
+    const value = convert(expense.amount, expense.currency, homeCurrency, rates);
+
+    return value === null ? null : `≈ ${formatMoney(value, homeCurrency)}`;
+  };
 
   return (
     <SafeAreaView style={s.container}>
@@ -166,6 +302,9 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
             <TouchableOpacity style={[s.actionBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}>
               <Text style={[s.actionBtnText,{color:'#4ECDC4'}]}>{`📸 ${t('stat_photos')}`}</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={[s.actionBtn,{borderColor:'#D4AF3750',backgroundColor:'#D4AF3715'}]} onPress={openNewExpense}>
+              <Text style={[s.actionBtnText,{color:'#D4AF37'}]}>{`💰 ${t('expense_add')}`}</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -179,6 +318,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
             <View style={s.emptyBtns}>
               <TouchableOpacity style={s.emptyBtn} onPress={openNewMemo}><Text style={s.emptyBtnText}>{`📝 ${t('day_write_memo')}`}</Text></TouchableOpacity>
               <TouchableOpacity style={[s.emptyBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}><Text style={[s.emptyBtnText,{color:'#4ECDC4'}]}>{`📸 ${t('day_upload_photo')}`}</Text></TouchableOpacity>
+              <TouchableOpacity style={[s.emptyBtn,{borderColor:'#D4AF3750',backgroundColor:'#D4AF3715'}]} onPress={openNewExpense}><Text style={[s.emptyBtnText,{color:'#D4AF37'}]}>{`💰 ${t('expense_add')}`}</Text></TouchableOpacity>
             </View>
           </View>
         ) : (
@@ -199,7 +339,36 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
               </>
             )}
 
-            {/* 视频功能 v2.0 上线，代码保留暂时隐藏 */}
+            {expenses.length>0 && (
+              <>
+                <View style={s.expenseHeader}>
+                  <Text style={s.sectionTitle}>{t('expense_section')} ({expenses.length})</Text>
+                  <View style={{alignItems:'flex-end'}}>
+                    <Text style={s.expenseTotal}>{formatMoney(dayTotal.total, homeCurrency)}</Text>
+                    {/* Never let a partial total masquerade as the full one. */}
+                    {dayTotal.unconvertible.length>0 && (
+                      <Text style={s.expenseWarn}>{t('expense_partial_total')}</Text>
+                    )}
+                    {rates?.stale && dayTotal.unconvertible.length===0 && (
+                      <Text style={s.expenseWarn}>{t('expense_stale_rate')}</Text>
+                    )}
+                  </View>
+                </View>
+                {expenses.map(expense=>(
+                  <TouchableOpacity key={String(expense.id)} style={s.expenseCard} onPress={()=>openEditExpense(expense)} activeOpacity={0.8}>
+                    <Text style={s.expenseIcon}>{EXPENSE_CATEGORY_ICONS[expense.category]||'•'}</Text>
+                    <View style={{flex:1}}>
+                      <Text style={s.expenseCat}>{t(EXPENSE_CATEGORY_LABEL_KEYS[expense.category]||'expense_cat_other')}</Text>
+                      {!!expense.note && <Text style={s.expenseNote} numberOfLines={1}>{expense.note}</Text>}
+                    </View>
+                    <View style={{alignItems:'flex-end'}}>
+                      <Text style={s.expenseAmount}>{formatMoney(expense.amount, expense.currency)}</Text>
+                      {!!convertedText(expense) && <Text style={s.expenseConverted}>{convertedText(expense)}</Text>}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </>
+            )}
 
             {day.memos.length>0 && (
               <>
@@ -271,6 +440,72 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* 记一笔 */}
+      <Modal visible={showExpenseModal} transparent animationType="slide">
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':undefined} style={s.modalWrap}>
+          <View style={s.modalBox}>
+            <Text style={s.modalTitle}>{editingExpense?t('expense_edit_title'):t('expense_add')}</Text>
+
+            <Text style={s.inputLabel}>{t('expense_label_amount')}</Text>
+            <TextInput
+              style={s.input}
+              placeholder="0"
+              placeholderTextColor="#444"
+              keyboardType="decimal-pad"
+              value={expenseAmount}
+              onChangeText={setExpenseAmount}
+              autoFocus
+            />
+
+            <Text style={s.inputLabel}>{t('expense_label_currency')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:16}}>
+              {COMMON_CURRENCIES.map(item=>(
+                <TouchableOpacity
+                  key={item.code}
+                  style={[s.chip, expenseCurrency===item.code&&s.chipActive]}
+                  onPress={()=>setExpenseCurrency(item.code)}>
+                  <Text style={[s.chipText, expenseCurrency===item.code&&s.chipTextActive]}>{item.code}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={s.inputLabel}>{t('expense_label_category')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:16}}>
+              {EXPENSE_CATEGORIES.map(cat=>(
+                <TouchableOpacity
+                  key={cat}
+                  style={[s.chip, expenseCategory===cat&&s.chipActive]}
+                  onPress={()=>setExpenseCategory(cat)}>
+                  <Text style={[s.chipText, expenseCategory===cat&&s.chipTextActive]}>
+                    {`${EXPENSE_CATEGORY_ICONS[cat]} ${t(EXPENSE_CATEGORY_LABEL_KEYS[cat])}`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={s.inputLabel}>{t('expense_label_note')}</Text>
+            <TextInput
+              style={s.input}
+              placeholder={t('expense_note_placeholder')}
+              placeholderTextColor="#444"
+              value={expenseNote}
+              onChangeText={setExpenseNote}
+            />
+
+            <View style={{flexDirection:'row',gap:12}}>
+              <TouchableOpacity style={s.cancelBtn} onPress={()=>setShowExpenseModal(false)}><Text style={s.cancelText}>{t('cancel')}</Text></TouchableOpacity>
+              <TouchableOpacity style={s.confirmBtn} onPress={saveExpense}><Text style={s.confirmText}>{t('save')}</Text></TouchableOpacity>
+            </View>
+
+            {!!editingExpense && (
+              <TouchableOpacity style={{marginTop:14,alignItems:'center'}} onPress={()=>deleteExpense(editingExpense)}>
+                <Text style={{color:'#C86B6B',fontSize:13}}>{t('expense_delete_title')}</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -296,6 +531,19 @@ const s = StyleSheet.create({
   emptyBtn:{borderWidth:1,borderColor:'#D4AF3750',backgroundColor:'#D4AF3715',borderRadius:20,paddingHorizontal:16,paddingVertical:10},
   emptyBtnText:{color:'#D4AF37',fontSize:14},
   sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:12},
+  expenseHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'},
+  expenseTotal:{fontSize:20,color:'#D4AF37',fontWeight:'300'},
+  expenseWarn:{fontSize:10,color:'#8A7B4A',marginTop:2},
+  expenseCard:{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:'#161616',borderRadius:14,padding:14,marginBottom:8,borderWidth:1,borderColor:'#2A2A2A'},
+  expenseIcon:{fontSize:20},
+  expenseCat:{fontSize:14,color:'#C8C4BC'},
+  expenseNote:{fontSize:12,color:'#555',marginTop:2},
+  expenseAmount:{fontSize:16,color:'#F0EDE8',fontWeight:'300'},
+  expenseConverted:{fontSize:11,color:'#555',marginTop:2},
+  chip:{borderWidth:1,borderColor:'#2A2A2A',borderRadius:16,paddingHorizontal:14,paddingVertical:8,marginRight:8},
+  chipActive:{borderColor:'#D4AF3780',backgroundColor:'#D4AF3720'},
+  chipText:{fontSize:13,color:'#666'},
+  chipTextActive:{color:'#D4AF37'},
   photoGrid:{flexDirection:'row',flexWrap:'wrap',gap:4,marginBottom:24},
   photoThumb:{width:PHOTO_SIZE,height:PHOTO_SIZE,borderRadius:8,backgroundColor:'#1A1A1A'},
   addPhotoBtn:{width:PHOTO_SIZE,height:PHOTO_SIZE,borderRadius:8,backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A',alignItems:'center',justifyContent:'center'},

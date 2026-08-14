@@ -335,6 +335,7 @@ export default function MemoScreen({ route, navigation, trips = [] }) {
           items: validItems,
           category,
           tripId: tripId || null,
+          untitledLabel: t('memo_untitled'),
         }),
         ...memos,
       ]);
