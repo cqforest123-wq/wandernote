@@ -25,11 +25,9 @@ struct GlanceContentView: View {
             unavailableView
 
         case .travel, .daily, .stale:
-            metricRow(
-                title: WatchStrings.text("trip"),
-                value: glance.title
-            )
-
+            // No "Trip" row: the header already carries the trip, and on a 46mm
+            // face the first screen only fits about four lines. Repeating it
+            // there pushed every live metric below the fold.
             metricRow(
                 title: WatchStrings.text("location"),
                 value: formatLocation(glance)
@@ -87,17 +85,14 @@ struct GlanceContentView: View {
                 .foregroundStyle(.secondary)
                 .textCase(.uppercase)
 
-            Text(glance.title)
-                .font(.headline)
-                .lineLimit(2)
-                .minimumScaleFactor(0.85)
-
-            if let subtitle = glance.subtitle,
-               subtitle != glance.title {
-                Text(subtitle)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+            // In Daily mode the title is the mode name, so it would simply
+            // repeat the label above it. The subtitle is dropped entirely
+            // because it is the same place the Location row already shows.
+            if glance.title != title(for: glance) {
+                Text(glance.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
             }
 
             if glance.isStale {
@@ -220,17 +215,30 @@ struct GlanceContentView: View {
             glance.parkingLongitude != nil
     }
 
+    /// Rounded, locale-aware measurement text. `.naturalScale` converts to the
+    /// region's own system, so an American traveller sees feet and Fahrenheit
+    /// rather than the metric values the snapshot happens to carry.
+    private func localizedMeasurement<T: Dimension>(
+        _ value: Double,
+        _ unit: T
+    ) -> String {
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .naturalScale
+        formatter.numberFormatter.maximumFractionDigits = 0
+
+        return formatter.string(
+            from: Measurement(value: value, unit: unit)
+        )
+    }
+
     private func formatAltitude(
         _ meters: Double?
     ) -> String {
         guard let meters else {
-            return WatchStrings.text("altitude.unavailable")
+            return WatchStrings.text("value.unavailable")
         }
 
-        return WatchStrings.format(
-            "altitude.format",
-            Int(meters.rounded())
-        )
+        return localizedMeasurement(meters, UnitLength.meters)
     }
 
     private func formatTemperature(
@@ -240,7 +248,7 @@ struct GlanceContentView: View {
             return WatchStrings.text("value.unavailable")
         }
 
-        return "\(Int(celsius.rounded()))°C"
+        return localizedMeasurement(celsius, UnitTemperature.celsius)
     }
 
     private func formatTime(
@@ -300,18 +308,7 @@ struct GlanceContentView: View {
             return WatchStrings.text("parking.notSaved")
         }
 
-        let distanceText: String
-
-        if distance < 1_000 {
-            distanceText = "\(Int(distance.rounded())) m"
-        } else {
-            distanceText = String(
-                format: "%.1f km",
-                distance / 1_000
-            )
-        }
-
-        return distanceText
+        return localizedMeasurement(distance, UnitLength.meters)
     }
 
     private func openParkingDirections(

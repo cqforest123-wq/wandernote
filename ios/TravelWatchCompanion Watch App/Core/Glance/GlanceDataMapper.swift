@@ -15,10 +15,21 @@ enum GlanceDataMapper {
         dailyData: DailyGlanceData? = nil,
         at date: Date = Date()
     ) -> GlanceData {
-        guard let snapshot else {
+        // Match the language the user picked on the iPhone. Nil leaves the
+        // watch on its own system locale, which is the right default.
+        if let language = snapshot?.language {
+            WatchStrings.appLanguageOverride = language
+        }
+
+        // A snapshot with no trip carries nothing the watch cannot measure
+        // itself, and it is persisted across launches — treating it as travel
+        // data would lock the watch out of Daily mode forever.
+        guard let snapshot, snapshot.trip != nil else {
             if let dailyData {
                 GlanceMapperDiagnostics.log(
-                    "Daily fallback selected because no iPhone snapshot is available"
+                    snapshot == nil
+                        ? "Daily fallback selected because no iPhone snapshot is available"
+                        : "Daily fallback selected because the iPhone snapshot has no trip"
                 )
                 return makeDailyGlance(
                     dailyData,
@@ -51,6 +62,37 @@ enum GlanceDataMapper {
         let resolvedSteps = snapshot.activity?.steps ??
             dailyData?.stepsToday
 
+        // The iPhone never computes sun times or parking — both are measured on
+        // the watch. Without these fallbacks every travel-mode glance shows
+        // "unavailable" for sunset/daylight and treats parking as unsaved,
+        // which also permanently disables the "Back to Parking" button.
+        let resolvedSunrise = snapshot.sun?.sunriseAt ?? dailyData?.sunrise
+        let resolvedSunset = snapshot.sun?.sunsetAt ?? dailyData?.sunset
+        let resolvedParkingLatitude = snapshot.parking?.latitude ??
+            dailyData?.parkingLatitude
+        let resolvedParkingLongitude = snapshot.parking?.longitude ??
+            dailyData?.parkingLongitude
+        let resolvedParkingDistance = snapshot.parking?.distanceMeters ??
+            dailyData?.parkingDistanceMeters
+        let resolvedParkingSavedAt = snapshot.parking?.savedAt ??
+            dailyData?.parkingSavedAt
+
+        if snapshot.sun == nil {
+            GlanceMapperDiagnostics.log(
+                resolvedSunset == nil
+                    ? "travel snapshot missing sun times; watch local sun times also unavailable"
+                    : "travel snapshot missing sun times; using watch local sun times"
+            )
+        }
+
+        if snapshot.parking == nil {
+            GlanceMapperDiagnostics.log(
+                resolvedParkingLatitude == nil
+                    ? "travel snapshot missing parking; no parking saved on the watch either"
+                    : "travel snapshot missing parking; using watch local parking"
+            )
+        }
+
         if snapshot.altitude == nil {
             GlanceMapperDiagnostics.log(
                 resolvedAltitude == nil
@@ -78,16 +120,16 @@ enum GlanceDataMapper {
             altitudeMeters: resolvedAltitude,
             temperatureCelsius: snapshot.weather?.temperatureCelsius,
             weatherSummary: snapshot.weather?.conditionCode,
-            sunrise: snapshot.sun?.sunriseAt,
-            sunset: snapshot.sun?.sunsetAt,
+            sunrise: resolvedSunrise,
+            sunset: resolvedSunset,
             daylightRemaining: daylightRemaining(
-                until: snapshot.sun?.sunsetAt,
+                until: resolvedSunset,
                 from: date
-            ),
-            parkingLatitude: snapshot.parking?.latitude,
-            parkingLongitude: snapshot.parking?.longitude,
-            parkingDistanceMeters: snapshot.parking?.distanceMeters,
-            parkingSavedAt: snapshot.parking?.savedAt,
+            ) ?? dailyData?.daylightRemaining,
+            parkingLatitude: resolvedParkingLatitude,
+            parkingLongitude: resolvedParkingLongitude,
+            parkingDistanceMeters: resolvedParkingDistance,
+            parkingSavedAt: resolvedParkingSavedAt,
             stepsToday: resolvedSteps,
             lastUpdatedAt: snapshot.generatedAt,
             isStale: isStale,
@@ -105,6 +147,20 @@ enum GlanceDataMapper {
         longitude: Double?,
         authorization: GlanceLocationAuthorization
     ) {
+        // Prefer where the wearer actually is. The snapshot's location is only
+        // the trip's destination — useful as a fallback, but it never moves, so
+        // showing it as "Location" while the watch knows better is misleading.
+        if let dailyData,
+           dailyData.latitude != nil,
+           dailyData.longitude != nil {
+            return (
+                dailyData.currentLocationName ?? locationName,
+                dailyData.latitude,
+                dailyData.longitude,
+                dailyData.locationAuthorization
+            )
+        }
+
         if let snapshotLocation {
             return (
                 locationName,
@@ -141,7 +197,7 @@ enum GlanceDataMapper {
     ) -> GlanceData {
         GlanceData(
             mode: .daily,
-            title: "Daily Glance",
+            title: WatchStrings.text("mode.daily"),
             subtitle: dailyData.currentLocationName,
             currentLocationName: dailyData.currentLocationName,
             locationAuthorization: dailyData.locationAuthorization,

@@ -15,6 +15,8 @@ export type OutdoorGlanceSnapshot = {
   sun: OutdoorGlanceSun | null;
   activity: OutdoorGlanceActivity | null;
   parking: OutdoorGlanceParking | null;
+  /** Language selected inside the iPhone app, so the watch can match it. */
+  language: string | null;
 };
 
 export type OutdoorGlanceFreshness = {
@@ -127,4 +129,5 @@ export type ComposeOutdoorGlanceSnapshotInput = {
   sun?: OutdoorGlanceSunDraft | null;
   activity?: OutdoorGlanceActivityDraft | null;
   parking?: OutdoorGlanceParkingDraft | null;
+  language?: string | null;
 };

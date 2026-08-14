@@ -16,6 +16,7 @@ final class DailyGlanceStore: ObservableObject {
     private let locationAltitudeProvider: LocationAltitudeProvider?
     private let parkingStore: ParkingStore
     private let activityStepProvider: ActivityStepProvider?
+    private let placeNameResolver: PlaceNameResolver?
     private var refreshCancellable: AnyCancellable?
     private var hasStarted = false
 
@@ -23,7 +24,8 @@ final class DailyGlanceStore: ObservableObject {
         data: DailyGlanceData = .empty(),
         locationAltitudeProvider: LocationAltitudeProvider? = nil,
         parkingStore: ParkingStore? = nil,
-        activityStepProvider: ActivityStepProvider? = nil
+        activityStepProvider: ActivityStepProvider? = nil,
+        placeNameResolver: PlaceNameResolver? = nil
     ) {
         self.data = data
         self.locationAltitudeProvider =
@@ -31,11 +33,22 @@ final class DailyGlanceStore: ObservableObject {
         self.parkingStore = parkingStore ?? ParkingStore()
         self.activityStepProvider =
             activityStepProvider ?? ActivityStepProvider()
+        self.placeNameResolver = placeNameResolver ?? PlaceNameResolver()
         self.locationAltitudeProvider?.onUpdate = { [weak self] update in
             self?.apply(locationUpdate: update)
         }
         self.activityStepProvider?.onUpdate = { [weak self] update in
             self?.apply(activityUpdate: update)
+        }
+        self.placeNameResolver?.onResolve = { [weak self] name in
+            guard let self, let name else {
+                return
+            }
+
+            self.data = self.data.updatingLocationName(name)
+            DailyGlanceDiagnostics.log(
+                "resolved place name for current watch location"
+            )
         }
     }
 
@@ -146,6 +159,12 @@ final class DailyGlanceStore: ObservableObject {
         )
         data = applyingParkingSnapshot(
             to: applyingSunEvents(to: nextData)
+        )
+
+        placeNameResolver?.resolveIfNeeded(
+            latitude: data.latitude,
+            longitude: data.longitude,
+            hasName: data.currentLocationName != nil
         )
     }
 

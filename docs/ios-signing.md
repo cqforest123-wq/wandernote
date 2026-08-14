@@ -216,3 +216,61 @@ grep -oE "(MARKETING_VERSION|CURRENT_PROJECT_VERSION) = [^;]*" \
 ```
 
 Both keys should print exactly one value each, matching `app.json`.
+
+## The watch complication target (added in 1.0.4)
+
+`TravelWatchComplication` is a WidgetKit app-extension target nested inside the
+Watch App, which is itself nested inside the iOS app. It was added by editing
+`project.pbxproj` directly (see the script kept alongside this change), because
+`expo prebuild` cannot generate any of it — the same reason `ios/` is tracked.
+
+Three things cost real time here; all three produce a **green build** while
+leaving the complication broken, so check the built product, not the exit code.
+
+### `INFOPLIST_KEY_NSExtensionPointIdentifier` does not exist
+
+There is no such build setting. Xcode silently ignores unknown `INFOPLIST_KEY_*`
+entries, so the extension compiles, links, and embeds correctly — with **no
+`NSExtension` dictionary in its Info.plist**, which means watchOS never offers it
+in the watch-face gallery.
+
+An explicit `INFOPLIST_FILE` is required. Verify after building:
+
+```bash
+plutil -p "$DERIVED/TravelWatchCompanion Watch App.app/PlugIns/TravelWatchComplication.appex/Info.plist" | grep -A2 NSExtension
+```
+
+### The Info.plist must live outside the synchronized folder
+
+The target uses a `PBXFileSystemSynchronizedRootGroup`, so everything inside
+`ios/TravelWatchComplication/` is picked up automatically. An `Info.plist` in
+there is treated both as the target's Info.plist *and* as a resource to copy,
+which fails with `Multiple commands produce .../Info.plist`. It lives at
+`ios/TravelWatchComplication-Info.plist` instead. The `.entitlements` file inside
+the folder is fine — Xcode excludes that type.
+
+### Simulator entitlements land in a different file
+
+`TravelWatchComplication.appex.xcent` is empty for simulator builds and
+`codesign -d --entitlements` reports `[Dict]`. That is not a missing App Group —
+check `*-Simulated.xcent` instead:
+
+```bash
+plutil -p "$INTERMEDIATES/TravelWatchComplication.build/TravelWatchComplication.appex-Simulated.xcent"
+```
+
+## App Group
+
+`group.com.litao0729.wandernote` is shared by the Watch App and the complication.
+The extension is a separate process and cannot run CoreLocation or HealthKit, so
+the Watch App flattens everything into `GlanceWidgetPayload` and writes it there;
+the complication only reads.
+
+`ParkingStore` moved from `UserDefaults.standard` into this group and carries a
+one-shot migration, because a parking point saved by an earlier build would
+otherwise disappear on upgrade.
+
+Distribution builds need the App Group registered on the developer portal.
+Automatic signing normally creates it; if an archive fails on a missing
+`com.apple.security.application-groups` entitlement, that registration is the
+thing to check first.

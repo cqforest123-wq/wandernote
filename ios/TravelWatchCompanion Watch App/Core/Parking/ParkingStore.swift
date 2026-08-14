@@ -22,8 +22,30 @@ final class ParkingStore {
         defaults: UserDefaults? = nil,
         key: String = "wandernote.watch.parking.snapshot"
     ) {
-        self.defaults = defaults ?? .standard
+        // Parking moved into the App Group so the complication can read it.
+        // Fall back to .standard if the group is unavailable rather than
+        // silently losing the feature.
+        self.defaults = defaults
+            ?? GlanceSharedStorage.sharedDefaults
+            ?? .standard
         self.key = key
+        migrateFromStandardDefaultsIfNeeded()
+    }
+
+    /// A parked car saved before the App Group existed still lives in
+    /// `.standard`. Move it across once so upgrading users don't lose it.
+    private func migrateFromStandardDefaultsIfNeeded() {
+        guard defaults != .standard,
+              defaults.data(forKey: key) == nil,
+              let legacy = UserDefaults.standard.data(forKey: key) else {
+            return
+        }
+
+        defaults.set(legacy, forKey: key)
+        UserDefaults.standard.removeObject(forKey: key)
+        ParkingStoreDiagnostics.log(
+            "migrated saved parking point into the shared app group"
+        )
     }
 
     func load() -> ParkingSnapshot? {

@@ -21,12 +21,14 @@ type TripLike = {
 export type OutdoorGlanceAppStateInput = {
   trips?: TripLike[] | null;
   weather?: OutdoorGlanceWeatherDraft | null;
+  language?: string | null;
   now?: Date;
 };
 
 export function makeOutdoorGlanceSnapshotInputFromAppState({
   trips,
   weather,
+  language,
   now = new Date(),
 }: OutdoorGlanceAppStateInput): ComposeOutdoorGlanceSnapshotInput {
   const trip = selectOutdoorGlanceTrip(trips, now);
@@ -40,6 +42,7 @@ export function makeOutdoorGlanceSnapshotInputFromAppState({
       sun: null,
       activity: null,
       parking: null,
+      language: language ?? null,
     };
   }
 
@@ -55,6 +58,7 @@ export function makeOutdoorGlanceSnapshotInputFromAppState({
     sun: null,
     activity: null,
     parking: null,
+    language: language ?? null,
   };
 }
 

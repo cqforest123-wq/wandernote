@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8BCF00000000000000000F /* GlanceWidgetPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCF000000000000000001 /* GlanceWidgetPayload.swift */; };
+		8BCF000000000000000010 /* GlanceWidgetPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCF000000000000000001 /* GlanceWidgetPayload.swift */; };
+		8BCF000000000000000011 /* WatchStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCF000000000000000002 /* WatchStrings.swift */; };
+		8BCF000000000000000012 /* WatchStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BCF000000000000000002 /* WatchStrings.swift */; };
+		8BCF000000000000000013 /* OutdoorGlanceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */; };
+		8BCF000000000000000014 /* TravelWatchComplication.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8BCF000000000000000003 /* TravelWatchComplication.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2F41112AA2B305DB49869BBF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DF0524F3A3A5646AC05EADA6 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
@@ -25,6 +31,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		8BCF00000000000000000A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8BCF000000000000000005;
+			remoteInfo = TravelWatchComplication;
+		};
 		A68EA9202FD666170015944F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
@@ -35,6 +48,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		8BCF000000000000000009 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				8BCF000000000000000014 /* TravelWatchComplication.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A68EA9232FD666170015944F /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -49,6 +73,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8BCF000000000000000001 /* GlanceWidgetPayload.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GlanceWidgetPayload.swift; sourceTree = "<group>"; };
+		8BCF000000000000000002 /* WatchStrings.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WatchStrings.swift; sourceTree = "<group>"; };
+		8BCF000000000000000003 /* TravelWatchComplication.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TravelWatchComplication.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07F961A680F5B00A75B9A /* WanderNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WanderNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = WanderNote/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = WanderNote/Info.plist; sourceTree = "<group>"; };
@@ -71,6 +98,17 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		8BCF000000000000000004 /* TravelWatchComplication */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = TravelWatchComplication;
+			sourceTree = "<group>";
+		};
 		A68EA9192FD666150015944F /* TravelWatchCompanion Watch App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -85,6 +123,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		8BCF000000000000000007 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F8C1A680F5B00A75B9A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -122,6 +167,8 @@
 			isa = PBXGroup;
 			children = (
 				411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */,
+				8BCF000000000000000001 /* GlanceWidgetPayload.swift */,
+				8BCF000000000000000002 /* WatchStrings.swift */,
 			);
 			name = OutdoorGlanceContract;
 			path = OutdoorGlanceContract;
@@ -174,6 +221,7 @@
 				13B07FAE1A68108700A75B9A /* WanderNote */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				A68EA9192FD666150015944F /* TravelWatchCompanion Watch App */,
+				8BCF000000000000000004 /* TravelWatchComplication */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				A9042720AF7B88A04B3C5D16 /* Pods */,
@@ -190,6 +238,7 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* WanderNote.app */,
 				A68EA9182FD666150015944F /* TravelWatchCompanion Watch App.app */,
+				8BCF000000000000000003 /* TravelWatchComplication.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -226,6 +275,26 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		8BCF000000000000000005 /* TravelWatchComplication */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8BCF00000000000000000C /* Build configuration list for PBXNativeTarget "TravelWatchComplication" */;
+			buildPhases = (
+				8BCF000000000000000006 /* Sources */,
+				8BCF000000000000000007 /* Frameworks */,
+				8BCF000000000000000008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				8BCF000000000000000004 /* TravelWatchComplication */,
+			);
+			name = TravelWatchComplication;
+			productName = TravelWatchComplication;
+			productReference = 8BCF000000000000000003 /* TravelWatchComplication.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		13B07F861A680F5B00A75B9A /* WanderNote */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "WanderNote" */;
@@ -257,10 +326,12 @@
 				A68EA9142FD666150015944F /* Sources */,
 				A68EA9152FD666150015944F /* Frameworks */,
 				A68EA9162FD666150015944F /* Resources */,
+				8BCF000000000000000009 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				8BCF00000000000000000B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A68EA9192FD666150015944F /* TravelWatchCompanion Watch App */,
@@ -302,11 +373,19 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* WanderNote */,
 				A68EA9172FD666150015944F /* TravelWatchCompanion Watch App */,
+				8BCF000000000000000005 /* TravelWatchComplication */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		8BCF000000000000000008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -449,6 +528,16 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		8BCF000000000000000006 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8BCF000000000000000013 /* OutdoorGlanceSnapshot.swift in Sources */,
+				8BCF000000000000000010 /* GlanceWidgetPayload.swift in Sources */,
+				8BCF000000000000000012 /* WatchStrings.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -468,12 +557,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				D5E7129A7D66B1F29728BE30 /* OutdoorGlanceSnapshot.swift in Sources */,
+				8BCF00000000000000000F /* GlanceWidgetPayload.swift in Sources */,
+				8BCF000000000000000011 /* WatchStrings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		8BCF00000000000000000B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8BCF000000000000000005 /* TravelWatchComplication */;
+			targetProxy = 8BCF00000000000000000A /* PBXContainerItemProxy */;
+		};
 		A68EA9212FD666170015944F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = A68EA9172FD666150015944F /* TravelWatchCompanion Watch App */;
@@ -482,6 +578,82 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		8BCF00000000000000000D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = TravelWatchComplication/TravelWatchComplication.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = V5746UM5UL;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "TravelWatchComplication-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Travel Glance";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.litao0729.wandernote.watchkitapp.complication;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		8BCF00000000000000000E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CODE_SIGN_ENTITLEMENTS = TravelWatchComplication/TravelWatchComplication.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 12;
+				DEVELOPMENT_TEAM = V5746UM5UL;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "TravelWatchComplication-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Travel Glance";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.4;
+				PRODUCT_BUNDLE_IDENTIFIER = com.litao0729.wandernote.watchkitapp.complication;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 1E33A9721A3C26C0A6837B44 /* Pods-WanderNote.debug.xcconfig */;
@@ -776,6 +948,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		8BCF00000000000000000C /* Build configuration list for PBXNativeTarget "TravelWatchComplication" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8BCF00000000000000000D /* Debug */,
+				8BCF00000000000000000E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "WanderNote" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -35,7 +35,7 @@ struct GlanceData: Equatable {
     ) -> GlanceData {
         GlanceData(
             mode: .unavailable,
-            title: "Daily Glance",
+            title: WatchStrings.text("mode.daily"),
             subtitle: nil,
             currentLocationName: nil,
             locationAuthorization: .unavailable,

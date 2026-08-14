@@ -49,7 +49,18 @@ export function composeOutdoorGlanceSnapshot(
     sun: normalizeSun(input.sun),
     activity: normalizeActivity(input.activity, generatedAt),
     parking: normalizeParking(input.parking),
+    language: normalizeLanguage(input.language),
   };
+}
+
+function normalizeLanguage(value?: string | null): string | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+
+  return trimmed.length > 0 ? trimmed : null;
 }
 
 export function fingerprintOutdoorGlanceInput(
@@ -65,6 +76,7 @@ export function fingerprintOutdoorGlanceInput(
     sun: normalizeSun(input.sun),
     activity: normalizeActivity(input.activity, stableDate),
     parking: normalizeParking(input.parking),
+    language: normalizeLanguage(input.language),
   });
 }
 

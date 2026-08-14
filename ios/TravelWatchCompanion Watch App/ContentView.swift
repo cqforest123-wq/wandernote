@@ -20,12 +20,19 @@ struct ContentView: View {
     }
 
     private func glance(at date: Date) -> GlanceData {
-        GlanceDataMapper.make(
+        let glance = GlanceDataMapper.make(
             snapshot: store.snapshot,
             availability: store.availability(at: date),
             dailyData: dailyStore.data,
             at: date
         )
+
+        GlanceWidgetPayloadWriter.write(
+            from: glance,
+            language: store.snapshot?.language
+        )
+
+        return glance
     }
 
     private var canRecordParking: Bool {

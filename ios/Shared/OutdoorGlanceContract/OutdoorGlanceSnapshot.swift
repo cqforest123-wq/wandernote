@@ -14,6 +14,38 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
     let sun: OutdoorGlanceSun?
     let activity: OutdoorGlanceActivity?
     let parking: OutdoorGlanceParking?
+    /// Language the user picked inside the iPhone app, so the watch can match it
+    /// instead of following its own system locale. Optional and defaulted so
+    /// snapshots written by older builds still decode at the same schema version.
+    let language: String?
+
+    init(
+        schemaVersion: Int,
+        snapshotId: UUID,
+        generatedAt: Date,
+        freshness: OutdoorGlanceFreshness,
+        trip: OutdoorGlanceTrip?,
+        location: OutdoorGlanceLocation?,
+        altitude: OutdoorGlanceAltitude?,
+        weather: OutdoorGlanceWeather?,
+        sun: OutdoorGlanceSun?,
+        activity: OutdoorGlanceActivity?,
+        parking: OutdoorGlanceParking?,
+        language: String? = nil
+    ) {
+        self.schemaVersion = schemaVersion
+        self.snapshotId = snapshotId
+        self.generatedAt = generatedAt
+        self.freshness = freshness
+        self.trip = trip
+        self.location = location
+        self.altitude = altitude
+        self.weather = weather
+        self.sun = sun
+        self.activity = activity
+        self.parking = parking
+        self.language = language
+    }
 
     func isStale(at date: Date = Date()) -> Bool {
         date > freshness.validUntil
