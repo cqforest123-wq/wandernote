@@ -22,7 +22,8 @@
     "test:backup": "node scripts/backupTests.mjs",
     "test": "npm run --silent test:watch-snapshot && npm run --silent test:watch-glance && npm run --silent test:watch-parking && npm run --silent test:currency && npm run --silent test:watch-complication && npm run --silent test:watch-sun && npm run --silent test:notifications && npm run --silent test:offline-geocode && npm run --silent test:search && npm run --silent test:photo-trip && npm run --silent test:backup && npm run --silent test:trip-share && npm run --silent test:visits",
     "test:trip-share": "node scripts/tripShareTests.mjs",
-    "test:visits": "node scripts/visitTests.mjs"
+    "test:visits": "node scripts/visitTests.mjs",
+    "bump": "node scripts/bumpBuild.mjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",

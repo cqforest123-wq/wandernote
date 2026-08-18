@@ -5,7 +5,7 @@
  * pause after ~7 days idle, which took the whole AI feature down between releases
  * and is what App Review hit in June. Workers have no such idle pause.
  *
- * Request:  POST { prompt, maxTokens?, responseMimeType? }
+ * Request:  POST { prompt, maxTokens?, responseMimeType?, responseSchema? }
  * Response: { content: [{ type: 'text', text }] }   (same shape the app already parses)
  */
 
@@ -97,13 +97,29 @@ export default {
 
     const maxTokens = Math.min(Math.max(Number(body?.maxTokens) || 4096, 1024), 12000);
 
+    const wantsJson = String(body?.responseMimeType || '').includes('json');
+
     const generationConfig = {
       maxOutputTokens: maxTokens,
-      temperature: 0.7,
-      thinkingConfig: { thinkingBudget: 0 },
+      // Thinking is off for prose, where it only costs latency. Structured
+      // output is different: with no thinking budget, 2.5-flash emitted JSON
+      // with a stray doubled quote often enough that the itinerary silently
+      // fell back to a local template, which is what "the AI doesn't work"
+      // looked like from the outside.
+      thinkingConfig: { thinkingBudget: wantsJson ? 1024 : 0 },
+      // Lower temperature for structured output: creativity belongs in the
+      // content, not in the punctuation.
+      temperature: wantsJson ? 0.4 : 0.7,
     };
+
     if (body?.responseMimeType) {
       generationConfig.responseMimeType = String(body.responseMimeType);
+    }
+
+    // A schema constrains the decoder itself, so malformed JSON becomes
+    // impossible rather than merely unlikely.
+    if (body?.responseSchema && typeof body.responseSchema === 'object') {
+      generationConfig.responseSchema = body.responseSchema;
     }
 
     // Travel writing kept tripping the default thresholds (food, nightlife,

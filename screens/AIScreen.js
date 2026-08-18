@@ -48,6 +48,7 @@ function getAiOutputLanguage(lang) {
 }
 
 import { callAI } from '../lib/ai';
+import { logEvent } from '../lib/diagnostics';
 
 export default function AIScreen({ trips }) {
   const { t, i18n } = useTranslation();
@@ -178,7 +179,36 @@ Strict requirements:
 4. Keep each day concise: attractions + time + transport.
 5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
 6. Keep each field short and ensure valid complete JSON.`;
-        const text = await callAI(prompt, 8000, { responseMimeType: 'application/json' });
+        // A schema constrains the decoder, so the model cannot emit the stray
+        // quote that used to make this response unparseable and drop the whole
+        // itinerary back to a local template.
+        const daySchema = {
+          type: 'OBJECT',
+          properties: {
+            day: { type: 'INTEGER' },
+            theme: { type: 'STRING' },
+            morning: { type: 'STRING' },
+            afternoon: { type: 'STRING' },
+            evening: { type: 'STRING' },
+            tips: { type: 'STRING' },
+            distance: { type: 'STRING' },
+            hours: { type: 'STRING' },
+            status: { type: 'STRING' },
+          },
+          required: ['day', 'theme', 'morning', 'afternoon', 'evening', 'tips'],
+        };
+
+        const text = await callAI(prompt, 8000, {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: {
+              title: { type: 'STRING' },
+              days: { type: 'ARRAY', items: daySchema },
+            },
+            required: ['title', 'days'],
+          },
+        });
         if (!String(text || '').trim()) {
           setResult(localFallbackNotice + '\n\n' + fallback);
           return;
@@ -188,6 +218,11 @@ Strict requirements:
         try {
           parsed = parseAiJsonObject(text);
         } catch (parseError) {
+          // Worth knowing about: this path means the AI answered and we threw
+          // the answer away, which looks identical to the AI being down.
+          logEvent('ai', 'itinerary-unparseable', {
+            chars: String(text || '').length,
+          });
           const readable = extractReadableAiText(text);
           setResult(readable ? `${localFallbackNotice}\n\n${readable}` : `${localFallbackNotice}\n\n${fallback}`);
           return;

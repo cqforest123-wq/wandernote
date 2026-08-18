@@ -31,10 +31,19 @@ export default function AuthScreen({ onAuth, onContinueAsGuest }) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
+  /**
+   * What the user typed, minus what the keyboard added.
+   *
+   * iOS predictive text and paste both append a trailing space readily, and
+   * Supabase rejects that outright as "invalid format" — a confusing thing to
+   * be told about an address you can see is correct.
+   */
+  const cleanEmail = () => email.trim();
+
   const handleLogin = async () => {
-    if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
+    if (!email.trim() || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail(), password });
     setLoading(false);
     if (error) {
       noteAuthFailure('login', error);
@@ -43,14 +52,25 @@ export default function AuthScreen({ onAuth, onContinueAsGuest }) {
   };
 
   const handleRegister = async () => {
-    if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
+    if (!email.trim() || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     if (password.length < 6) { Alert.alert(t('notice'), t('auth_password_min')); return; }
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email: cleanEmail(), password });
     setLoading(false);
 
     if (error) {
       noteAuthFailure('register', error);
+
+      // Being told "User already registered" and left on the sign-up form is a
+      // dead end; the thing to do next is sign in, so offer it.
+      if (error?.code === 'user_already_exists' || /already registered/i.test(error?.message || '')) {
+        Alert.alert(t('auth_already_registered_title'), t('auth_already_registered_body'), [
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('auth_go_login'), onPress: () => setMode('login') },
+        ]);
+        return;
+      }
+
       Alert.alert(t('auth_register_failed'), error.message);
       return;
     }
@@ -71,9 +91,9 @@ export default function AuthScreen({ onAuth, onContinueAsGuest }) {
   };
 
   const handleReset = async () => {
-    if (!email) { Alert.alert(t('notice'), t('auth_enter_email')); return; }
+    if (!email.trim()) { Alert.alert(t('notice'), t('auth_enter_email')); return; }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail());
     setLoading(false);
     if (error) {
       noteAuthFailure('reset', error);
@@ -116,6 +136,9 @@ export default function AuthScreen({ onAuth, onContinueAsGuest }) {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            textContentType="emailAddress"
           />
 
           {mode !== 'reset' && <>

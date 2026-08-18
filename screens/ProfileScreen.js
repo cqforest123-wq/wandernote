@@ -15,6 +15,10 @@ import * as Clipboard from 'expo-clipboard';
 import appConfig from '../app.json';
 
 const APP_VERSION = appConfig.expo.version;
+// Without the build number every install today read "v1.1.0", which made two
+// weeks of builds indistinguishable on the device. scripts/checkVersions.mjs
+// keeps app.json in step with the pbxproj, so this is the real number.
+const APP_BUILD = appConfig.expo.ios?.buildNumber;
 
 export default function ProfileScreen({ session, trips, navigation, onRequestSignIn, onDataRestored }) {
   // 游客模式：没有 session，数据只在本机，不显示登出/注销账号。
@@ -483,7 +487,7 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
           </>
         )}
 
-        <Text style={s.version}>WanderNote v{APP_VERSION} · {t('profile_version_slogan')}</Text>
+        <Text style={s.version}>WanderNote v{APP_VERSION} ({APP_BUILD}) · {t('profile_version_slogan')}</Text>
       </ScrollView>
 
       <Modal visible={showEditProfile} animationType="slide" transparent>
