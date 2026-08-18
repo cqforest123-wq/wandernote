@@ -1,0 +1,5 @@
+/* Purpose strings shown in the system permission prompts. */
+
+"NSCameraUsageDescription" = "Haz fotos durante el viaje y guárdalas directamente en ese día de tu diario.";
+"NSPhotoLibraryUsageDescription" = "Añade tus fotos a un viaje. Al crear un viaje desde fotos, sus fechas y ubicaciones se leen en tu dispositivo para ordenarlas por días y situarlas en el mapa.";
+"NSLocationWhenInUseUsageDescription" = "Mostrar a qué distancia estás del destino, trazar tu recorrido en el mapa y enviar la altitud y la luz solar a tu Apple Watch.";

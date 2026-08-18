@@ -1,0 +1,5 @@
+/* Purpose strings shown in the system permission prompts. */
+
+"NSCameraUsageDescription" = "여행 중 사진을 찍어 그날의 여행 기록에 바로 저장합니다.";
+"NSPhotoLibraryUsageDescription" = "사진을 여행에 추가합니다. ‘사진으로 여행 만들기’를 사용하면 기기 안에서 사진의 날짜와 위치를 읽어 날짜별로 정리하고 지도에 표시합니다.";
+"NSLocationWhenInUseUsageDescription" = "목적지까지의 거리를 표시하고, 발자취를 지도에 남기며, 현재 고도와 낮 시간을 Apple Watch로 보냅니다.";

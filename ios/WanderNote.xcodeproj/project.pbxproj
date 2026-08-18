@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8BDD000000000000000002 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 8BDD000000000000000001 /* InfoPlist.strings */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		2F41112AA2B305DB49869BBF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DF0524F3A3A5646AC05EADA6 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
@@ -73,6 +74,13 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		8BDD000000000000000100 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "en"; path = "WanderNote/en.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8BDD000000000000000101 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "WanderNote/zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8BDD000000000000000102 /* ja */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ja"; path = "WanderNote/ja.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8BDD000000000000000103 /* ko */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "ko"; path = "WanderNote/ko.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8BDD000000000000000104 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "fr"; path = "WanderNote/fr.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8BDD000000000000000105 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "es"; path = "WanderNote/es.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		8BDD000000000000000106 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "th"; path = "WanderNote/th.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* WanderNote.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WanderNote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = WanderNote/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = WanderNote/Info.plist; sourceTree = "<group>"; };
@@ -157,6 +165,7 @@
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
+				8BDD000000000000000001 /* InfoPlist.strings */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				DF0524F3A3A5646AC05EADA6 /* PrivacyInfo.xcprivacy */,
 			);
@@ -361,7 +370,13 @@
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
+				"en",
+				"zh-Hans",
+				"ja",
+				"ko",
+				"fr",
+				"es",
+				"th",
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
@@ -381,6 +396,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8BDD000000000000000002 /* InfoPlist.strings in Resources */,
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
@@ -580,6 +596,23 @@
 			targetProxy = A68EA9202FD666170015944F /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		8BDD000000000000000001 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				8BDD000000000000000100 /* en */,
+				8BDD000000000000000101 /* zh-Hans */,
+				8BDD000000000000000102 /* ja */,
+				8BDD000000000000000103 /* ko */,
+				8BDD000000000000000104 /* fr */,
+				8BDD000000000000000105 /* es */,
+				8BDD000000000000000106 /* th */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {

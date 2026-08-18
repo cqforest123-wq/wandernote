@@ -47,11 +47,11 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>WanderNote需要访问相机来拍摄旅行照片</string>
+	<string>Take photos during a trip and save them straight into that day of your travel journal.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>WanderNote需要访问位置来为旅程选择当前位置并同步旅行速览</string>
+	<string>Show how far you are from your destination, place your footprints on the map, and send local altitude and daylight to your Apple Watch.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>WanderNote需要访问您的相册来上传旅行照片</string>
+	<string>Add your own photos to a trip. When you build a trip from photos, their dates and locations are read on your device to sort them into days and place them on your map.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

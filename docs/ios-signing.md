@@ -359,3 +359,30 @@ stays C++20.
 Note this was latent, not caused by adding a dependency: a stale `format.o` in
 DerivedData had been reused for a long time. A clean checkout or CI would have
 hit it regardless.
+
+## Permission prompts are localized via InfoPlist.strings
+
+The purpose strings in `Info.plist` were Chinese, so every French, Japanese or
+English traveller met a Chinese system dialog at the exact moment the app asks
+to be trusted. `ios/WanderNote/<lang>.lproj/InfoPlist.strings` now carries all
+seven languages; the base `Info.plist` holds English as the fallback.
+
+Two things to know when touching this:
+
+- The `WanderNote` group in the pbxproj has a `name` but no `path`, so file
+  references inside it resolve against `ios/`, not `ios/WanderNote/`. Each
+  `InfoPlist.strings` reference therefore spells out
+  `WanderNote/<lang>.lproj/InfoPlist.strings`. Getting this wrong fails with
+  "Build input file cannot be found" pointing at `ios/<lang>.lproj/...`.
+- `knownRegions` has to list every language or Xcode ignores the folders.
+
+The `.lproj` folders are also what tells iOS which languages the app supports,
+so `Locale.current` inside the app now negotiates correctly — the same
+mechanism whose absence made the Watch app show English (see WatchStrings).
+
+Verify the built product, since a missing localization still builds green:
+
+```bash
+ls -d "$APP"/*.lproj
+plutil -p "$APP/fr.lproj/InfoPlist.strings"
+```
