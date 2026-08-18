@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
@@ -63,12 +63,36 @@ function buildFootprint(trip) {
 
 const DAY_ROUTE_COLORS = ['#D4AF37', '#4ECDC4', '#FF8C69', '#9B8EC4', '#6BCB77', '#64B5F6'];
 
+/**
+ * The trip's own first photo, for use as its pin and chip.
+ *
+ * A map of identical camera glyphs tells the reader nothing about where they
+ * have been; the photograph does. Falls back to the emoji for trips entered by
+ * hand, which genuinely have no picture yet.
+ */
+function firstPhotoUri(trip) {
+  for (const day of trip?.days || []) {
+    for (const photo of day?.photos || []) {
+      if (photo?.uri) return photo.uri;
+    }
+  }
+
+  return null;
+}
+
 export default function MapScreen({ trips }) {
   const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const mapRef = useRef(null);
   const [mapType, setMapType] = useState('standard');
   const [showFootprint, setShowFootprint] = useState(true);
+  const [viewerPhoto, setViewerPhoto] = useState(null);
+  // react-native-maps snapshots a marker's view once tracksViewChanges goes
+  // false. Turning it off before the image decodes leaves a blank pin, so each
+  // marker keeps redrawing until its own photo reports loaded.
+  const [readyUris, setReadyUris] = useState(() => new Set());
+  const markPhotoReady = uri =>
+    setReadyUris(prev => (prev.has(uri) ? prev : new Set(prev).add(uri)));
 
   // 获取所有有坐标的旅程
   const safeTrips = Array.isArray(trips) ? trips : [];
@@ -151,19 +175,33 @@ export default function MapScreen({ trips }) {
             initialRegion={getInitialRegion()}
             showsUserLocation={false}
             showsCompass={false}>
-            {mappedTrips.map(trip => (
-              <Marker
-                key={trip.id}
-                coordinate={{ latitude: trip.coords.lat, longitude: trip.coords.lng }}
-                onPress={() => setSelectedTrip(trip)}>
-                <View style={s.markerContainer}>
-                  <View style={[s.marker, selectedTrip?.id === trip.id && s.markerSelected]}>
-                    <Text style={s.markerEmoji}>{trip.emoji}</Text>
+            {mappedTrips.map(trip => {
+              const cover = firstPhotoUri(trip);
+
+              return (
+                <Marker
+                  key={trip.id}
+                  coordinate={{ latitude: trip.coords.lat, longitude: trip.coords.lng }}
+                  tracksViewChanges={!cover || !readyUris.has(cover)}
+                  onPress={() => setSelectedTrip(trip)}>
+                  <View style={s.markerContainer}>
+                    <View style={[s.marker, selectedTrip?.id === trip.id && s.markerSelected]}>
+                      {cover ? (
+                        <Image
+                          source={{ uri: cover }}
+                          style={s.markerPhoto}
+                          onLoad={() => markPhotoReady(cover)}
+                          onError={() => markPhotoReady(cover)}
+                        />
+                      ) : (
+                        <Text style={s.markerEmoji}>{trip.emoji}</Text>
+                      )}
+                    </View>
+                    <View style={s.markerTail}/>
                   </View>
-                  <View style={s.markerTail}/>
-                </View>
-              </Marker>
-            ))}
+                </Marker>
+              );
+            })}
 
             {/* 选中旅程的照片足迹 */}
             {showFootprint && footprint.map((day, dayIndex) => (
@@ -178,18 +216,32 @@ export default function MapScreen({ trips }) {
                     strokeWidth={3}
                   />
                 )}
-                {day.points.map((point, i) => (
-                  <Marker
-                    key={`fp_${day.date}_${i}`}
-                    coordinate={{ latitude: point.coords.lat, longitude: point.coords.lng }}
-                    anchor={{ x: 0.5, y: 0.5 }}
-                    tracksViewChanges={false}>
-                    <View style={[
-                      s.footDot,
-                      { borderColor: DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length] },
-                    ]}/>
-                  </Marker>
-                ))}
+                {day.points.map((point, i) => {
+                  const colour = DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length];
+
+                  return (
+                    <Marker
+                      key={`fp_${day.date}_${i}`}
+                      coordinate={{ latitude: point.coords.lat, longitude: point.coords.lng }}
+                      anchor={{ x: 0.5, y: 0.5 }}
+                      tracksViewChanges={!!point.uri && !readyUris.has(point.uri)}
+                      onPress={() =>
+                        point.uri &&
+                        setViewerPhoto({ uri: point.uri, date: day.date, takenAt: point.takenAt })
+                      }>
+                      {point.uri ? (
+                        <Image
+                          source={{ uri: point.uri }}
+                          style={[s.footPhoto, { borderColor: colour }]}
+                          onLoad={() => markPhotoReady(point.uri)}
+                          onError={() => markPhotoReady(point.uri)}
+                        />
+                      ) : (
+                        <View style={[s.footDot, { borderColor: colour }]}/>
+                      )}
+                    </Marker>
+                  );
+                })}
               </React.Fragment>
             ))}
           </MapView>
@@ -215,7 +267,11 @@ export default function MapScreen({ trips }) {
                     }, 800);
                   }
                 }}>
-                <Text style={s.tripChipEmoji}>{trip.emoji}</Text>
+                {firstPhotoUri(trip) ? (
+                  <Image source={{ uri: firstPhotoUri(trip) }} style={s.tripChipPhoto}/>
+                ) : (
+                  <Text style={s.tripChipEmoji}>{trip.emoji}</Text>
+                )}
                 <Text style={[s.tripChipCity, selectedTrip?.id === trip.id && {color:'#D4AF37'}]}>
                   {trip.city}
                 </Text>
@@ -233,7 +289,11 @@ export default function MapScreen({ trips }) {
           {selectedTrip && (
             <View style={s.modalSheet}>
               <View style={s.modalHeader}>
-                <Text style={s.modalEmoji}>{selectedTrip.emoji}</Text>
+                {firstPhotoUri(selectedTrip) ? (
+                  <Image source={{ uri: firstPhotoUri(selectedTrip) }} style={s.modalPhoto}/>
+                ) : (
+                  <Text style={s.modalEmoji}>{selectedTrip.emoji}</Text>
+                )}
                 <View style={{flex:1}}>
                   <Text style={s.modalCity}>{selectedTrip.city}</Text>
                   <Text style={s.modalMeta}>{selectedTrip.country} · {selectedTrip.date}</Text>
@@ -263,6 +323,33 @@ export default function MapScreen({ trips }) {
           )}
         </View>
       </Modal>
+
+      {/* A footprint pin is a photograph, so tapping one should show it. */}
+      <Modal visible={!!viewerPhoto} transparent animationType="fade">
+        <View style={s.photoViewerOverlay}>
+          <TouchableOpacity
+            style={StyleSheet.absoluteFill}
+            activeOpacity={1}
+            onPress={() => setViewerPhoto(null)}
+          />
+          {viewerPhoto && (
+            <>
+              <Image
+                source={{ uri: viewerPhoto.uri }}
+                style={s.photoViewerImage}
+                resizeMode="contain"
+                pointerEvents="none"
+              />
+              <Text style={s.photoViewerMeta}>{viewerPhoto.date}</Text>
+            </>
+          )}
+          <TouchableOpacity
+            style={s.photoViewerClose}
+            onPress={() => setViewerPhoto(null)}>
+            <Text style={s.photoViewerCloseText}>✕</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -286,17 +373,26 @@ const s = StyleSheet.create({
   marker: {backgroundColor:'#1A1A1A', borderRadius:22, padding:6, borderWidth:2, borderColor:'#D4AF3760', shadowColor:'#000', shadowOpacity:0.3, shadowRadius:4},
   markerSelected: {borderColor:'#D4AF37', backgroundColor:'#D4AF3720'},
   markerEmoji: {fontSize:22},
+  markerPhoto: {width:34, height:34, borderRadius:17},
+  footPhoto: {width:34, height:34, borderRadius:7, borderWidth:2},
+  photoViewerOverlay: {flex:1, backgroundColor:'#000000EE', justifyContent:'center'},
+  photoViewerImage: {width:'100%', height:height*0.7},
+  photoViewerMeta: {color:'#888', fontSize:13, textAlign:'center', marginTop:16},
+  photoViewerClose: {position:'absolute', top:60, right:24, padding:10},
+  photoViewerCloseText: {color:'#F0EDE8', fontSize:28, fontWeight:'300'},
   markerTail: {width:2, height:8, backgroundColor:'#D4AF37', opacity:0.6},
   tripList: {paddingVertical:14, backgroundColor:'#0D0D0D', borderTopWidth:1, borderTopColor:'#1A1A1A'},
   tripChip: {backgroundColor:'#161616', borderRadius:14, padding:12, alignItems:'center', width:80, borderWidth:1, borderColor:'#242424'},
   tripChipActive: {borderColor:'#D4AF37', backgroundColor:'#D4AF3710'},
   tripChipEmoji: {fontSize:22, marginBottom:4},
+  tripChipPhoto: {width:34, height:34, borderRadius:8, marginBottom:4},
   tripChipCity: {fontSize:11, color:'#888', textAlign:'center'},
   tripChipMeta: {fontSize:10, color:'#555', marginTop:2},
   modalOverlay: {flex:1, justifyContent:'flex-end', backgroundColor:'#00000088'},
   modalSheet: {backgroundColor:'#111', borderTopLeftRadius:24, borderTopRightRadius:24, padding:24, paddingBottom:40, borderTopWidth:1, borderColor:'#2A2A2A'},
   modalHeader: {flexDirection:'row', alignItems:'center', gap:14, marginBottom:20},
   modalEmoji: {fontSize:40},
+  modalPhoto: {width:52, height:52, borderRadius:12},
   modalCity: {fontSize:22, color:'#F0EDE8', fontWeight:'300'},
   modalMeta: {fontSize:13, color:'#555', marginTop:4},
   modalStats: {flexDirection:'row', gap:12},
