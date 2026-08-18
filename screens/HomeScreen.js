@@ -421,9 +421,9 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
         onPress: async () => {
           setDeletingId(tripId);
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error(t('auth_not_logged_in'));
-            await deleteTripAndRelated(user.id, tripId);
+            // 游客没有 user：旅程只在本机，本地删掉即可。
+            const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+            await deleteTripAndRelated(user?.id ?? null, tripId);
             setTrips(prev => prev.filter(t => t.id !== tripId));
           } catch (e) {
             console.error('deleteTrip error:', e.message);

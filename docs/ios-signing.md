@@ -327,3 +327,13 @@ correctly. The binary built as 1.0.0 (1) with a 1.0.4 (12) watch app inside it.
 The plist now reads `$(MARKETING_VERSION)` and `$(CURRENT_PROJECT_VERSION)`, so
 the pbxproj is the single source. Check the built `Info.plist`, not the pbxproj,
 when bumping a release.
+
+### The splash screen had the same problem
+
+`SplashScreenLegacy.imageset` held Expo's placeholder too, so every launch
+flashed a near-white grid-and-circles image against the dark `#0D0D0D`
+background. Replaced with `assets/splash-icon.png` (all three scales are the
+same 1024px file, matching how prebuild generates them).
+
+Anything under `ios/WanderNote/Images.xcassets/` is suspect for the same reason:
+it was written once by prebuild and can never be refreshed by it again.

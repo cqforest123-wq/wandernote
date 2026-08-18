@@ -160,9 +160,9 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         onPress: async () => {
           setIsDeleting(true);
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error(t('auth_not_logged_in'));
-            await deleteTripAndRelated(user.id, trip.id);
+            // 游客没有 user：旅程只在本机，本地删掉即可。
+            const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+            await deleteTripAndRelated(user?.id ?? null, trip.id);
             setTrips(prev => prev.filter(t => t.id !== trip.id));
             navigation.goBack();
           } catch (e) {
