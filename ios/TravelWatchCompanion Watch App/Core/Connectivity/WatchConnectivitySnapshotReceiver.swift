@@ -1,3 +1,4 @@
+import Combine
 import Foundation
 import WatchConnectivity
 
@@ -7,6 +8,22 @@ private enum WatchConnectivityDiagnostics {
         print("[WatchGlance] \(message())")
         #endif
     }
+}
+
+/// What the link is doing, so the watch can say why it has no trip data.
+///
+/// "Waiting for iPhone" with no further explanation is untraceable from the
+/// wrist: the phone reports the payload as sent while the watch shows nothing,
+/// and there is nowhere to read a log. These few fields are surfaced in the UI.
+@MainActor
+final class WatchLinkStatus: ObservableObject {
+    @Published var activation: String = "starting"
+    @Published var reachable: Bool = false
+    @Published var receivedBytes: Int?
+    @Published var receivedAt: Date?
+    @Published var lastError: String?
+
+    static let shared = WatchLinkStatus()
 }
 
 final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
@@ -36,6 +53,7 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
         WatchConnectivityDiagnostics.log(
             "WatchConnectivity receiver activating"
         )
+        note(activation: "activating")
 
         process(
             applicationContext: session.receivedApplicationContext
@@ -51,8 +69,14 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
             WatchConnectivityDiagnostics.log(
                 "receiver activation failed: \(String(describing: error))"
             )
+            note(activation: "activation-failed", error: String(describing: error))
             return
         }
+
+        note(
+            activation: activationState == .activated ? "activated" : "state-\(activationState.rawValue)",
+            reachable: session.isReachable
+        )
 
         WatchConnectivityDiagnostics.log(
             "receiver activation completed with state=\(activationState.rawValue)"
@@ -80,6 +104,24 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
     }
     #endif
 
+    private func note(
+        activation: String? = nil,
+        reachable: Bool? = nil,
+        error: String? = nil
+    ) {
+        Task { @MainActor in
+            if let activation {
+                WatchLinkStatus.shared.activation = activation
+            }
+            if let reachable {
+                WatchLinkStatus.shared.reachable = reachable
+            }
+            if let error {
+                WatchLinkStatus.shared.lastError = error
+            }
+        }
+    }
+
     private func process(
         applicationContext: [String: Any]
     ) {
@@ -88,6 +130,11 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
         ] as? Data else {
             WatchConnectivityDiagnostics.log(
                 "application context did not contain outdoor glance payload"
+            )
+            note(
+                error: applicationContext.isEmpty
+                    ? "empty-context"
+                    : "context-keys:\(applicationContext.keys.joined(separator: ","))"
             )
             return
         }
@@ -100,12 +147,18 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
                 return
             }
 
+            WatchLinkStatus.shared.receivedBytes = data.count
+            WatchLinkStatus.shared.receivedAt = Date()
+
             do {
                 try self.store.save(encodedData: data)
+                WatchLinkStatus.shared.lastError = nil
                 WatchConnectivityDiagnostics.log(
                     "cache updated from received payload"
                 )
             } catch {
+                WatchLinkStatus.shared.lastError =
+                    "decode:\(String(describing: error).prefix(40))"
                 WatchConnectivityDiagnostics.log(
                     "received payload rejected; preserving cached snapshot"
                 )

@@ -5,6 +5,7 @@ import SwiftUI
 /// without touching the live snapshot/daily stores.
 struct GlanceContentView: View {
     @Environment(\.openURL) private var openURL
+    @ObservedObject private var link = WatchLinkStatus.shared
 
     let glance: GlanceData
     let canRecordParking: Bool
@@ -121,6 +122,13 @@ struct GlanceContentView: View {
             .foregroundStyle(.tertiary)
             .frame(maxWidth: .infinity, alignment: .center)
             .padding(.top, 4)
+
+            // Only while there is no trip data: saying "Daily Glance" without
+            // saying why the phone's trip never arrived leaves the wearer with
+            // nothing to act on, and nowhere to read a log.
+            if glance.mode == .daily {
+                linkStatusView
+            }
         }
     }
 
@@ -193,6 +201,26 @@ struct GlanceContentView: View {
         }
 
         return min(max(remaining / total, 0), 1)
+    }
+
+    private var linkStatusView: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("link: \(link.activation)\(link.reachable ? " · reachable" : "")")
+
+            if let bytes = link.receivedBytes, let at = link.receivedAt {
+                Text("rx: \(bytes)B at \(formatTime(at))")
+            } else {
+                Text("rx: none")
+            }
+
+            if let error = link.lastError {
+                Text(error).lineLimit(2)
+            }
+        }
+        .font(.system(size: 9))
+        .foregroundStyle(.tertiary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
     }
 
     private var headerView: some View {
