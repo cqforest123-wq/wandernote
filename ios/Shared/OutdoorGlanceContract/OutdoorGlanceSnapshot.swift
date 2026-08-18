@@ -20,6 +20,10 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
     let language: String?
     /// Today's spend, already formatted in the user's home currency by the app.
     let todaySpendText: String?
+    /// Decided on the iPhone, whose locale is reliable. The watch bundle keeps
+    /// degrading Locale.current to its development language, which is how a
+    /// user in Chengdu ended up reading altitude in feet.
+    let usesMetric: Bool?
 
     init(
         schemaVersion: Int,
@@ -34,7 +38,8 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
         activity: OutdoorGlanceActivity?,
         parking: OutdoorGlanceParking?,
         language: String? = nil,
-        todaySpendText: String? = nil
+        todaySpendText: String? = nil,
+        usesMetric: Bool? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.snapshotId = snapshotId
@@ -49,6 +54,7 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
         self.parking = parking
         self.language = language
         self.todaySpendText = todaySpendText
+        self.usesMetric = usesMetric
     }
 
     func isStale(at date: Date = Date()) -> Bool {

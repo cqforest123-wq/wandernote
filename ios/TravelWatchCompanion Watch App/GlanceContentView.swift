@@ -350,6 +350,12 @@ struct GlanceContentView: View {
     /// region — and when it carries none, metric is the right default for a
     /// travel app sold worldwide.
     private var usesMetric: Bool {
+        // The iPhone decides when it can: its locale is trustworthy, this
+        // bundle's is not. Only guess when no snapshot has arrived.
+        if let fromPhone = glance.usesMetric {
+            return fromPhone
+        }
+
         guard let preferred = Locale.preferredLanguages.first else {
             return true
         }

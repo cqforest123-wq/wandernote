@@ -15,7 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { buildTripDraftFromPhotos, parseExifCoords } from '../lib/tripFromPhotos';
 import { attachPhotoLocations, requestPhotoLocationAccess } from '../lib/photoLocation';
 import { logEvent } from '../lib/diagnostics';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 
 const CONTINENTS = [
   { name:'🌏 亚洲', countries:[
@@ -523,6 +523,11 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
         coords: draft.coords,
       });
       newTrip.days = draft.days;
+      // A photo of the place beats a generic camera glyph — and this trip was
+      // built from photos, so there is always one to use.
+      newTrip.coverUri = draft.days
+        .flatMap((d) => d.photos || [])
+        .find((photo) => photo?.uri)?.uri || null;
       setTrips(prev => [newTrip, ...prev]);
 
       // 目的地是从坐标猜的，可能猜错，也可能因为照片没 GPS 而为空。
@@ -674,7 +679,11 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             onPress={() => navigation.navigate('TripDetail', { tripId: trip.id })}
             onLongPress={() => deleteTrip(trip.id, trip.city)}
             disabled={deletingId === trip.id}>
-            <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
+            <View style={s.cardEmoji}>
+              {trip.coverUri
+                ? <Image source={{uri:trip.coverUri}} style={s.cardCover} resizeMode="cover"/>
+                : <Text style={{fontSize:22}}>{trip.emoji}</Text>}
+            </View>
             <View style={{flex:1}}>
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
               <Text style={s.countryName}>{trip.country} · {trip.days.length} {t('unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {t('unit_memos')}</Text>
@@ -922,7 +931,8 @@ const s = StyleSheet.create({
   photoImportText:{color:'#4ECDC4',fontSize:15,fontWeight:'600'},
   photoImportHint:{color:'#5A7A78',fontSize:12,marginTop:5,textAlign:'center'},
   card:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:'#242424'},
-  cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center'},
+  cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center',overflow:'hidden'},
+  cardCover:{width:'100%',height:'100%'},
   cityName:{fontSize:16,color:'#F0EDE8'},
   countryName:{fontSize:12,color:'#555',marginTop:3},
   cardDate:{fontSize:11,color:'#444'},

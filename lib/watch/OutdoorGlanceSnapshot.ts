@@ -19,6 +19,8 @@ export type OutdoorGlanceSnapshot = {
   language: string | null;
   /** Today's spend, already formatted in the home currency. */
   todaySpendText: string | null;
+  /** Whether the user's region is metric, decided on the phone. */
+  usesMetric: boolean | null;
 };
 
 export type OutdoorGlanceFreshness = {
@@ -133,4 +135,5 @@ export type ComposeOutdoorGlanceSnapshotInput = {
   parking?: OutdoorGlanceParkingDraft | null;
   language?: string | null;
   todaySpendText?: string | null;
+  usesMetric?: boolean | null;
 };

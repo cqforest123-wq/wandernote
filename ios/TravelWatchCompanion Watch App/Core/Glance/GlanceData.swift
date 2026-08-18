@@ -36,6 +36,8 @@ struct GlanceData: Equatable {
     /// Pre-formatted so the view has no unit logic; trend drives the arrow.
     let pressureText: String?
     let pressureFalling: Bool?
+    /// nil = no snapshot yet, fall back to the watch's own guess.
+    let usesMetric: Bool?
 
     init(
         mode: GlanceMode,
@@ -61,7 +63,8 @@ struct GlanceData: Equatable {
         warnings: [GlanceStatusLine],
         todaySpendText: String? = nil,
         pressureText: String? = nil,
-        pressureFalling: Bool? = nil
+        pressureFalling: Bool? = nil,
+        usesMetric: Bool? = nil
     ) {
         self.mode = mode
         self.title = title
@@ -87,6 +90,7 @@ struct GlanceData: Equatable {
         self.todaySpendText = todaySpendText
         self.pressureText = pressureText
         self.pressureFalling = pressureFalling
+        self.usesMetric = usesMetric
     }
 
     static func unavailable(

@@ -197,7 +197,9 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 
         {/* 旅程标题 — 点击可编辑 */}
         <TouchableOpacity style={s.tripHeader} onPress={()=>{setEditCity(trip.city);setShowEditTrip(true);}}>
-          <Text style={s.tripEmoji}>{trip.emoji}</Text>
+          {trip.coverUri
+              ? <Image source={{uri:trip.coverUri}} style={s.tripCover} resizeMode="cover"/>
+              : <Text style={s.tripEmoji}>{trip.emoji}</Text>}
           <View style={{flex:1}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
               <Text style={s.tripCity} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
@@ -514,6 +516,7 @@ const s = StyleSheet.create({
   deleteText:{color:'#FF6B6B',fontSize:13},
   tripHeader:{flexDirection:'row',alignItems:'center',gap:16,marginBottom:24},
   tripEmoji:{fontSize:48},
+  tripCover:{width:64,height:64,borderRadius:16},
   tripCity:{fontSize:28,color:'#F0EDE8',fontWeight:'300'},
   editHint:{fontSize:16,color:'#444'},
   tripMeta:{fontSize:14,color:'#555',marginTop:4},

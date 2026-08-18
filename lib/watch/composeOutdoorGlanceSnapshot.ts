@@ -51,6 +51,7 @@ export function composeOutdoorGlanceSnapshot(
     parking: normalizeParking(input.parking),
     language: normalizeOptionalText(input.language),
     todaySpendText: normalizeOptionalText(input.todaySpendText),
+    usesMetric: typeof input.usesMetric === 'boolean' ? input.usesMetric : null,
   };
 }
 
@@ -80,6 +81,7 @@ export function fingerprintOutdoorGlanceInput(
     parking: normalizeParking(input.parking),
     language: normalizeOptionalText(input.language),
     todaySpendText: normalizeOptionalText(input.todaySpendText),
+    usesMetric: typeof input.usesMetric === 'boolean' ? input.usesMetric : null,
   });
 }
 

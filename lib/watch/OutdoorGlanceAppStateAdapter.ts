@@ -24,6 +24,7 @@ export type OutdoorGlanceAppStateInput = {
   language?: string | null;
   /** Formatted by the caller, which owns the home currency and rate table. */
   todaySpendText?: string | null;
+  usesMetric?: boolean | null;
   now?: Date;
 };
 
@@ -32,6 +33,7 @@ export function makeOutdoorGlanceSnapshotInputFromAppState({
   weather,
   language,
   todaySpendText,
+  usesMetric,
   now = new Date(),
 }: OutdoorGlanceAppStateInput): ComposeOutdoorGlanceSnapshotInput {
   const trip = selectOutdoorGlanceTrip(trips, now);
@@ -47,6 +49,7 @@ export function makeOutdoorGlanceSnapshotInputFromAppState({
       parking: null,
       language: language ?? null,
       todaySpendText: null,
+      usesMetric: usesMetric ?? null,
     };
   }
 
@@ -64,6 +67,7 @@ export function makeOutdoorGlanceSnapshotInputFromAppState({
     parking: null,
     language: language ?? null,
     todaySpendText: todaySpendText ?? null,
+    usesMetric: usesMetric ?? null,
   };
 }
 

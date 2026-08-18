@@ -136,7 +136,8 @@ enum GlanceDataMapper {
             warnings: isStale ? [.staleSnapshot] : [],
             todaySpendText: snapshot.todaySpendText,
             pressureText: formatPressure(dailyData?.pressureKPa),
-            pressureFalling: dailyData?.pressureFalling
+            pressureFalling: dailyData?.pressureFalling,
+            usesMetric: snapshot.usesMetric
         )
     }
 
