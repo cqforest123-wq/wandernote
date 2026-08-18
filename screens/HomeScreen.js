@@ -486,6 +486,15 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
         ).length,
       });
 
+      // Key names only — never values. Which keys iOS actually hands over is
+      // the thing we cannot otherwise see, and it is not personal data.
+      const sampleKeys = Object.keys(result.assets[0]?.exif || {});
+      logEvent('photo-import', 'exif-keys', {
+        n: sampleKeys.length,
+        keys: sampleKeys.filter(k => /gps|date/i.test(k)).slice(0, 8),
+        sample: sampleKeys.slice(0, 10),
+      });
+
       const granted = await requestPhotoLocationAccess();
       const located = await attachPhotoLocations(result.assets, {
         onProgress: (p) => setImportProgress(p),
@@ -495,9 +504,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
 
       logEvent('photo-import', 'located', {
         granted,
-        permission: locationStats.permission,
-        candidates: locationStats.candidates,
-        resolved: locationStats.resolved,
+        ...locationStats,
       });
 
       const draft = await buildTripDraftFromPhotos(assets, t, {
