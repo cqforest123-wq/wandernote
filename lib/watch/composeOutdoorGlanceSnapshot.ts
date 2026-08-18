@@ -156,13 +156,19 @@ function normalizeTrip(
     return null;
   }
 
+  // A trip with no name is still a trip. Photo-built trips keep their
+  // coordinates when the destination lookup fails, and dropping them here for
+  // want of a label sent the watch an empty snapshot — which it then correctly
+  // rendered as Daily mode, with no trip, no weather and no way to tell why.
   const name = String(trip.name || '').trim();
-  if (!name) {
+  const id = String(trip.id ?? '').trim();
+
+  if (!name && !id) {
     return null;
   }
 
   return {
-    id: String(trip.id),
+    id,
     name,
     dayNumber: normalizePositiveInteger(trip.dayNumber),
   };

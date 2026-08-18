@@ -269,8 +269,17 @@ enum GlanceDataMapper {
             return nil
         }
 
+        // A trip built from photos may have coordinates but no destination
+        // name yet. Fall back to the day number alone rather than showing an
+        // empty heading.
+        let name = trip.name.trimmingCharacters(in: .whitespaces)
+
         guard let dayNumber = trip.dayNumber else {
-            return trip.name
+            return name.isEmpty ? nil : name
+        }
+
+        if name.isEmpty {
+            return WatchStrings.format("trip.dayOnlyFormat", dayNumber)
         }
 
         return WatchStrings.format(

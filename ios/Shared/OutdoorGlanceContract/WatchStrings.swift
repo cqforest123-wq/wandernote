@@ -112,7 +112,8 @@ public enum WatchStrings {
         "spend.today": "Spent today",
         "updated.at": "Updated %@",
         "sunrise": "Sunrise",
-        "pressure": "Pressure"
+        "pressure": "Pressure",
+        "trip.dayOnlyFormat": "Day %d"
     ]
 
     private static let simplifiedChinese: [String: String] = [
@@ -148,7 +149,8 @@ public enum WatchStrings {
         "spend.today": "今日花费",
         "updated.at": "更新于 %@",
         "sunrise": "日出",
-        "pressure": "气压"
+        "pressure": "气压",
+        "trip.dayOnlyFormat": "第%d天"
     ]
 
     private static let traditionalChinese: [String: String] = [
@@ -184,7 +186,8 @@ public enum WatchStrings {
         "spend.today": "今日花費",
         "updated.at": "更新於 %@",
         "sunrise": "日出",
-        "pressure": "氣壓"
+        "pressure": "氣壓",
+        "trip.dayOnlyFormat": "第%d天"
     ]
 
     private static let japanese: [String: String] = [
@@ -220,7 +223,8 @@ public enum WatchStrings {
         "spend.today": "今日の支出",
         "updated.at": "%@ 更新",
         "sunrise": "日の出",
-        "pressure": "気圧"
+        "pressure": "気圧",
+        "trip.dayOnlyFormat": "%d日目"
     ]
 
     private static let korean: [String: String] = [
@@ -256,7 +260,8 @@ public enum WatchStrings {
         "spend.today": "오늘 지출",
         "updated.at": "%@ 업데이트",
         "sunrise": "일출",
-        "pressure": "기압"
+        "pressure": "기압",
+        "trip.dayOnlyFormat": "%d일차"
     ]
 
     private static let french: [String: String] = [
@@ -292,7 +297,8 @@ public enum WatchStrings {
         "spend.today": "Dépensé aujourd’hui",
         "updated.at": "Mis à jour à %@",
         "sunrise": "Lever du soleil",
-        "pressure": "Pression"
+        "pressure": "Pression",
+        "trip.dayOnlyFormat": "Jour %d"
     ]
 
     private static let spanish: [String: String] = [
@@ -328,7 +334,8 @@ public enum WatchStrings {
         "spend.today": "Gastado hoy",
         "updated.at": "Actualizado a las %@",
         "sunrise": "Amanecer",
-        "pressure": "Presión"
+        "pressure": "Presión",
+        "trip.dayOnlyFormat": "Día %d"
     ]
 
     private static let thai: [String: String] = [
@@ -364,6 +371,7 @@ public enum WatchStrings {
         "spend.today": "ใช้จ่ายวันนี้",
         "updated.at": "อัปเดตเมื่อ %@",
         "sunrise": "พระอาทิตย์ขึ้น",
-        "pressure": "ความกดอากาศ"
+        "pressure": "ความกดอากาศ",
+        "trip.dayOnlyFormat": "วันที่ %d"
     ]
 }
