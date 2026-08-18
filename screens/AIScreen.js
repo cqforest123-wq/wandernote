@@ -199,6 +199,7 @@ Strict requirements:
         };
 
         const text = await callAI(prompt, 8000, {
+          feature: 'itinerary',
           responseMimeType: 'application/json',
           responseSchema: {
             type: 'OBJECT',
@@ -283,7 +284,7 @@ Strict requirements:
     }
 
     try {
-      const text = await callAI(buildPrompt(), 1200);
+      const text = await callAI(buildPrompt(), 1200, { feature: mode });
       const readable = extractReadableAiText(text) || String(text || '').trim();
       setResult(readable || `${localFallbackNotice}\n\n${fallback}`);
     } catch (e) {

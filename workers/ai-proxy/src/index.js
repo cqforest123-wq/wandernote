@@ -99,6 +99,13 @@ export default {
 
     const wantsJson = String(body?.responseMimeType || '').includes('json');
 
+    // Which feature asked. Cloudflare's observability shows request counts but
+    // cannot tell a diary from an itinerary, and deciding which AI features
+    // are worth keeping needs exactly that split. A label only — no prompt
+    // text, no trip content, nothing about the user.
+    const feature = String(body?.feature || 'unknown').slice(0, 24).replace(/[^a-z-]/gi, '');
+    console.log(JSON.stringify({ event: 'ai_request', feature, wantsJson, maxTokens: Number(body?.maxTokens) || null }));
+
     const generationConfig = {
       maxOutputTokens: maxTokens,
       // Thinking is off for prose, where it only costs latency. Structured
