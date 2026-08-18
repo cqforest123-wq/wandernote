@@ -154,11 +154,16 @@ final class DailyGlanceStore: ObservableObject {
     private func apply(
         locationUpdate update: LocationAltitudeUpdate
     ) {
+        // An authorization-change notification arrives with no location
+        // attached. Writing its nil coordinates over the last known fix wiped
+        // altitude, sunset and daylight while the place name — a separate
+        // field — stayed on screen, which is exactly how the watch ended up
+        // showing "成都市" beside three empty rows.
         let nextData = data.updatingLocation(
             authorization: update.authorization,
-            latitude: update.latitude,
-            longitude: update.longitude,
-            altitudeMeters: update.altitudeMeters
+            latitude: update.latitude ?? data.latitude,
+            longitude: update.longitude ?? data.longitude,
+            altitudeMeters: update.altitudeMeters ?? data.altitudeMeters
         )
 
         DailyGlanceDiagnostics.log(
@@ -230,9 +235,15 @@ final class DailyGlanceStore: ObservableObject {
         to data: DailyGlanceData,
         at date: Date = Date()
     ) -> DailyGlanceData {
-        guard data.locationAuthorization == .authorized else {
+        // Gate on having coordinates, not on the authorization enum. Sun times
+        // are pure arithmetic on a latitude and longitude — if we hold a fix,
+        // whether from this session or the last one, they are computable. The
+        // old check wiped a perfectly good sunset whenever the enum was not yet
+        // .authorized, which includes the moment right after launch: the watch
+        // showed a resolved place name beside an empty sunset.
+        guard data.latitude != nil, data.longitude != nil else {
             DailyGlanceDiagnostics.log(
-                "sun unavailable because location authorization=\(data.locationAuthorization)"
+                "sun unavailable because no coordinates are known (authorization=\(data.locationAuthorization))"
             )
             return data.updatingSun(
                 sunrise: nil,

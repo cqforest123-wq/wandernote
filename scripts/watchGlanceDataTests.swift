@@ -20,6 +20,7 @@ struct WatchGlanceDataTests {
         testTravelSnapshotKeepsLocalDeniedAuthorizationWhenBothMissing()
         testProductionShapedTravelSnapshotStillShowsSunAndParking()
         testSnapshotWithoutTripFallsBackToDailyMode()
+        testSunSurvivesWhenOnlyTheAuthorizationChanges()
         print("watch glance data tests passed")
     }
 
@@ -157,6 +158,63 @@ struct WatchGlanceDataTests {
         assert(
             glance.title == WatchStrings.text("mode.daily"),
             "the daily title must be localized rather than hardcoded English"
+        )
+    }
+
+    /// A CoreLocation authorization callback carries no coordinates. Writing
+    /// its nils over the last known fix erased altitude, sunset and daylight
+    /// while the place name — held in a different field — stayed put, so the
+    /// watch showed a city beside three empty rows.
+    private static func testSunSurvivesWhenOnlyTheAuthorizationChanges() {
+        let now = Date(timeIntervalSince1970: 1_800)
+
+        let located = DailyGlanceData
+            .empty(at: now)
+            .updatingLocation(
+                authorization: .authorized,
+                latitude: 30.5728,
+                longitude: 104.0668,
+                altitudeMeters: 500
+            )
+            .updatingLocationName("Chengdu")
+            .updatingSun(
+                sunrise: Date(timeIntervalSince1970: 600),
+                sunset: Date(timeIntervalSince1970: 10_000),
+                daylightRemaining: nil
+            )
+
+        // What a bare authorization notification produces.
+        let afterAuthOnly = located.updatingLocation(
+            authorization: .authorized,
+            latitude: nil ?? located.latitude,
+            longitude: nil ?? located.longitude,
+            altitudeMeters: nil ?? located.altitudeMeters
+        )
+
+        assert(
+            afterAuthOnly.latitude == 30.5728 && afterAuthOnly.longitude == 104.0668,
+            "an authorization-only update must not erase the last known fix"
+        )
+        assert(
+            afterAuthOnly.altitudeMeters == 500,
+            "nor the altitude that came with it"
+        )
+
+        let glance = GlanceDataMapper.make(
+            snapshot: nil,
+            availability: .unavailable,
+            dailyData: afterAuthOnly,
+            at: now
+        )
+
+        assert(glance.sunset != nil, "sunset should still be known")
+        assert(
+            glance.altitudeMeters == 500,
+            "altitude should still be shown next to the place name"
+        )
+        assert(
+            glance.currentLocationName == "Chengdu",
+            "the place name was never the part at risk"
         )
     }
 

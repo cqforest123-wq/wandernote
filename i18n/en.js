@@ -440,4 +440,12 @@ export default {
   notify_denied_title: 'Notifications are off',
   notify_denied_body: 'Turn them on for WanderNote in Settings to get a reminder the evening before you travel.',
   photo_trip_needs_photo_access: 'Photo locations are off, so the destination is blank. Allow full photo access for WanderNote in Settings and import again to place these on the map.',
+
+  // 诊断日志
+  diag_title: 'Diagnostics',
+  diag_hint: 'Recent activity — what happened, never what you wrote. No trip text, places or amounts.',
+  diag_empty: 'Nothing recorded yet.',
+  diag_copy: 'Copy',
+  diag_clear: 'Clear',
+  diag_copied: 'Copied.',
 };

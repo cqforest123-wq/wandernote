@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import WatchKit
 
 @MainActor
 final class WatchCompanionRuntime: ObservableObject {
@@ -31,6 +32,13 @@ final class WatchCompanionRuntime: ObservableObject {
         hasStarted = true
         receiver.start()
         dailyStore.start()
+        BackgroundRefreshScheduler.scheduleNext()
+    }
+
+    /// Queue the next background window. SwiftUI's `.backgroundTask(.appRefresh)`
+    /// completes the task for us, so all that is left is asking for another.
+    func scheduleNextBackgroundRefresh() {
+        BackgroundRefreshScheduler.scheduleNext()
     }
 
     func refreshActiveData() {

@@ -440,4 +440,12 @@ export default {
   notify_denied_title: '通知未开启',
   notify_denied_body: '在系统设置里为 WanderNote 打开通知，就能在出发前一晚收到提醒。',
   photo_trip_needs_photo_access: '没有相册访问权限，读不到照片位置，目的地留空了。在系统设置里给 WanderNote 开启完整相册访问后重新导入，就能标到地图上。',
+
+  // 诊断日志
+  diag_title: '诊断日志',
+  diag_hint: '最近的运行记录——只记发生了什么，不记你写了什么。不含旅程内容、地点或金额。',
+  diag_empty: '还没有记录。',
+  diag_copy: '复制',
+  diag_clear: '清空',
+  diag_copied: '已复制。',
 };

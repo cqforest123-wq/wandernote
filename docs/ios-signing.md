@@ -386,3 +386,19 @@ Verify the built product, since a missing localization still builds green:
 ls -d "$APP"/*.lproj
 plutil -p "$APP/fr.lproj/InfoPlist.strings"
 ```
+
+## Disk space
+
+A full Release build of this workspace needs several GB, and the machine runs
+close to full. Two Xcode caches regrow constantly and are safe to delete — both
+rebuild themselves:
+
+```bash
+rm -rf ~/Library/Developer/Xcode/DerivedData/*
+rm -rf ~/Library/Developer/Xcode/"iOS DeviceSupport"
+```
+
+`iOS DeviceSupport` regenerates the next time a device is attached; DerivedData
+costs one full rebuild. Do **not** clear
+`~/Library/Developer/CoreSimulator/Devices` — that is simulator state, not a
+cache, and deleting it is unrecoverable.

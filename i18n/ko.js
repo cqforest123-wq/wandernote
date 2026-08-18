@@ -348,4 +348,12 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   notify_denied_title: '알림이 꺼져 있습니다',
   notify_denied_body: '설정에서 WanderNote 알림을 켜면 출발 전날 저녁에 알려드립니다.',
   photo_trip_needs_photo_access: '사진 접근 권한이 없어 위치를 읽지 못해 목적지를 비워 뒀습니다. 설정에서 전체 사진 접근을 허용한 뒤 다시 가져오면 지도에 표시됩니다.',
+
+  // 诊断日志
+  diag_title: '진단 로그',
+  diag_hint: '최근 동작 기록입니다. 무슨 일이 있었는지만 기록하며 입력한 내용은 저장하지 않습니다. 여행 내용·장소·금액은 포함되지 않습니다.',
+  diag_empty: '아직 기록이 없습니다.',
+  diag_copy: '복사',
+  diag_clear: '지우기',
+  diag_copied: '복사했습니다.',
 };

@@ -14,6 +14,7 @@ import { searchPlaces } from '../lib/placeSearch';
 import * as ImagePicker from 'expo-image-picker';
 import { buildTripDraftFromPhotos } from '../lib/tripFromPhotos';
 import { attachPhotoLocations, requestPhotoLocationAccess } from '../lib/photoLocation';
+import { logEvent } from '../lib/diagnostics';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 
 const CONTINENTS = [
@@ -477,12 +478,27 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
       // coordinates have to be read back from the library itself. Declining
       // only costs the destination guess and the map footprint — the days are
       // built from timestamps either way.
-      await requestPhotoLocationAccess();
+      logEvent('photo-import', 'picked', {
+        count: result.assets.length,
+        withAssetId: result.assets.filter(a => !!a.assetId).length,
+        withExifGps: result.assets.filter(
+          a => !!(a.exif && (a.exif['{GPS}'] || a.exif.GPS))
+        ).length,
+      });
+
+      const granted = await requestPhotoLocationAccess();
       const located = await attachPhotoLocations(result.assets, {
         onProgress: (p) => setImportProgress(p),
       });
       const assets = located.assets;
       const locationStats = located.stats;
+
+      logEvent('photo-import', 'located', {
+        granted,
+        permission: locationStats.permission,
+        candidates: locationStats.candidates,
+        resolved: locationStats.resolved,
+      });
 
       const draft = await buildTripDraftFromPhotos(assets, t, {
         onProgress: (p) => setImportProgress(p),
@@ -504,6 +520,13 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
 
       // 目的地是从坐标猜的，可能猜错，也可能因为照片没 GPS 而为空。
       // 明确告诉用户结果，并提示可以改，而不是假装百分百正确。
+      logEvent('photo-import', 'draft', {
+        days: draft.stats.dayCount,
+        photos: draft.stats.photoCount,
+        hasLocation: !!draft.stats.hasLocation,
+        undated: draft.stats.undatedCount,
+      });
+
       const lines = [
         t('photo_trip_summary')
           .replace('%p', draft.stats.photoCount)

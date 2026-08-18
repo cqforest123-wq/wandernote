@@ -349,4 +349,12 @@ alert_logout_confirm: '¿Cerrar sesión?',
   notify_denied_title: 'Notificaciones desactivadas',
   notify_denied_body: 'Actívalas para WanderNote en Ajustes y te avisaremos la víspera del viaje.',
   photo_trip_needs_photo_access: 'Sin acceso a las fotos no se pueden leer las ubicaciones y el destino queda vacío. Concede acceso completo en Ajustes y vuelve a importar para situarlas en el mapa.',
+
+  // 诊断日志
+  diag_title: 'Diagnóstico',
+  diag_hint: 'Actividad reciente: qué ocurrió, nunca lo que escribiste. Sin textos, lugares ni importes.',
+  diag_empty: 'Aún no hay registros.',
+  diag_copy: 'Copiar',
+  diag_clear: 'Borrar',
+  diag_copied: 'Copiado.',
 };

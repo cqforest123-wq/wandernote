@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,6 +8,8 @@ import { deleteCurrentAccount } from '../lib/accountDeletion';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
 import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, currencySymbol, getHomeCurrency, setHomeCurrency } from '../lib/currency';
 import { areRemindersEnabled, setRemindersEnabled } from '../lib/notifications';
+import { clearDiagnostics, formatDiagnostics, readDiagnostics } from '../lib/diagnostics';
+import * as Clipboard from 'expo-clipboard';
 // 直接读 app.json，避免版本号在这里再次写死后跟着 bump 漂移
 import appConfig from '../app.json';
 
@@ -58,6 +60,25 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
     } finally {
       setTogglingReminders(false);
     }
+  };
+
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticsText, setDiagnosticsText] = useState('');
+
+  const openDiagnostics = async () => {
+    const entries = await readDiagnostics();
+    setDiagnosticsText(formatDiagnostics(entries));
+    setShowDiagnostics(true);
+  };
+
+  const copyDiagnostics = async () => {
+    await Clipboard.setStringAsync(diagnosticsText || '');
+    Alert.alert('', t('diag_copied'));
+  };
+
+  const wipeDiagnostics = async () => {
+    await clearDiagnostics();
+    setDiagnosticsText('');
   };
 
   const selectCurrency = async (code) => {
@@ -351,6 +372,12 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             <Text style={s.settingLabel}>{t('profile_privacy_policy')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={s.settingRow} onPress={openDiagnostics}>
+            <Text style={s.settingIcon}>🩺</Text>
+            <Text style={s.settingLabel}>{t('diag_title')}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/id6769281736?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
             <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
@@ -421,6 +448,33 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
               </TouchableOpacity>
             ))}
             <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowLangModal(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 诊断日志：只记录发生了什么，不记录你写了什么 */}
+      <Modal visible={showDiagnostics} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowDiagnostics(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>{t('diag_title')}</Text>
+            <Text style={{color:'#555',fontSize:12,marginBottom:10}}>{t('diag_hint')}</Text>
+            <ScrollView style={{maxHeight:300,backgroundColor:'#111',borderRadius:10,padding:10}}>
+              <Text style={{color:'#8A8A8A',fontSize:11,fontFamily:Platform.OS==='ios'?'Menlo':'monospace'}}>
+                {diagnosticsText || t('diag_empty')}
+              </Text>
+            </ScrollView>
+            <View style={{flexDirection:'row',gap:12,marginTop:14}}>
+              <TouchableOpacity style={[s.editCancelBtn,{flex:1}]} onPress={wipeDiagnostics}>
+                <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('diag_clear')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.editCancelBtn,{flex:1,borderColor:'#D4AF3750',backgroundColor:'#D4AF3715'}]} onPress={copyDiagnostics}>
+                <Text style={{color:'#D4AF37',fontSize:15,textAlign:'center'}}>{t('diag_copy')}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowDiagnostics(false)}>
               <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>

@@ -348,4 +348,12 @@ alert_logout_confirm: 'ログアウトしますか？',
   notify_denied_title: '通知がオフです',
   notify_denied_body: '設定で WanderNote の通知をオンにすると、出発前夜にお知らせします。',
   photo_trip_needs_photo_access: '写真へのアクセスがないため位置を読み取れず、行き先は空のままです。設定でフル写真アクセスを許可してから読み込み直すと地図に表示されます。',
+
+  // 诊断日志
+  diag_title: '診断ログ',
+  diag_hint: '最近の動作記録です。何が起きたかだけを記録し、入力内容は記録しません。旅の文章・場所・金額は含みません。',
+  diag_empty: 'まだ記録がありません。',
+  diag_copy: 'コピー',
+  diag_clear: '消去',
+  diag_copied: 'コピーしました。',
 };
