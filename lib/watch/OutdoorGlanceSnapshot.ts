@@ -17,6 +17,8 @@ export type OutdoorGlanceSnapshot = {
   parking: OutdoorGlanceParking | null;
   /** Language selected inside the iPhone app, so the watch can match it. */
   language: string | null;
+  /** Today's spend, already formatted in the home currency. */
+  todaySpendText: string | null;
 };
 
 export type OutdoorGlanceFreshness = {
@@ -130,4 +132,5 @@ export type ComposeOutdoorGlanceSnapshotInput = {
   activity?: OutdoorGlanceActivityDraft | null;
   parking?: OutdoorGlanceParkingDraft | null;
   language?: string | null;
+  todaySpendText?: string | null;
 };

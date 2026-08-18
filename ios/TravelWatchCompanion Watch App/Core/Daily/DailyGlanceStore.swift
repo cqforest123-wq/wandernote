@@ -11,7 +11,11 @@ private enum DailyGlanceDiagnostics {
 
 @MainActor
 final class DailyGlanceStore: ObservableObject {
-    @Published private(set) var data: DailyGlanceData
+    @Published private(set) var data: DailyGlanceData {
+        didSet {
+            DailyGlanceCache.save(data)
+        }
+    }
 
     private let locationAltitudeProvider: LocationAltitudeProvider?
     private let parkingStore: ParkingStore
@@ -20,14 +24,17 @@ final class DailyGlanceStore: ObservableObject {
     private var refreshCancellable: AnyCancellable?
     private var hasStarted = false
 
+    /// `nil` hydrates from the last cached reading so a relaunch shows numbers
+    /// immediately instead of a screenful of "unavailable" while the sensors
+    /// spin up. Tests pass an explicit value.
     init(
-        data: DailyGlanceData = .empty(),
+        data: DailyGlanceData? = nil,
         locationAltitudeProvider: LocationAltitudeProvider? = nil,
         parkingStore: ParkingStore? = nil,
         activityStepProvider: ActivityStepProvider? = nil,
         placeNameResolver: PlaceNameResolver? = nil
     ) {
-        self.data = data
+        self.data = data ?? DailyGlanceCache.load() ?? .empty()
         self.locationAltitudeProvider =
             locationAltitudeProvider ?? LocationAltitudeProvider()
         self.parkingStore = parkingStore ?? ParkingStore()

@@ -29,6 +29,58 @@ struct GlanceData: Equatable {
     let lastUpdatedAt: Date?
     let isStale: Bool
     let warnings: [GlanceStatusLine]
+    /// Already formatted by the iPhone, which owns the home currency and the
+    /// per-currency decimal rules. Duplicating that money formatting in Swift
+    /// would be a second place for it to drift.
+    let todaySpendText: String?
+
+    init(
+        mode: GlanceMode,
+        title: String,
+        subtitle: String?,
+        currentLocationName: String?,
+        locationAuthorization: GlanceLocationAuthorization,
+        latitude: Double?,
+        longitude: Double?,
+        altitudeMeters: Double?,
+        temperatureCelsius: Double?,
+        weatherSummary: String?,
+        sunrise: Date?,
+        sunset: Date?,
+        daylightRemaining: TimeInterval?,
+        parkingLatitude: Double?,
+        parkingLongitude: Double?,
+        parkingDistanceMeters: Double?,
+        parkingSavedAt: Date?,
+        stepsToday: Int?,
+        lastUpdatedAt: Date?,
+        isStale: Bool,
+        warnings: [GlanceStatusLine],
+        todaySpendText: String? = nil
+    ) {
+        self.mode = mode
+        self.title = title
+        self.subtitle = subtitle
+        self.currentLocationName = currentLocationName
+        self.locationAuthorization = locationAuthorization
+        self.latitude = latitude
+        self.longitude = longitude
+        self.altitudeMeters = altitudeMeters
+        self.temperatureCelsius = temperatureCelsius
+        self.weatherSummary = weatherSummary
+        self.sunrise = sunrise
+        self.sunset = sunset
+        self.daylightRemaining = daylightRemaining
+        self.parkingLatitude = parkingLatitude
+        self.parkingLongitude = parkingLongitude
+        self.parkingDistanceMeters = parkingDistanceMeters
+        self.parkingSavedAt = parkingSavedAt
+        self.stepsToday = stepsToday
+        self.lastUpdatedAt = lastUpdatedAt
+        self.isStale = isStale
+        self.warnings = warnings
+        self.todaySpendText = todaySpendText
+    }
 
     static func unavailable(
         at date: Date

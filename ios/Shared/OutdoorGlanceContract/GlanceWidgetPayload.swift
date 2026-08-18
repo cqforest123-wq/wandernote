@@ -66,6 +66,7 @@ public struct GlanceWidgetPayload: Codable, Equatable, Sendable {
     public let stepsToday: Int?
     public let parkingSavedAt: Date?
     public let language: String?
+    public let todaySpendText: String?
 
     public init(
         updatedAt: Date,
@@ -77,7 +78,8 @@ public struct GlanceWidgetPayload: Codable, Equatable, Sendable {
         sunset: Date? = nil,
         stepsToday: Int? = nil,
         parkingSavedAt: Date? = nil,
-        language: String? = nil
+        language: String? = nil,
+        todaySpendText: String? = nil
     ) {
         self.updatedAt = updatedAt
         self.tripName = tripName
@@ -89,6 +91,7 @@ public struct GlanceWidgetPayload: Codable, Equatable, Sendable {
         self.stepsToday = stepsToday
         self.parkingSavedAt = parkingSavedAt
         self.language = language
+        self.todaySpendText = todaySpendText
     }
 
     /// Daylight left at `date`, recomputed on every timeline entry so the

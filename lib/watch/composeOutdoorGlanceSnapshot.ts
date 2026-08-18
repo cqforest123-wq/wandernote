@@ -49,11 +49,13 @@ export function composeOutdoorGlanceSnapshot(
     sun: normalizeSun(input.sun),
     activity: normalizeActivity(input.activity, generatedAt),
     parking: normalizeParking(input.parking),
-    language: normalizeLanguage(input.language),
+    language: normalizeOptionalText(input.language),
+    todaySpendText: normalizeOptionalText(input.todaySpendText),
   };
 }
 
-function normalizeLanguage(value?: string | null): string | null {
+/** Trimmed non-empty string, or null. */
+function normalizeOptionalText(value?: string | null): string | null {
   if (typeof value !== 'string') {
     return null;
   }
@@ -76,7 +78,8 @@ export function fingerprintOutdoorGlanceInput(
     sun: normalizeSun(input.sun),
     activity: normalizeActivity(input.activity, stableDate),
     parking: normalizeParking(input.parking),
-    language: normalizeLanguage(input.language),
+    language: normalizeOptionalText(input.language),
+    todaySpendText: normalizeOptionalText(input.todaySpendText),
   });
 }
 

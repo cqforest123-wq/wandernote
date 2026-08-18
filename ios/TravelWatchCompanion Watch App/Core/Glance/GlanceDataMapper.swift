@@ -133,7 +133,8 @@ enum GlanceDataMapper {
             stepsToday: resolvedSteps,
             lastUpdatedAt: snapshot.generatedAt,
             isStale: isStale,
-            warnings: isStale ? [.staleSnapshot] : []
+            warnings: isStale ? [.staleSnapshot] : [],
+            todaySpendText: snapshot.todaySpendText
         )
     }
 

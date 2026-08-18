@@ -26,7 +26,8 @@ enum GlanceWidgetPayloadWriter {
             sunset: glance.sunset,
             stepsToday: glance.stepsToday,
             parkingSavedAt: glance.parkingSavedAt,
-            language: language
+            language: language,
+            todaySpendText: glance.todaySpendText
         )
 
         guard payload != lastWritten else {

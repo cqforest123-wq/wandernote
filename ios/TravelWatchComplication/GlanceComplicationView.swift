@@ -56,8 +56,10 @@ struct GlanceComplicationView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            if let parking = parkingText {
-                Text(parking)
+            // Three lines is all this family fits. Today's spend is the more
+            // actionable of the two, so it wins when there is any.
+            if let third = entry.payload?.todaySpendText ?? parkingText {
+                Text(third)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)

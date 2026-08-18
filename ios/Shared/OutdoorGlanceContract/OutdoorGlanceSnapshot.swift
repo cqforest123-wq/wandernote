@@ -18,6 +18,8 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
     /// instead of following its own system locale. Optional and defaulted so
     /// snapshots written by older builds still decode at the same schema version.
     let language: String?
+    /// Today's spend, already formatted in the user's home currency by the app.
+    let todaySpendText: String?
 
     init(
         schemaVersion: Int,
@@ -31,7 +33,8 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
         sun: OutdoorGlanceSun?,
         activity: OutdoorGlanceActivity?,
         parking: OutdoorGlanceParking?,
-        language: String? = nil
+        language: String? = nil,
+        todaySpendText: String? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.snapshotId = snapshotId
@@ -45,6 +48,7 @@ struct OutdoorGlanceSnapshot: Codable, Equatable, Sendable {
         self.activity = activity
         self.parking = parking
         self.language = language
+        self.todaySpendText = todaySpendText
     }
 
     func isStale(at date: Date = Date()) -> Bool {

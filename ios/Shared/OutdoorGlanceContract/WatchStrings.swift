@@ -8,7 +8,19 @@ public enum WatchStrings {
     public nonisolated(unsafe) static var appLanguageOverride: String?
 
     private static var languageTable: [String: String] {
-        resolvedTable(for: appLanguageOverride ?? Locale.current.identifier)
+        resolvedTable(for: appLanguageOverride ?? systemLanguage)
+    }
+
+    /// The wearer's own language preference.
+    ///
+    /// Deliberately NOT `Locale.current`: that is negotiated against the
+    /// bundle's localizations, and this app keeps its strings in Swift rather
+    /// than in `.lproj` resources. The system therefore treats it as
+    /// English-only and `Locale.current` returns "en" no matter what language
+    /// the watch is set to — which is exactly what shipped and showed a
+    /// Chinese user an English watch face.
+    private static var systemLanguage: String {
+        Locale.preferredLanguages.first ?? "en"
     }
 
     /// Maps a BCP-47-ish identifier ("ja", "zh-Hant-TW", "fr_FR") onto one of
@@ -96,7 +108,9 @@ public enum WatchStrings {
         "mock.location": "San Francisco",
         "mock.carDistance": "0.8 km",
         "complication.description": "Sunset, daylight left and your parked car, on the watch face.",
-        "parking.elapsed": "Parked %@ ago"
+        "parking.elapsed": "Parked %@ ago",
+        "spend.today": "Spent today",
+        "updated.at": "Updated %@"
     ]
 
     private static let simplifiedChinese: [String: String] = [
@@ -128,7 +142,9 @@ public enum WatchStrings {
         "mock.location": "旧金山",
         "mock.carDistance": "0.8 公里",
         "complication.description": "把日落、剩余日照和停车时间放到表盘上。",
-        "parking.elapsed": "已停车 %@"
+        "parking.elapsed": "已停车 %@",
+        "spend.today": "今日花费",
+        "updated.at": "更新于 %@"
     ]
 
     private static let traditionalChinese: [String: String] = [
@@ -160,7 +176,9 @@ public enum WatchStrings {
         "mock.location": "舊金山",
         "mock.carDistance": "0.8 公里",
         "complication.description": "把日落、剩餘日照和停車時間放到錶盤上。",
-        "parking.elapsed": "已停車 %@"
+        "parking.elapsed": "已停車 %@",
+        "spend.today": "今日花費",
+        "updated.at": "更新於 %@"
     ]
 
     private static let japanese: [String: String] = [
@@ -192,7 +210,9 @@ public enum WatchStrings {
         "mock.location": "サンフランシスコ",
         "mock.carDistance": "0.8 km",
         "complication.description": "日の入り、残りの日照、駐車からの経過時間を文字盤に。",
-        "parking.elapsed": "駐車から %@"
+        "parking.elapsed": "駐車から %@",
+        "spend.today": "今日の支出",
+        "updated.at": "%@ 更新"
     ]
 
     private static let korean: [String: String] = [
@@ -224,7 +244,9 @@ public enum WatchStrings {
         "mock.location": "샌프란시스코",
         "mock.carDistance": "0.8 km",
         "complication.description": "일몰, 남은 낮 시간, 주차 경과 시간을 시계 페이스에.",
-        "parking.elapsed": "주차 후 %@"
+        "parking.elapsed": "주차 후 %@",
+        "spend.today": "오늘 지출",
+        "updated.at": "%@ 업데이트"
     ]
 
     private static let french: [String: String] = [
@@ -256,7 +278,9 @@ public enum WatchStrings {
         "mock.location": "San Francisco",
         "mock.carDistance": "0,8 km",
         "complication.description": "Coucher du soleil, jour restant et stationnement, sur le cadran.",
-        "parking.elapsed": "Garé depuis %@"
+        "parking.elapsed": "Garé depuis %@",
+        "spend.today": "Dépensé aujourd’hui",
+        "updated.at": "Mis à jour à %@"
     ]
 
     private static let spanish: [String: String] = [
@@ -288,7 +312,9 @@ public enum WatchStrings {
         "mock.location": "San Francisco",
         "mock.carDistance": "0,8 km",
         "complication.description": "Puesta de sol, luz restante y aparcamiento, en la esfera.",
-        "parking.elapsed": "Aparcado hace %@"
+        "parking.elapsed": "Aparcado hace %@",
+        "spend.today": "Gastado hoy",
+        "updated.at": "Actualizado a las %@"
     ]
 
     private static let thai: [String: String] = [
@@ -320,6 +346,8 @@ public enum WatchStrings {
         "mock.location": "ซานฟรานซิสโก",
         "mock.carDistance": "0.8 กม.",
         "complication.description": "พระอาทิตย์ตก เวลากลางวันที่เหลือ และเวลาจอดรถ บนหน้าปัด",
-        "parking.elapsed": "จอดมาแล้ว %@"
+        "parking.elapsed": "จอดมาแล้ว %@",
+        "spend.today": "ใช้จ่ายวันนี้",
+        "updated.at": "อัปเดตเมื่อ %@"
     ]
 }

@@ -25,57 +25,152 @@ struct GlanceContentView: View {
             unavailableView
 
         case .travel, .daily, .stale:
-            // No "Trip" row: the header already carries the trip, and on a 46mm
-            // face the first screen only fits about four lines. Repeating it
-            // there pushed every live metric below the fold.
+            daylightHero
+
             metricRow(
+                icon: "mappin.and.ellipse",
+                tint: .teal,
                 title: WatchStrings.text("location"),
                 value: formatLocation(glance)
             )
 
             metricRow(
+                icon: "mountain.2",
+                tint: .green,
                 title: WatchStrings.text("altitude"),
                 value: formatAltitude(glance.altitudeMeters)
             )
 
-            metricRow(
-                title: WatchStrings.text("weather"),
-                value: formatTemperature(
-                    glance.temperatureCelsius
+            // Weather rides on the iPhone snapshot's destination forecast, so
+            // Daily mode can never have one. Showing a permanently empty row
+            // there just wastes a line of a very small screen.
+            if glance.mode != .daily {
+                metricRow(
+                    icon: "thermometer.medium",
+                    tint: .orange,
+                    title: WatchStrings.text("weather"),
+                    value: formatTemperature(
+                        glance.temperatureCelsius
+                    )
                 )
-            )
+            }
 
             metricRow(
+                icon: "sunset",
+                tint: .orange,
                 title: WatchStrings.text("sunset"),
                 value: formatTime(glance.sunset)
             )
 
             metricRow(
-                title: WatchStrings.text("daylight"),
-                value: formatDuration(glance.daylightRemaining)
-            )
-
-            Divider()
-
-            metricRow(
+                icon: "figure.walk",
+                tint: .mint,
                 title: WatchStrings.text("steps"),
                 value: formatSteps(glance.stepsToday)
             )
 
+            if let spend = glance.todaySpendText {
+                metricRow(
+                    icon: "creditcard",
+                    tint: .yellow,
+                    title: WatchStrings.text("spend.today"),
+                    value: spend
+                )
+            }
+
+            Divider()
+
             metricRow(
+                icon: "parkingsign.circle",
+                tint: .blue,
                 title: WatchStrings.text("car"),
                 value: formatParking(glance)
             )
 
             parkingControls
 
-            Divider()
+            Text(
+                WatchStrings.format(
+                    "updated.at",
+                    formatTime(glance.lastUpdatedAt)
+                )
+            )
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 4)
+        }
+    }
 
+    /// The one thing worth seeing without reading: how much daylight is left.
+    ///
+    /// Falls back to a plain sunset time when the sun times are unknown rather
+    /// than drawing an empty ring, which would read as "no daylight left".
+    @ViewBuilder
+    private var daylightHero: some View {
+        if let remaining = glance.daylightRemaining {
+            HStack(spacing: 14) {
+                // The ring needs a sunrise/sunset pair to measure against. When
+                // only the remaining time is known the number still shows —
+                // losing the ring must never cost us the value itself.
+                if let fraction = daylightFraction {
+                    Gauge(value: fraction) {
+                        Image(systemName: "sun.horizon.fill")
+                    } currentValueLabel: {
+                        Image(systemName: "sun.max.fill")
+                            .font(.caption)
+                    }
+                    .gaugeStyle(.accessoryCircular)
+                    .tint(
+                        Gradient(colors: [.orange, .yellow])
+                    )
+                } else {
+                    Image(systemName: "sun.horizon.fill")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(WatchStrings.text("daylight"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Text(formatDuration(remaining))
+                        .font(.title3.weight(.semibold))
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 2)
+        } else {
             metricRow(
-                title: WatchStrings.text("updated"),
-                value: formatTime(glance.lastUpdatedAt)
+                icon: "sun.horizon",
+                tint: .orange,
+                title: WatchStrings.text("daylight"),
+                value: WatchStrings.text("value.unavailable")
             )
         }
+    }
+
+    /// Share of today's daylight still ahead, clamped so dusk never renders as
+    /// a negative or overfull ring.
+    private var daylightFraction: Double? {
+        guard let sunrise = glance.sunrise,
+              let sunset = glance.sunset,
+              let remaining = glance.daylightRemaining,
+              sunset > sunrise else {
+            return nil
+        }
+
+        let total = sunset.timeIntervalSince(sunrise)
+
+        guard total > 0 else {
+            return nil
+        }
+
+        return min(max(remaining / total, 0), 1)
     }
 
     private var headerView: some View {
@@ -162,10 +257,17 @@ struct GlanceContentView: View {
     }
 
     private func metricRow(
+        icon: String,
+        tint: Color,
         title: String,
         value: String
     ) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(tint)
+                .frame(width: 16, alignment: .leading)
+
             Text(title)
                 .font(.caption2)
                 .foregroundStyle(.secondary)

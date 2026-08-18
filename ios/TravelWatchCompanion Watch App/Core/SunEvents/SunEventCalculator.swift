@@ -153,9 +153,41 @@ enum SunEventCalculator {
             localMeanTime - longitudeHour
         )
 
-        return utcMidnight.addingTimeInterval(
+        let instant = utcMidnight.addingTimeInterval(
             universalTime * 60 * 60
         )
+
+        return snapped(
+            instant,
+            toLocalDayOf: date,
+            calendar: calendar
+        )
+    }
+
+    /// Pull an event onto the same local day as the reference date.
+    ///
+    /// The algorithm works from UTC midnight, so for far-eastern or far-western
+    /// longitudes the instant it produces can land on the neighbouring local
+    /// day — Guiyang at 17:00 returned *tomorrow's* sunrise next to *today's*
+    /// sunset. Defensible as "the next sunrise", but it makes the pair
+    /// inconsistent, and anything measuring the span between them (a daylight
+    /// gauge) then gets a negative interval and gives up.
+    private static func snapped(
+        _ instant: Date,
+        toLocalDayOf reference: Date,
+        calendar: Calendar
+    ) -> Date {
+        let day: TimeInterval = 24 * 60 * 60
+
+        for shift in [0.0, -day, day] {
+            let candidate = instant.addingTimeInterval(shift)
+
+            if calendar.isDate(candidate, inSameDayAs: reference) {
+                return candidate
+            }
+        }
+
+        return instant
     }
 
     private static func utcMidnight(

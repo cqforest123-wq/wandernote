@@ -288,3 +288,42 @@ The target now uses `com.litao0729.wandernote.watchkitapp.glance`.
 Adding the App Groups capability itself has to happen in the Xcode GUI once per
 target — `xcodebuild -allowProvisioningUpdates` will not register a new
 capability on an App ID.
+
+## The app icon was never the real one
+
+`ios/WanderNote/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png`
+held Expo's grey placeholder — concentric circles on a grid, effectively blank.
+The real artwork lives at `assets/icon.png` and reaches the native project only
+through `expo prebuild`, which this repo can never run (see above). So the
+shipped binary, and therefore the App Store product page, carried a blank icon.
+
+Both icon sets now hold a flattened copy of `assets/icon.png`. iOS app icons
+must have no alpha channel, and the source does, so it is composited onto white
+rather than copied straight across.
+
+If `assets/icon.png` is ever redesigned, both of these must be updated by hand:
+
+- `ios/WanderNote/Images.xcassets/AppIcon.appiconset/App-Icon-1024x1024@1x.png`
+- `ios/TravelWatchCompanion Watch App/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png`
+
+Verify the built product rather than the source, because a stale asset catalog
+looks identical in git:
+
+```bash
+xcrun pngcrush -revert-iphone-optimizations "$APP/AppIcon60x60@2x.png" /tmp/icon.png
+```
+
+watchOS also caches home-screen icons across overwrite installs — uninstall
+before reinstalling, or the old icon persists no matter what the bundle holds.
+
+## Version numbers, again
+
+The iOS target uses a real `WanderNote/Info.plist`, not `GENERATE_INFOPLIST_FILE`,
+and Expo wrote literal `1.0.0` / `1` into it. `MARKETING_VERSION` and
+`CURRENT_PROJECT_VERSION` in the pbxproj were therefore ignored for the app
+itself while the Watch target — which does generate its plist — picked them up
+correctly. The binary built as 1.0.0 (1) with a 1.0.4 (12) watch app inside it.
+
+The plist now reads `$(MARKETING_VERSION)` and `$(CURRENT_PROJECT_VERSION)`, so
+the pbxproj is the single source. Check the built `Info.plist`, not the pbxproj,
+when bumping a release.
