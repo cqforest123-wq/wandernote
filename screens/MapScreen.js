@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { pluralUnit } from '../lib/models';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
 const { width, height } = Dimensions.get('window');
@@ -72,6 +73,57 @@ function buildFootprint(trip) {
   }
 
   return days;
+}
+
+
+/**
+ * A view that actually contains the trip.
+ *
+ * Selecting a trip used to zoom to a fixed 8-degree window — roughly 900km
+ * across — so the footprints of any city trip collapsed into a single dot and
+ * the feature was invisible for exactly the trips people take most. This fits
+ * the window to the photos, falling back to the destination pin for trips that
+ * have no located photos yet.
+ */
+function regionForTrip(trip) {
+  const points = [];
+
+  for (const day of trip?.days || []) {
+    for (const photo of day?.photos || []) {
+      const coords = normalizeCoords(photo?.coords);
+      if (coords) points.push(coords);
+    }
+    for (const visit of day?.visits || []) {
+      const coords = normalizeCoords(visit?.coords);
+      if (coords) points.push(coords);
+    }
+  }
+
+  const centre = normalizeCoords(trip?.coords);
+
+  if (points.length === 0) {
+    return centre
+      ? { latitude: centre.lat, longitude: centre.lng, latitudeDelta: 0.6, longitudeDelta: 0.6 }
+      : null;
+  }
+
+  if (centre) points.push(centre);
+
+  const lats = points.map(p => p.lat);
+  const lngs = points.map(p => p.lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
+
+  // A floor of 0.02 degrees keeps a single spot from zooming to street level,
+  // where a map of one rooftop tells the reader nothing.
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLng + maxLng) / 2,
+    latitudeDelta: clamp((maxLat - minLat) * 1.8, 0.02, 80),
+    longitudeDelta: clamp((maxLng - minLng) * 1.8, 0.02, 160),
+  };
 }
 
 const DAY_ROUTE_COLORS = ['#D4AF37', '#4ECDC4', '#FF8C69', '#9B8EC4', '#6BCB77', '#64B5F6'];
@@ -270,14 +322,11 @@ export default function MapScreen({ trips }) {
                 key={trip.id}
                 style={[s.tripChip, selectedTrip?.id === trip.id && s.tripChipActive]}
                 onPress={() => {
-                  setSelectedTrip(selectedTrip?.id === trip.id ? null : trip);
-                  if (trip.coords) {
-                    mapRef.current?.animateToRegion({
-                      latitude: trip.coords.lat,
-                      longitude: trip.coords.lng,
-                      latitudeDelta: 8,
-                      longitudeDelta: 8,
-                    }, 800);
+                  const next = selectedTrip?.id === trip.id ? null : trip;
+                  setSelectedTrip(next);
+                  const region = next && regionForTrip(next);
+                  if (region) {
+                    mapRef.current?.animateToRegion(region, 800);
                   }
                 }}>
                 {firstPhotoUri(trip) ? (
@@ -288,7 +337,7 @@ export default function MapScreen({ trips }) {
                 <Text style={[s.tripChipCity, selectedTrip?.id === trip.id && {color:'#D4AF37'}]}>
                   {trip.city}
                 </Text>
-                <Text style={s.tripChipMeta}>{trip.days?.length || 0} {t('unit_days')}</Text>
+                <Text style={s.tripChipMeta}>{trip.days?.length || 0} {pluralUnit(t, trip.days?.length || 0, 'unit_day_one', 'unit_days')}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -317,7 +366,7 @@ export default function MapScreen({ trips }) {
               </View>
               <View style={s.modalStats}>
                 {[
-                  [String(selectedTrip.days?.length || 0), t('unit_days')],
+                  [String(selectedTrip.days?.length || 0), t('stat_days')],
                   [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.memos||[]).length,0)), t('stat_memos')],
                   [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.photos||[]).length,0)), t('stat_photos')],
                 ].map(([n,l]) => (

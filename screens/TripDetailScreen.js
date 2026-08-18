@@ -6,7 +6,7 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, Touch
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
-import { createDay } from '../lib/models';
+import { createDay, pluralUnit } from '../lib/models';
 import {
   collectTripExpenses,
   formatMoney,
@@ -261,11 +261,6 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={s.topRow}>
           <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← {t('back')}</Text></TouchableOpacity>
           <View style={{flexDirection:'row',gap:12}}>
-            {visitsSupported() && (
-              <TouchableOpacity onPress={fillFromVisits}>
-                <Text style={{color:'#6BCB77',fontSize:13}}>{t('visits_fill_action')} 👣</Text>
-              </TouchableOpacity>
-            )}
             <TouchableOpacity onPress={shareTripImage} disabled={savingCard}>
               <Text style={{color:'#D4AF37',fontSize:13,opacity:savingCard?0.5:1}}>
                 {savingCard ? t('trip_share_card_making') : `${t('trip_share_card')} ▣`}
@@ -430,7 +425,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           </View>
         ) : (
           <>
-            <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {t('unit_days')}</Text>
+            <View style={s.logHeader}>
+              <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {pluralUnit(t, trip.days.length, 'unit_day_one', 'unit_days')}</Text>
+              {visitsSupported() && (
+                <TouchableOpacity onPress={fillFromVisits} hitSlop={{top:8,bottom:8,left:8,right:8}}>
+                  <Text style={s.logAction}>{t('visits_fill_action')} 👣</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {[...trip.days].reverse().map((day,i)=>{
               const photos = day.photos||[];
               return (
@@ -624,7 +626,9 @@ const s = StyleSheet.create({
   offscreen:{position:'absolute',left:-9999,top:0,width:TRIP_CARD_WIDTH},
   container:{flex:1,backgroundColor:'#0D0D0D'},
   scroll:{padding:24,paddingBottom:100},
-  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20},
+  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20,gap:16},
+  logHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+  logAction:{color:'#6BCB77',fontSize:13},
   backText:{color:'#D4AF37',fontSize:15},
   deleteText:{color:'#FF6B6B',fontSize:13},
   tripHeader:{flexDirection:'row',alignItems:'center',gap:16,marginBottom:24},

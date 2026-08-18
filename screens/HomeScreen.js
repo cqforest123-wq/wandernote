@@ -3,7 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
-import { createTrip } from '../lib/models';
+import { createTrip, pluralUnit } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
@@ -697,7 +697,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             </View>
             <View style={{flex:1}}>
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
-              <Text style={s.countryName}>{trip.country} · {trip.days.length} {t('unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {t('unit_memos')}</Text>
+              <Text style={s.countryName}>{trip.country} · {trip.days.length} {pluralUnit(t, trip.days.length, 'unit_day_one', 'unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {pluralUnit(t, trip.days.reduce((a,d)=>a+d.memos.length,0), 'unit_memo_one', 'unit_memos')}</Text>
             </View>
             <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
           </TouchableOpacity>

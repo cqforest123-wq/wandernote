@@ -111,7 +111,11 @@ export default function SearchScreen({ navigation, trips }) {
             </Text>
             {!!result.subtitle && (
               <Text style={s.rowSubtitle} numberOfLines={1}>
-                {result.subtitle}
+                {/* A checklist's subtitle is its item count, which on its own
+                    reads as a stray number. */}
+                {result.type === 'checklist'
+                  ? t('search_items_count').replace('%1', result.subtitle)
+                  : result.subtitle}
               </Text>
             )}
           </TouchableOpacity>
