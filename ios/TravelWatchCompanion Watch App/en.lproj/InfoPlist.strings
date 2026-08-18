@@ -1,0 +1,5 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "Read your step count so the glance can show how far you have walked today.";
+"NSLocationWhenInUseUsageDescription" = "Show where you are, your altitude, and how much daylight is left, and remember where you parked.";
+"NSMotionUsageDescription" = "Read the barometer to show air pressure and whether it is rising or falling — an early sign of changing weather outdoors.";
