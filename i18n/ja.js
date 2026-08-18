@@ -338,4 +338,13 @@ alert_logout_confirm: 'ログアウトしますか？',
   expense_cat_shopping: '買い物',
   expense_cat_other: 'その他',
   map_footprint: '足あと',
+
+  // 出发提醒
+  notify_departure_setting: '出発リマインダー',
+  notify_on: 'オン',
+  notify_off: 'オフ',
+  notify_departure_title: '荷造りの時間です',
+  notify_departure_body: '明日は%sへ出発です。',
+  notify_denied_title: '通知がオフです',
+  notify_denied_body: '設定で WanderNote の通知をオンにすると、出発前夜にお知らせします。',
 };

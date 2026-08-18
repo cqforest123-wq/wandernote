@@ -430,4 +430,13 @@ export default {
   expense_cat_shopping: 'Shopping',
   expense_cat_other: 'Other',
   map_footprint: 'Footprint',
+
+  // 出发提醒
+  notify_departure_setting: 'Departure reminder',
+  notify_on: 'On',
+  notify_off: 'Off',
+  notify_departure_title: 'Time to pack',
+  notify_departure_body: 'You leave for %s tomorrow.',
+  notify_denied_title: 'Notifications are off',
+  notify_denied_body: 'Turn them on for WanderNote in Settings to get a reminder the evening before you travel.',
 };

@@ -59,5 +59,21 @@ target 'WanderNote' do
       :mac_catalyst_enabled => false,
       :ccache_enabled => ccache_enabled?(podfile_properties),
     )
+
+    # fmt 11.0.2 (pinned by React Native) fails to build with this Xcode's
+    # clang: its consteval format-string constructors are rejected as
+    # "not a constant expression" while compiling format.cc. fmt disables
+    # consteval by itself below C++20, so building this one pod as C++17 is
+    # enough. Everything else keeps C++20.
+    #
+    # This went unnoticed for a long time because a stale object file sat in
+    # DerivedData — the first real recompile is what surfaced it.
+    installer.pods_project.targets.each do |target|
+      next unless target.name == 'fmt'
+
+      target.build_configurations.each do |config|
+        config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+      end
+    end
   end
 end

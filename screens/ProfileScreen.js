@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
 import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, currencySymbol, getHomeCurrency, setHomeCurrency } from '../lib/currency';
+import { areRemindersEnabled, setRemindersEnabled } from '../lib/notifications';
 // 直接读 app.json，避免版本号在这里再次写死后跟着 bump 漂移
 import appConfig from '../app.json';
 
@@ -35,6 +36,29 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
   useEffect(() => {
     getHomeCurrency().then(setHomeCurrencyState);
   }, []);
+
+  const [remindersOn, setRemindersOn] = useState(false);
+  const [togglingReminders, setTogglingReminders] = useState(false);
+
+  useEffect(() => {
+    areRemindersEnabled().then(setRemindersOn);
+  }, []);
+
+  // The permission prompt only ever appears here, when the user reaches for the
+  // switch. If they decline, the switch goes back rather than lying.
+  const toggleReminders = async () => {
+    if (togglingReminders) return;
+    setTogglingReminders(true);
+    try {
+      const next = await setRemindersEnabled(!remindersOn, trips, t);
+      setRemindersOn(next);
+      if (!remindersOn && !next) {
+        Alert.alert(t('notify_denied_title'), t('notify_denied_body'));
+      }
+    } finally {
+      setTogglingReminders(false);
+    }
+  };
 
   const selectCurrency = async (code) => {
     setHomeCurrencyState(code);
@@ -300,6 +324,14 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             <Text style={s.settingIcon}>🌐</Text>
             <Text style={s.settingLabel}>{currentLangLabel}</Text>
             <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.settingRow} onPress={toggleReminders} disabled={togglingReminders}>
+            <Text style={s.settingIcon}>🔔</Text>
+            <Text style={s.settingLabel}>{t('notify_departure_setting')}</Text>
+            <Text style={[s.settingValue, remindersOn && {color:'#D4AF37'}]}>
+              {remindersOn ? t('notify_on') : t('notify_off')}
+            </Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={s.settingRow} onPress={()=>setShowCurrencyModal(true)}>

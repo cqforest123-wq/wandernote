@@ -354,4 +354,13 @@ alert_logout_confirm: 'Se déconnecter ?',
   expense_cat_shopping: 'Achats',
   expense_cat_other: 'Autre',
   map_footprint: 'Parcours',
+
+  // 出发提醒
+  notify_departure_setting: 'Rappel de départ',
+  notify_on: 'Activé',
+  notify_off: 'Désactivé',
+  notify_departure_title: 'Il est temps de faire les valises',
+  notify_departure_body: 'Vous partez pour %s demain.',
+  notify_denied_title: 'Notifications désactivées',
+  notify_denied_body: 'Activez-les pour WanderNote dans Réglages afin d’être prévenu la veille du départ.',
 };

@@ -1,6 +1,6 @@
 {
   "name": "wandernote",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
@@ -13,7 +13,9 @@
     "test:watch-parking": "swiftc ios/Shared/OutdoorGlanceContract/GlanceWidgetPayload.swift 'ios/TravelWatchCompanion Watch App/Core/Parking/GeoDistance.swift' 'ios/TravelWatchCompanion Watch App/Core/Parking/ParkingStore.swift' scripts/watchParkingTests.swift -o /tmp/wandernote-watch-parking-tests && /tmp/wandernote-watch-parking-tests",
     "test:currency": "node scripts/currencyTests.mjs",
     "test:watch-complication": "swiftc ios/Shared/OutdoorGlanceContract/GlanceWidgetPayload.swift scripts/watchComplicationTests.swift -o /tmp/wandernote-watch-complication-tests && /tmp/wandernote-watch-complication-tests",
-    "test:watch-sun": "swiftc 'ios/TravelWatchCompanion Watch App/Core/SunEvents/SunEventCalculator.swift' scripts/watchSunEventTests.swift -o /tmp/wandernote-watch-sun-tests && /tmp/wandernote-watch-sun-tests"
+    "test:watch-sun": "swiftc 'ios/TravelWatchCompanion Watch App/Core/SunEvents/SunEventCalculator.swift' scripts/watchSunEventTests.swift -o /tmp/wandernote-watch-sun-tests && /tmp/wandernote-watch-sun-tests",
+    "check:versions": "node scripts/checkVersions.mjs",
+    "test:notifications": "node scripts/notificationTests.mjs"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -27,6 +29,7 @@
     "expo-image-picker": "~17.0.11",
     "expo-localization": "^17.0.8",
     "expo-location": "~19.0.8",
+    "expo-notifications": "~0.32.17",
     "expo-sharing": "~14.0.8",
     "expo-splash-screen": "~31.0.13",
     "expo-status-bar": "~3.0.9",

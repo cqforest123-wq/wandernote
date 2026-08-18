@@ -339,4 +339,13 @@ alert_logout_confirm: '¿Cerrar sesión?',
   expense_cat_shopping: 'Compras',
   expense_cat_other: 'Otros',
   map_footprint: 'Recorrido',
+
+  // 出发提醒
+  notify_departure_setting: 'Recordatorio de salida',
+  notify_on: 'Activado',
+  notify_off: 'Desactivado',
+  notify_departure_title: 'Hora de hacer la maleta',
+  notify_departure_body: 'Mañana sales hacia %s.',
+  notify_denied_title: 'Notificaciones desactivadas',
+  notify_denied_body: 'Actívalas para WanderNote en Ajustes y te avisaremos la víspera del viaje.',
 };

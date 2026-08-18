@@ -430,4 +430,13 @@ export default {
   expense_cat_shopping: '购物',
   expense_cat_other: '其他',
   map_footprint: '足迹',
+
+  // 出发提醒
+  notify_departure_setting: '出发提醒',
+  notify_on: '已开启',
+  notify_off: '已关闭',
+  notify_departure_title: '该收拾行李了',
+  notify_departure_body: '明天出发去%s。',
+  notify_denied_title: '通知未开启',
+  notify_denied_body: '在系统设置里为 WanderNote 打开通知，就能在出发前一晚收到提醒。',
 };

@@ -337,3 +337,25 @@ same 1024px file, matching how prebuild generates them).
 
 Anything under `ios/WanderNote/Images.xcassets/` is suspect for the same reason:
 it was written once by prebuild and can never be refreshed by it again.
+
+## fmt fails to build after any `pod install`
+
+`ios/Pods/` is gitignored and the committed `Podfile.lock` was stale (it did not
+mention fmt at all), so the pods that were building came from some earlier
+install that was never recorded. Running `pod install` regenerates them from the
+current podspecs and pulls fmt 11.0.2, which this Xcode's clang rejects:
+
+```
+fmt/include/fmt/format-inl.h:59:24: error: call to consteval function
+'fmt::basic_format_string<...>' is not a constant expression
+```
+
+React Native pins fmt to 11.0.2, so downgrading is not an option, and
+`FMT_USE_CONSTEVAL` cannot be overridden from the command line — `base.h`
+redefines it unconditionally. fmt turns consteval off by itself below C++20, so
+the Podfile's `post_install` now builds that one pod as C++17. Everything else
+stays C++20.
+
+Note this was latent, not caused by adding a dependency: a stale `format.o` in
+DerivedData had been reused for a long time. A clean checkout or CI would have
+hit it regardless.

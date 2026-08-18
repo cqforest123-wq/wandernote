@@ -11,6 +11,7 @@ import { initSync, syncTripsUp } from './lib/sync';
 import { supabase } from './lib/supabase';
 import { geocodeCity } from './lib/geocoding';
 import OutdoorGlanceSync from './lib/watch/OutdoorGlanceSync';
+import { syncDepartureReminders } from './lib/notifications';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -141,6 +142,14 @@ function MainApp({ session, onRequestSignIn }) {
       return next;
     });
   };
+
+  // Departure reminders are rebuilt whenever trips change, so editing or
+  // deleting a trip can never leave a reminder behind for it. A no-op when the
+  // user has not switched them on.
+  useEffect(() => {
+    if (!loaded) return;
+    syncDepartureReminders(trips, t);
+  }, [trips, loaded, t]);
 
   const tabs = [
     {key:'home', icon:'🗺', label:t('tab_home')},

@@ -338,4 +338,13 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   expense_cat_shopping: '쇼핑',
   expense_cat_other: '기타',
   map_footprint: '발자취',
+
+  // 出发提醒
+  notify_departure_setting: '출발 알림',
+  notify_on: '켜짐',
+  notify_off: '꺼짐',
+  notify_departure_title: '짐 쌀 시간이에요',
+  notify_departure_body: '내일 %s(으)로 떠납니다.',
+  notify_denied_title: '알림이 꺼져 있습니다',
+  notify_denied_body: '설정에서 WanderNote 알림을 켜면 출발 전날 저녁에 알려드립니다.',
 };

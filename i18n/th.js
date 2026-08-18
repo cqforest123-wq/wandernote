@@ -339,4 +339,13 @@ alert_logout_confirm: 'ออกจากระบบ?',
   expense_cat_shopping: 'ช้อปปิ้ง',
   expense_cat_other: 'อื่น ๆ',
   map_footprint: 'เส้นทาง',
+
+  // 出发提醒
+  notify_departure_setting: 'เตือนก่อนออกเดินทาง',
+  notify_on: 'เปิด',
+  notify_off: 'ปิด',
+  notify_departure_title: 'ได้เวลาเก็บกระเป๋า',
+  notify_departure_body: 'พรุ่งนี้คุณจะออกเดินทางไป %s',
+  notify_denied_title: 'การแจ้งเตือนปิดอยู่',
+  notify_denied_body: 'เปิดการแจ้งเตือนให้ WanderNote ในการตั้งค่า เพื่อรับเตือนในเย็นก่อนออกเดินทาง',
 };
