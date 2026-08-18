@@ -225,6 +225,20 @@ Strict requirements:
       mode,
       trip: selectedTrip,
       day: mode === 'summary' ? null : selectedDay,
+      // Without these the body came out in English under a Chinese heading.
+      labels: {
+        place: t('fb_place'),
+        diaryTitle: dest => `${dest} · ${t('ai_diary')}`,
+        summaryTitle: dest => `${dest} · ${t('ai_summary')}`,
+        stats: (days, notes, photos) =>
+          t('fb_stats')
+            .replace('%1', String(days))
+            .replace('%2', String(notes))
+            .replace('%3', String(photos)),
+        notes: t('fb_notes'),
+        empty: t('fb_empty'),
+        hashtags: t('fb_hashtags'),
+      },
     });
 
     if (!selectedTrip || (mode !== 'summary' && !selectedDay)) {

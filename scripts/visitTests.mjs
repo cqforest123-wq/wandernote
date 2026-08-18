@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 const src = readFileSync(new URL('../lib/visitsToDays.js', import.meta.url), 'utf8');
 const {
   tidyVisits, groupVisitsByDay, mergeVisitsIntoTrip, dayKey, stayMinutes, MIN_STAY_MINUTES,
+  summariseDayVisits,
 } = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'));
 
 let failed = 0;
@@ -116,6 +117,27 @@ for (const [name, value] of [['null trip', null], ['no days', {}], ['empty days'
   ok(`${name} adds nothing`, r.addedVisits === 0);
 }
 check('no visits at all', mergeVisitsIntoTrip(trip, []).addedVisits, 0);
+
+// --- the day summary -----------------------------------------------------
+check('a day with no visits says nothing', summariseDayVisits({ }), null);
+check('an empty list says nothing', summariseDayVisits({ visits: [] }), null);
+
+const summary = summariseDayVisits({ visits: [
+  visit(kyoto, at(2026, 3, 15, 9), 90),
+  visit(osaka, at(2026, 3, 15, 14), 45),
+]});
+check('counts the stops', summary.places, 2);
+check('totals the minutes', summary.minutes, 135);
+check('splits into hours', summary.hours, 2);
+check('and remainder minutes', summary.remainderMinutes, 15);
+
+// An ongoing visit has no duration yet but is still somewhere you went.
+const ongoing = summariseDayVisits({ visits: [visit(kyoto, at(2026, 3, 15, 9), null)] });
+check('an ongoing stop still counts as a place', ongoing.places, 1);
+check('and contributes no time', ongoing.minutes, 0);
+
+check('a visit with broken coordinates is ignored',
+  summariseDayVisits({ visits: [{ coords: { lat: 'x' }, arrivalAt: 1 }] }), null);
 
 if (failed) { console.error(`\n${failed} visit test(s) failed`); process.exit(1); }
 console.log('visit tests passed');

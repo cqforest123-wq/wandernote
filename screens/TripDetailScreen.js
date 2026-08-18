@@ -22,7 +22,7 @@ import TripShareCard, { TRIP_CARD_WIDTH } from '../components/TripShareCard';
 import { buildTripShareStats } from '../lib/tripShareStats';
 import { resolveUsesMetric } from '../lib/currency';
 import { loadVisits, visitsSupported } from '../lib/visits';
-import { mergeVisitsIntoTrip } from '../lib/visitsToDays';
+import { mergeVisitsIntoTrip, summariseDayVisits } from '../lib/visitsToDays';
 
 const EXPENSE_CATEGORY_LABEL_KEYS = {
   food: 'expense_cat_food',
@@ -456,6 +456,21 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                     <View style={s.dayStats}>
                       {day.memos.length>0 && <Text style={s.dayStat}>📝 {day.memos.length}</Text>}
                       {photos.length>0 && <Text style={s.dayStat}>📸 {photos.length}</Text>}
+                      {(() => {
+                        // Automatic footprints only paid off on the map, which
+                        // is a separate tab — so the day they belong to said
+                        // nothing about them.
+                        const visited = summariseDayVisits(day);
+                        if (!visited) return null;
+                        const duration = visited.hours > 0
+                          ? t('visits_day_hm').replace('%1', visited.hours).replace('%2', visited.remainderMinutes)
+                          : t('visits_day_m').replace('%1', visited.minutes);
+                        return (
+                          <Text style={s.dayStat}>
+                            {`👣 ${t('visits_day_places').replace('%1', visited.places)} · ${duration}`}
+                          </Text>
+                        );
+                      })()}
                     </View>
                   </View>
                   <Text style={s.dayArrow}>→</Text>
