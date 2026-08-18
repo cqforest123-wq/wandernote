@@ -7,6 +7,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
 import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, UNIT_CHOICES, currencySymbol, getHomeCurrency, getUnitPreference, setHomeCurrency, setUnitPreference } from '../lib/currency';
+import { disableVisitTracking, enableVisitTracking, getVisitStatus, visitsSupported } from '../lib/visits';
 import { areRemindersEnabled, setRemindersEnabled } from '../lib/notifications';
 import { clearDiagnostics, formatDiagnostics, readDiagnostics } from '../lib/diagnostics';
 import * as Clipboard from 'expo-clipboard';
@@ -77,6 +78,50 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
       }
     } finally {
       setTogglingReminders(false);
+    }
+  };
+
+  const [visitsOn, setVisitsOn] = useState(false);
+  const [togglingVisits, setTogglingVisits] = useState(false);
+
+  useEffect(() => {
+    getVisitStatus().then(status => setVisitsOn(!!status?.enabled));
+  }, []);
+
+  /**
+   * Turn automatic footprints on or off.
+   *
+   * This asks for Always location, which is a lot to ask, so it is off until
+   * the user reaches for it here and the switch goes back if iOS refuses —
+   * showing "on" over a permission that was declined would be a lie.
+   */
+  const toggleVisits = async () => {
+    if (togglingVisits) return;
+    setTogglingVisits(true);
+
+    try {
+      if (visitsOn) {
+        await disableVisitTracking();
+        setVisitsOn(false);
+        return;
+      }
+
+      const reason = await enableVisitTracking();
+
+      if (reason) {
+        setVisitsOn(false);
+        Alert.alert(
+          t('visits_denied_title'),
+          reason === 'needs-always-authorization'
+            ? t('visits_denied_body')
+            : t('visits_unavailable_body')
+        );
+        return;
+      }
+
+      setVisitsOn(true);
+    } finally {
+      setTogglingVisits(false);
     }
   };
 
@@ -372,6 +417,16 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
               {remindersOn ? t('notify_on') : t('notify_off')}
             </Text>
           </TouchableOpacity>
+
+          {visitsSupported() && (
+            <TouchableOpacity style={s.settingRow} onPress={toggleVisits} disabled={togglingVisits}>
+              <Text style={s.settingIcon}>👣</Text>
+              <Text style={s.settingLabel}>{t('visits_setting')}</Text>
+              <Text style={[s.settingValue, visitsOn && {color:'#D4AF37'}]}>
+                {visitsOn ? t('notify_on') : t('notify_off')}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           <TouchableOpacity style={s.settingRow} onPress={()=>setShowUnitsModal(true)}>
             <Text style={s.settingIcon}>📏</Text>

@@ -3,3 +3,4 @@
 "NSCameraUsageDescription" = "在旅途中拍照，并直接存进当天的旅行记录。";
 "NSPhotoLibraryUsageDescription" = "把你的照片加进旅程。使用「从照片创建旅程」时，会在你的设备上读取照片的时间和地点，用来分天并标到地图上。";
 "NSLocationWhenInUseUsageDescription" = "显示你与目的地的距离、把足迹标到地图上，并把当前海拔与日照同步到 Apple Watch。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "记录你停留过的地方，让旅程地图自己长出来，你什么都不用做。这些记录只存在本机，绝不上传。";

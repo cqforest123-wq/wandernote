@@ -12,6 +12,9 @@
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		451E76E18EC04B349F70F056 /* libPods-WanderNote.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F1B9074F63DCF4A44A9CEEF /* libPods-WanderNote.a */; };
 		73BD0B12CEAEF99109E30AE9 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF150D415D277653A24C1BB0 /* ExpoModulesProvider.swift */; };
+		8B57D9B12FD9A00100B4A0C1 /* VisitTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9B02FD9A00100B4A0C1 /* VisitTracker.swift */; };
+		8B57D9B32FD9A00100B4A0C1 /* VisitTrackerBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9B22FD9A00100B4A0C1 /* VisitTrackerBridge.swift */; };
+		8B57D9B52FD9A00100B4A0C1 /* VisitTrackerBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9B42FD9A00100B4A0C1 /* VisitTrackerBridge.m */; };
 		8B57D9A72FD8D1D700B4A0C1 /* OutdoorGlanceWatchSender.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9A62FD8D1D700B4A0C1 /* OutdoorGlanceWatchSender.swift */; };
 		8B57D9A92FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9A82FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift */; };
 		8B57D9AB2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9AA2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift */; };
@@ -80,6 +83,9 @@
 		1E33A9721A3C26C0A6837B44 /* Pods-WanderNote.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WanderNote.debug.xcconfig"; path = "Target Support Files/Pods-WanderNote/Pods-WanderNote.debug.xcconfig"; sourceTree = "<group>"; };
 		411C3B9B87CA43B34DAD8BF4 /* OutdoorGlanceSnapshot.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceSnapshot.swift; sourceTree = "<group>"; };
 		86EE861785B23D5A1D6A27FE /* Pods-WanderNote.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WanderNote.release.xcconfig"; path = "Target Support Files/Pods-WanderNote/Pods-WanderNote.release.xcconfig"; sourceTree = "<group>"; };
+		8B57D9B02FD9A00100B4A0C1 /* VisitTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitTracker.swift; sourceTree = "<group>"; };
+		8B57D9B22FD9A00100B4A0C1 /* VisitTrackerBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisitTrackerBridge.swift; sourceTree = "<group>"; };
+		8B57D9B42FD9A00100B4A0C1 /* VisitTrackerBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = VisitTrackerBridge.m; sourceTree = "<group>"; };
 		8B57D9A62FD8D1D700B4A0C1 /* OutdoorGlanceWatchSender.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceWatchSender.swift; sourceTree = "<group>"; };
 		8B57D9A82FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceWatchRuntime.swift; sourceTree = "<group>"; };
 		8B57D9AA2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceWatchBridge.swift; sourceTree = "<group>"; };
@@ -162,6 +168,7 @@
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
 				F11748442D0722820044C1D9 /* WanderNote-Bridging-Header.h */,
 				8B57D9A52FD8D1D700B4A0C1 /* Watch */,
+				8B57D9B62FD9A00100B4A0C1 /* Visits */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -248,6 +255,16 @@
 				8BCF000000000000000003 /* TravelWatchComplication.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8B57D9B62FD9A00100B4A0C1 /* Visits */ = {
+			isa = PBXGroup;
+			children = (
+				8B57D9B02FD9A00100B4A0C1 /* VisitTracker.swift */,
+				8B57D9B22FD9A00100B4A0C1 /* VisitTrackerBridge.swift */,
+				8B57D9B42FD9A00100B4A0C1 /* VisitTrackerBridge.m */,
+			);
+			path = WanderNote/Visits;
 			sourceTree = "<group>";
 		};
 		8B57D9A52FD8D1D700B4A0C1 /* Watch */ = {
@@ -557,6 +574,9 @@
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				73BD0B12CEAEF99109E30AE9 /* ExpoModulesProvider.swift in Sources */,
 				C8B495E9A8FDC19AC8E860AF /* OutdoorGlanceSnapshot.swift in Sources */,
+				8B57D9B12FD9A00100B4A0C1 /* VisitTracker.swift in Sources */,
+				8B57D9B32FD9A00100B4A0C1 /* VisitTrackerBridge.swift in Sources */,
+				8B57D9B52FD9A00100B4A0C1 /* VisitTrackerBridge.m in Sources */,
 				8B57D9A72FD8D1D700B4A0C1 /* OutdoorGlanceWatchSender.swift in Sources */,
 				8B57D9A92FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift in Sources */,
 				8B57D9AB2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift in Sources */,

@@ -3,3 +3,4 @@
 "NSCameraUsageDescription" = "Take photos during a trip and save them straight into that day of your travel journal.";
 "NSPhotoLibraryUsageDescription" = "Add your own photos to a trip. When you build a trip from photos, their dates and locations are read on your device to sort them into days and place them on your map.";
 "NSLocationWhenInUseUsageDescription" = "Show how far you are from your destination, place your footprints on the map, and send local altitude and daylight to your Apple Watch.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Record the places you stop, so your trip map fills itself in without you doing anything. Visits stay on this device and are never uploaded.";

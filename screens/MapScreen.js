@@ -45,12 +45,25 @@ function buildFootprint(trip) {
   const days = [];
 
   for (const day of trip?.days || []) {
-    const points = (day.photos || [])
+    const fromPhotos = (day.photos || [])
       .map(photo => {
         const coords = normalizeCoords(photo?.coords);
         return coords ? { coords, takenAt: photo.takenAt, uri: photo.uri } : null;
       })
-      .filter(Boolean)
+      .filter(Boolean);
+
+    // Recorded stops, for the stretches of a day nobody photographed. They
+    // carry no picture, so they draw as a dot rather than a thumbnail.
+    const fromVisits = (day.visits || [])
+      .map(visit => {
+        const coords = normalizeCoords(visit?.coords);
+        return coords
+          ? { coords, takenAt: new Date(visit.arrivalAt || 0).toISOString(), uri: null }
+          : null;
+      })
+      .filter(Boolean);
+
+    const points = [...fromPhotos, ...fromVisits]
       .sort((a, b) => String(a.takenAt || '').localeCompare(String(b.takenAt || '')));
 
     if (points.length > 0) {

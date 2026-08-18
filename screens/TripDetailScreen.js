@@ -21,6 +21,8 @@ import { captureRef } from 'react-native-view-shot';
 import TripShareCard, { TRIP_CARD_WIDTH } from '../components/TripShareCard';
 import { buildTripShareStats } from '../lib/tripShareStats';
 import { resolveUsesMetric } from '../lib/currency';
+import { loadVisits, visitsSupported } from '../lib/visits';
+import { mergeVisitsIntoTrip } from '../lib/visitsToDays';
 
 const EXPENSE_CATEGORY_LABEL_KEYS = {
   food: 'expense_cat_food',
@@ -192,6 +194,29 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     ]);
   };
 
+  /**
+   * Fill this trip's days in from the places the phone recorded stopping.
+   *
+   * Explicit rather than automatic: the visits are the user's movements, and
+   * folding them into a journal is their decision to make each time, not a
+   * background behaviour they have to notice and undo.
+   */
+  const fillFromVisits = async () => {
+    const visits = await loadVisits();
+    const { trip: merged, matchedDays, addedVisits } = mergeVisitsIntoTrip(trip, visits);
+
+    if (addedVisits === 0) {
+      Alert.alert(t('visits_fill_title'), t('visits_fill_none'));
+      return;
+    }
+
+    setTrips(prev => prev.map(item => (item.id === trip.id ? merged : item)));
+    Alert.alert(
+      t('visits_fill_title'),
+      t('visits_fill_done').replace('%1', String(addedVisits)).replace('%2', String(matchedDays))
+    );
+  };
+
   const shareStats = buildTripShareStats(trip, { homeCurrency, rates, usesMetric });
 
   /**
@@ -236,6 +261,11 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={s.topRow}>
           <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← {t('back')}</Text></TouchableOpacity>
           <View style={{flexDirection:'row',gap:12}}>
+            {visitsSupported() && (
+              <TouchableOpacity onPress={fillFromVisits}>
+                <Text style={{color:'#6BCB77',fontSize:13}}>{t('visits_fill_action')} 👣</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={shareTripImage} disabled={savingCard}>
               <Text style={{color:'#D4AF37',fontSize:13,opacity:savingCard?0.5:1}}>
                 {savingCard ? t('trip_share_card_making') : `${t('trip_share_card')} ▣`}

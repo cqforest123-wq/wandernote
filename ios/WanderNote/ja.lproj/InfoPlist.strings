@@ -3,3 +3,4 @@
 "NSCameraUsageDescription" = "旅先で写真を撮り、その日の旅の記録にそのまま保存します。";
 "NSPhotoLibraryUsageDescription" = "写真を旅に追加します。「写真から旅を作る」では、写真の日時と位置情報を端末内で読み取り、日ごとに整理して地図に配置します。";
 "NSLocationWhenInUseUsageDescription" = "目的地までの距離を表示し、足あとを地図に記録し、現在の標高と日照を Apple Watch に送ります。";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "立ち寄った場所を記録し、何もしなくても旅の地図ができあがります。記録はこの端末内にのみ保存され、送信されることはありません。";

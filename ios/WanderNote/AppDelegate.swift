@@ -22,6 +22,10 @@ public class AppDelegate: ExpoAppDelegate {
     reactNativeFactory = factory
     bindReactNativeFactory(factory)
     outdoorGlanceWatchRuntime.start()
+    // Visit monitoring relaunches the app in the background to deliver a
+    // visit, so the tracker has to exist by the time launching finishes. It
+    // does nothing unless the user turned it on.
+    VisitTracker.shared.resumeIfEnabled()
 
 #if os(iOS) || os(tvOS)
     window = UIWindow(frame: UIScreen.main.bounds)
