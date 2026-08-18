@@ -2,8 +2,27 @@ import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
+import { logEvent } from '../lib/diagnostics';
 
 
+
+
+/**
+ * Record why sign-in or sign-up failed.
+ *
+ * The alert already shows the message, but it is gone the moment it is
+ * dismissed — leaving a user able to report only "registration failed". The
+ * status separates a rejected request from a server that could not be reached
+ * at all, which matters here: supabase.co is not reliably reachable from
+ * mainland China.
+ */
+function noteAuthFailure(step, error) {
+  logEvent('auth', `${step}-failed`, {
+    status: error?.status ?? 'none',
+    code: String(error?.code || error?.name || 'unknown').slice(0, 30),
+    message: String(error?.message || '').slice(0, 80),
+  });
+}
 
 export default function AuthScreen({ onAuth, onContinueAsGuest }) {
   const [mode, setMode] = useState('login');
@@ -17,16 +36,36 @@ export default function AuthScreen({ onAuth, onContinueAsGuest }) {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
-    if (error) Alert.alert(t('auth_login_failed'), error.message);
+    if (error) {
+      noteAuthFailure('login', error);
+      Alert.alert(t('auth_login_failed'), error.message);
+    }
   };
 
   const handleRegister = async () => {
     if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     if (password.length < 6) { Alert.alert(t('notice'), t('auth_password_min')); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email, password });
     setLoading(false);
-    if (error) { Alert.alert(t('auth_register_failed'), error.message); return; }
+
+    if (error) {
+      noteAuthFailure('register', error);
+      Alert.alert(t('auth_register_failed'), error.message);
+      return;
+    }
+
+    logEvent('auth', 'registered', { session: !!data?.session });
+
+    // Whether a confirmation email is needed is a server setting, and this
+    // project has auto-confirm on — so telling everyone to go and check their
+    // inbox sent them looking for a message that was never sent. A session in
+    // the response means they are already signed in.
+    if (data?.session) {
+      Alert.alert(t('auth_register_success'), t('auth_registered_signed_in'));
+      return;
+    }
+
     Alert.alert(t('auth_register_success'), t('auth_check_email'));
     setMode('login');
   };
@@ -36,7 +75,11 @@ export default function AuthScreen({ onAuth, onContinueAsGuest }) {
     setLoading(true);
     const { error } = await supabase.auth.resetPasswordForEmail(email);
     setLoading(false);
-    if (error) { Alert.alert(t('failed'), error.message); return; }
+    if (error) {
+      noteAuthFailure('reset', error);
+      Alert.alert(t('failed'), error.message);
+      return;
+    }
     Alert.alert(t('auth_sent'), t('auth_reset_email_sent'));
     setMode('login');
   };

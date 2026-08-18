@@ -189,6 +189,7 @@ export default {
   visits_day_places: '%1 处停留',
   visits_day_hm: '%1 小时 %2 分',
   visits_day_m: '%1 分钟',
+  auth_registered_signed_in: '注册成功，已为你登录。',
   search_placeholder: '搜索笔记、花费、清单…',
   search_hint: '搜索所有旅程里的\n笔记、花费和清单',
   search_no_results: '没有找到匹配的内容',

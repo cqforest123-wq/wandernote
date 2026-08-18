@@ -189,6 +189,7 @@ export default {
   visits_day_places: '%1 stops',
   visits_day_hm: '%1h %2m',
   visits_day_m: '%1 min',
+  auth_registered_signed_in: "You're registered and signed in.",
   search_placeholder: 'Search notes, spending, lists…',
   search_hint: 'Search notes, spending and lists\nacross every trip',
   search_no_results: 'Nothing matched',
