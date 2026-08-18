@@ -100,7 +100,8 @@ final class OutdoorGlanceWatchSender: NSObject {
         }
     }
 
-    func publish(_ snapshot: OutdoorGlanceSnapshot) throws {
+    @discardableResult
+    func publish(_ snapshot: OutdoorGlanceSnapshot) throws -> String {
         let encodedData: Data
 
         do {
@@ -111,10 +112,11 @@ final class OutdoorGlanceWatchSender: NSObject {
             )
         }
 
-        try publishValidated(encodedData: encodedData)
+        return try publishValidated(encodedData: encodedData)
     }
 
-    func publish(encodedData data: Data) throws {
+    @discardableResult
+    func publish(encodedData data: Data) throws -> String {
         let snapshot: OutdoorGlanceSnapshot
 
         do {
@@ -125,10 +127,10 @@ final class OutdoorGlanceWatchSender: NSObject {
             )
         }
 
-        try publish(snapshot)
+        return try publish(snapshot)
     }
 
-    private func publishValidated(encodedData data: Data) throws {
+    private func publishValidated(encodedData data: Data) throws -> String {
         try stateQueue.sync {
             guard WCSession.isSupported() else {
                 OutdoorGlanceWatchDiagnostics.log(
@@ -141,20 +143,40 @@ final class OutdoorGlanceWatchSender: NSObject {
             OutdoorGlanceWatchDiagnostics.log(
                 "payload queued for WatchConnectivity send"
             )
-            try sendPendingIfPossible()
+            return try sendPendingIfPossible()
         }
     }
 
-    private func sendPendingIfPossible() throws {
+    /// Why a payload could not go out right now, or nil if it did.
+    ///
+    /// This used to return silently, so the JavaScript promise resolved
+    /// whether the snapshot reached the watch or merely sat in a queue — and a
+    /// watch stuck in Daily mode looked like a watch-side bug for hours.
+    @discardableResult
+    private func sendPendingIfPossible() throws -> String {
         guard state == .active,
               session.activationState == .activated,
               session.isPaired,
               session.isWatchAppInstalled,
               let data = pendingSnapshotData else {
+            let reason: String
+
+            if state != .active {
+                reason = "runtime-inactive"
+            } else if session.activationState != .activated {
+                reason = "session-not-activated"
+            } else if !session.isPaired {
+                reason = "watch-not-paired"
+            } else if !session.isWatchAppInstalled {
+                reason = "watch-app-not-installed"
+            } else {
+                reason = "nothing-pending"
+            }
+
             OutdoorGlanceWatchDiagnostics.log(
-                "payload pending; state=\(state), activation=\(session.activationState.rawValue), paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)"
+                "payload pending; reason=\(reason)"
             )
-            return
+            return reason
         }
 
         do {
@@ -166,6 +188,8 @@ final class OutdoorGlanceWatchSender: NSObject {
             OutdoorGlanceWatchDiagnostics.log(
                 "payload sent with updateApplicationContext"
             )
+
+            return "sent"
         } catch {
             OutdoorGlanceWatchDiagnostics.log(
                 "payload send failed: \(String(describing: error))"

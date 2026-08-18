@@ -30,8 +30,10 @@ final class OutdoorGlanceWatchBridge: NSObject {
       OutdoorGlanceWatchDiagnostics.log(
         "native bridge send requested"
       )
-      try OutdoorGlanceWatchRuntime.shared.publish(encodedData: data)
-      resolve(nil)
+      // Resolve with what actually happened. "sent" means the watch has it;
+      // anything else names the condition that stopped it.
+      let status = try OutdoorGlanceWatchRuntime.shared.publish(encodedData: data)
+      resolve(status)
     } catch let error as OutdoorGlanceWatchSenderError {
       OutdoorGlanceWatchDiagnostics.log(
         "native bridge send failed: \(error.bridgeCode)"

@@ -11,7 +11,8 @@ final class OutdoorGlanceWatchRuntime {
     sender.start()
   }
 
-  func publish(encodedData data: Data) throws {
+  @discardableResult
+  func publish(encodedData data: Data) throws -> String {
     try sender.publish(encodedData: data)
   }
 }

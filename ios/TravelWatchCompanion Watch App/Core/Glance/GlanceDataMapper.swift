@@ -31,9 +31,13 @@ enum GlanceDataMapper {
                         ? "Daily fallback selected because no iPhone snapshot is available"
                         : "Daily fallback selected because the iPhone snapshot has no trip"
                 )
+                // Carry the phone's unit preference into Daily mode too:
+                // without it the watch fell back to guessing and showed feet
+                // in Chengdu even while a snapshot was sitting right there.
                 return makeDailyGlance(
                     dailyData,
-                    at: date
+                    at: date,
+                    usesMetric: snapshot?.usesMetric
                 )
             }
 
@@ -197,7 +201,8 @@ enum GlanceDataMapper {
 
     private static func makeDailyGlance(
         _ dailyData: DailyGlanceData,
-        at date: Date
+        at date: Date,
+        usesMetric: Bool? = nil
     ) -> GlanceData {
         GlanceData(
             mode: .daily,
@@ -226,7 +231,8 @@ enum GlanceDataMapper {
             warnings: dailyWarnings(for: dailyData),
             todaySpendText: nil,
             pressureText: formatPressure(dailyData.pressureKPa),
-            pressureFalling: dailyData.pressureFalling
+            pressureFalling: dailyData.pressureFalling,
+            usesMetric: usesMetric
         )
     }
 
