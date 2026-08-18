@@ -59,6 +59,15 @@ final class OutdoorGlanceWatchSender: NSObject {
     private var state: SessionState = .notStarted
     private var pendingSnapshotData: Data?
 
+    /// The last payload we successfully handed to WatchConnectivity.
+    ///
+    /// Kept after sending so it can be pushed again when the watch app
+    /// reappears. The system drops its stored application context when the
+    /// watch app is uninstalled, and without this the phone had nothing left
+    /// to resend — a watch app installed later stayed empty until the trip
+    /// data happened to change.
+    private var lastSnapshotData: Data?
+
     init(session: WCSession = .default) {
         self.session = session
         super.init()
@@ -185,6 +194,7 @@ final class OutdoorGlanceWatchSender: NSObject {
             ])
 
             pendingSnapshotData = nil
+            lastSnapshotData = data
             OutdoorGlanceWatchDiagnostics.log(
                 "payload sent with updateApplicationContext"
             )
@@ -258,6 +268,24 @@ extension OutdoorGlanceWatchSender: WCSessionDelegate {
         OutdoorGlanceWatchDiagnostics.log(
             "watch state changed; paired=\(session.isPaired), installed=\(session.isWatchAppInstalled)"
         )
+
+        // A newly installed watch app starts with no application context at
+        // all, so requeue whatever we sent last rather than waiting for the
+        // trip data to change on its own.
+        stateQueue.async { [weak self] in
+            guard let self else {
+                return
+            }
+
+            if self.pendingSnapshotData == nil,
+               let last = self.lastSnapshotData {
+                self.pendingSnapshotData = last
+                OutdoorGlanceWatchDiagnostics.log(
+                    "requeued last payload after watch state change"
+                )
+            }
+        }
+
         markActivatedAndFlush()
     }
 }
