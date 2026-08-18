@@ -509,6 +509,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
 
       const draft = await buildTripDraftFromPhotos(assets, t, {
         onProgress: (p) => setImportProgress(p),
+        language: i18n.language,
       });
 
       if (draft?.error === 'NO_USABLE_PHOTOS') {
