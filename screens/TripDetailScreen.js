@@ -16,6 +16,11 @@ import {
   sumExpenses,
 } from '../lib/currency';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
+import TripShareCard, { TRIP_CARD_WIDTH } from '../components/TripShareCard';
+import { buildTripShareStats } from '../lib/tripShareStats';
+import { resolveUsesMetric } from '../lib/currency';
 
 const EXPENSE_CATEGORY_LABEL_KEYS = {
   food: 'expense_cat_food',
@@ -58,12 +63,16 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [forecast, setForecast] = useState(null);
   const [homeCurrency, setHomeCurrency] = useState('');
   const [rates, setRates] = useState(null);
+  const [usesMetric, setUsesMetric] = useState(true);
+  const [savingCard, setSavingCard] = useState(false);
+  const cardRef = React.useRef(null);
 
   useEffect(() => {
     let cancelled = false;
 
     getHomeCurrency().then(code => !cancelled && setHomeCurrency(code));
     loadRates().then(result => !cancelled && setRates(result));
+    resolveUsesMetric().then(metric => !cancelled && setUsesMetric(metric));
 
     return () => { cancelled = true; };
   }, []);
@@ -183,6 +192,43 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     ]);
   };
 
+  const shareStats = buildTripShareStats(trip, { homeCurrency, rates, usesMetric });
+
+  /**
+   * Share the trip as a picture.
+   *
+   * The text share says where you went; this shows it. A travel journal whose
+   * trips cannot be shown to anyone is missing the thing people most want to
+   * do with a trip, and it was the app's only route to being seen at all.
+   */
+  const shareTripImage = async () => {
+    if (savingCard) return;
+
+    try {
+      setSavingCard(true);
+      // Let the off-screen card lay out before capturing it.
+      await new Promise(requestAnimationFrame);
+
+      const uri = await captureRef(cardRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+        pixelRatio: 3,
+      });
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(t('trip_share_card_failed'), t('profile_try_later'));
+        return;
+      }
+
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png' });
+    } catch (e) {
+      Alert.alert(t('trip_share_card_failed'), e?.message || t('profile_try_later'));
+    } finally {
+      setSavingCard(false);
+    }
+  };
+
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
@@ -190,6 +236,11 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={s.topRow}>
           <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← {t('back')}</Text></TouchableOpacity>
           <View style={{flexDirection:'row',gap:12}}>
+            <TouchableOpacity onPress={shareTripImage} disabled={savingCard}>
+              <Text style={{color:'#D4AF37',fontSize:13,opacity:savingCard?0.5:1}}>
+                {savingCard ? t('trip_share_card_making') : `${t('trip_share_card')} ▣`}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={shareTrip}><Text style={{color:'#4ECDC4',fontSize:13}}>{t('share')} ↗</Text></TouchableOpacity>
             <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>{t('trip_delete')}</Text></TouchableOpacity>
           </View>
@@ -385,6 +436,22 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         )}
       </ScrollView>
 
+      {/* Off-screen, purely as input to view-shot. */}
+      <View style={s.offscreen} pointerEvents="none">
+        <TripShareCard
+          cardRef={cardRef}
+          stats={shareStats}
+          emoji={trip.emoji}
+          labels={{
+            days: t('stat_days'),
+            photos: t('stat_photos'),
+            distance: t('trip_share_distance'),
+            spend: t('expense_trip_total'),
+            untitled: t('search_untitled'),
+          }}
+        />
+      </View>
+
       {/* 记录今天弹窗 — 使用iOS原生日期选择器 */}
       <Modal visible={showAddDay} animationType="slide" transparent>
         <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'} style={s.overlay}>
@@ -509,6 +576,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 }
 
 const s = StyleSheet.create({
+  offscreen:{position:'absolute',left:-9999,top:0,width:TRIP_CARD_WIDTH},
   container:{flex:1,backgroundColor:'#0D0D0D'},
   scroll:{padding:24,paddingBottom:100},
   topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20},
