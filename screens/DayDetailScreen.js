@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { createPhoto, createExpense, EXPENSE_CATEGORIES } from '../lib/models';
 import { parseExifCoords, parseExifDate } from '../lib/tripFromPhotos';
+import { attachPhotoLocations } from '../lib/photoLocation';
 import {
   COMMON_CURRENCIES,
   convert,
@@ -171,7 +172,10 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       exif: true,
     });
     if (!result.canceled) {
-      const newPhotos = result.assets.map(a => createPhoto({
+      // Same PHPicker limitation as the trip importer: recover coordinates from
+      // the library when we already have access, but never prompt for it here.
+      const assets = await attachPhotoLocations(result.assets);
+      const newPhotos = assets.map(a => createPhoto({
         uri: a.uri,
         coords: parseExifCoords(a.exif),
         takenAt: parseExifDate(a.exif),

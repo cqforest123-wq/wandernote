@@ -13,6 +13,7 @@ import { geocodeCity } from '../lib/geocoding';
 import { searchPlaces } from '../lib/placeSearch';
 import * as ImagePicker from 'expo-image-picker';
 import { buildTripDraftFromPhotos } from '../lib/tripFromPhotos';
+import { attachPhotoLocations, requestPhotoLocationAccess } from '../lib/photoLocation';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 
 const CONTINENTS = [
@@ -467,7 +468,16 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
       setImporting(true);
       setImportProgress(null);
 
-      const draft = await buildTripDraftFromPhotos(result.assets, t, {
+      // iOS strips GPS from anything the photo picker hands over, so the
+      // coordinates have to be read back from the library itself. Declining
+      // only costs the destination guess and the map footprint — the days are
+      // built from timestamps either way.
+      await requestPhotoLocationAccess();
+      const assets = await attachPhotoLocations(result.assets, {
+        onProgress: (p) => setImportProgress(p),
+      });
+
+      const draft = await buildTripDraftFromPhotos(assets, t, {
         onProgress: (p) => setImportProgress(p),
       });
 
