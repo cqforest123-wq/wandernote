@@ -905,6 +905,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = TravelWatchCompanion;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "WanderNote reads Apple Watch step count to show today's steps in Daily Glance.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "WanderNote reads the barometer to show air pressure and whether it is rising or falling, an early sign of changing weather outdoors.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "WanderNote uses your location on Apple Watch to show altitude and local daylight information.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.litao0729.wandernote;
@@ -959,6 +960,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = TravelWatchCompanion;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "WanderNote reads Apple Watch step count to show today's steps in Daily Glance.";
+				INFOPLIST_KEY_NSMotionUsageDescription = "WanderNote reads the barometer to show air pressure and whether it is rising or falling, an early sign of changing weather outdoors.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "WanderNote uses your location on Apple Watch to show altitude and local daylight information.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.litao0729.wandernote;

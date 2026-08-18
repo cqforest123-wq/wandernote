@@ -3,8 +3,12 @@ import Foundation
 
 /// Barometric pressure from the watch's altimeter.
 ///
-/// Needs no permission — the barometer is not a privacy-gated sensor — and no
-/// network, which is exactly when it earns its place.
+/// Motion *is* privacy-gated, contrary to what it looks like: starting altimeter
+/// updates without `NSMotionUsageDescription` in the Info.plist crashes the app
+/// on launch. The authorization state is also checked here, because a denied
+/// sensor should cost one hidden row, never the whole app.
+///
+/// It needs no network though, which is exactly when it earns its place.
 @MainActor
 final class PressureTrendProvider {
     private let altimeter = CMAltimeter()
@@ -15,7 +19,18 @@ final class PressureTrendProvider {
     var onUpdate: ((Double, Bool?) -> Void)?
 
     static var isSupported: Bool {
-        CMAltimeter.isRelativeAltitudeAvailable()
+        guard CMAltimeter.isRelativeAltitudeAvailable() else {
+            return false
+        }
+
+        switch CMAltimeter.authorizationStatus() {
+        case .denied, .restricted:
+            return false
+        case .authorized, .notDetermined:
+            return true
+        @unknown default:
+            return false
+        }
     }
 
     func start() {
