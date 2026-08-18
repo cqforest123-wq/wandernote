@@ -122,6 +122,33 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
         }
     }
 
+    /// Push the newly received snapshot out to the watch face.
+    ///
+    /// Only ContentView used to write the complication payload, so the face
+    /// stayed frozen at whatever was true the last time someone opened the
+    /// Watch App — which defeats the entire point of a complication. The
+    /// system launches us in the background to deliver an application context,
+    /// and that is exactly the moment the face should change.
+    ///
+    /// Live sensor readings are unavailable to a background launch, so this
+    /// uses the cached daily data. Steps and altitude may lag until the app is
+    /// next opened; the trip, weather and sun times — the things the face is
+    /// actually for — are current.
+    @MainActor
+    private func refreshComplication() {
+        let now = Date()
+
+        GlanceWidgetPayloadWriter.write(
+            from: GlanceDataMapper.make(
+                snapshot: store.snapshot,
+                availability: store.availability(at: now),
+                dailyData: DailyGlanceCache.load(),
+                at: now
+            ),
+            language: store.snapshot?.language
+        )
+    }
+
     private func process(
         applicationContext: [String: Any]
     ) {
@@ -156,6 +183,7 @@ final class WatchConnectivitySnapshotReceiver: NSObject, WCSessionDelegate {
                 WatchConnectivityDiagnostics.log(
                     "cache updated from received payload"
                 )
+                self.refreshComplication()
             } catch {
                 WatchLinkStatus.shared.lastError =
                     "decode:\(String(describing: error).prefix(40))"

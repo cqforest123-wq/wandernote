@@ -17,7 +17,10 @@
     "check:versions": "node scripts/checkVersions.mjs",
     "test:notifications": "node scripts/notificationTests.mjs",
     "test:offline-geocode": "node scripts/offlineGeocodeTests.mjs",
-    "test:search": "node scripts/searchTests.mjs"
+    "test:search": "node scripts/searchTests.mjs",
+    "test:photo-trip": "node scripts/photoTripTests.mjs",
+    "test:backup": "node scripts/backupTests.mjs",
+    "test": "npm run --silent test:watch-snapshot && npm run --silent test:watch-glance && npm run --silent test:watch-parking && npm run --silent test:currency && npm run --silent test:watch-complication && npm run --silent test:watch-sun && npm run --silent test:notifications && npm run --silent test:offline-geocode && npm run --silent test:search && npm run --silent test:photo-trip && npm run --silent test:backup"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
