@@ -320,19 +320,30 @@ struct GlanceContentView: View {
     /// Rounded, locale-aware measurement text. `.naturalScale` converts to the
     /// region's own system, so an American traveller sees feet and Fahrenheit
     /// rather than the metric values the snapshot happens to carry.
-    private func localizedMeasurement<T: Dimension>(
+    private var usesMetric: Bool {
+        Locale.current.measurementSystem == .metric
+    }
+
+    /// Format an explicit unit, rounded, with the locale's own number style.
+    private func measurementText<T: Dimension>(
         _ value: Double,
-        _ unit: T
+        _ unit: T,
+        fractionDigits: Int = 0
     ) -> String {
         let formatter = MeasurementFormatter()
-        formatter.unitOptions = .naturalScale
-        formatter.numberFormatter.maximumFractionDigits = 0
+        formatter.unitOptions = .providedUnit
+        formatter.numberFormatter.maximumFractionDigits = fractionDigits
 
         return formatter.string(
             from: Measurement(value: value, unit: unit)
         )
     }
 
+    /// Altitude is feet or metres — never yards.
+    ///
+    /// `.naturalScale` picks a unit by magnitude, and for a few hundred metres
+    /// in an imperial locale it lands on yards: "537 yd" for a mountain is not
+    /// a unit anyone reports altitude in.
     private func formatAltitude(
         _ meters: Double?
     ) -> String {
@@ -340,7 +351,14 @@ struct GlanceContentView: View {
             return WatchStrings.text("value.unavailable")
         }
 
-        return localizedMeasurement(meters, UnitLength.meters)
+        if usesMetric {
+            return measurementText(meters, UnitLength.meters)
+        }
+
+        let feet = Measurement(value: meters, unit: UnitLength.meters)
+            .converted(to: .feet)
+
+        return measurementText(feet.value, UnitLength.feet)
     }
 
     private func formatTemperature(
@@ -350,7 +368,14 @@ struct GlanceContentView: View {
             return WatchStrings.text("value.unavailable")
         }
 
-        return localizedMeasurement(celsius, UnitTemperature.celsius)
+        // Temperature is the one place the region's own unit is unambiguous.
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .naturalScale
+        formatter.numberFormatter.maximumFractionDigits = 0
+
+        return formatter.string(
+            from: Measurement(value: celsius, unit: UnitTemperature.celsius)
+        )
     }
 
     private func formatTime(
@@ -410,7 +435,25 @@ struct GlanceContentView: View {
             return WatchStrings.text("parking.notSaved")
         }
 
-        return localizedMeasurement(distance, UnitLength.meters)
+        // Walking distance: metres then kilometres, or feet then miles. Yards
+        // would creep in here too if the unit were chosen by magnitude alone.
+        if usesMetric {
+            return distance < 1_000
+                ? measurementText(distance, UnitLength.meters)
+                : measurementText(distance / 1_000, UnitLength.kilometers, fractionDigits: 1)
+        }
+
+        let feet = Measurement(value: distance, unit: UnitLength.meters)
+            .converted(to: .feet)
+
+        if feet.value < 1_000 {
+            return measurementText(feet.value, UnitLength.feet)
+        }
+
+        let miles = Measurement(value: distance, unit: UnitLength.meters)
+            .converted(to: .miles)
+
+        return measurementText(miles.value, UnitLength.miles, fractionDigits: 1)
     }
 
     private func openParkingDirections(
