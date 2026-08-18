@@ -356,4 +356,5 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   diag_copy: '복사',
   diag_clear: '지우기',
   diag_copied: '복사했습니다.',
+  photo_trip_located_unnamed: '사진 위치를 지도에 표시했습니다. 목적지 이름은 찾지 못했으니 여행을 열어 입력해 주세요.',
 };

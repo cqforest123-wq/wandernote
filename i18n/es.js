@@ -357,4 +357,5 @@ alert_logout_confirm: '¿Cerrar sesión?',
   diag_copy: 'Copiar',
   diag_clear: 'Borrar',
   diag_copied: 'Copiado.',
+  photo_trip_located_unnamed: 'Situado en el mapa según la ubicación de las fotos. No se pudo obtener el nombre del destino: ábrelo para completarlo.',
 };

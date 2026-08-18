@@ -342,8 +342,28 @@ struct GlanceContentView: View {
     /// Rounded, locale-aware measurement text. `.naturalScale` converts to the
     /// region's own system, so an American traveller sees feet and Fahrenheit
     /// rather than the metric values the snapshot happens to carry.
+    /// Metric unless the wearer's own region says otherwise.
+    ///
+    /// Deliberately not `Locale.current`, for the same reason `WatchStrings`
+    /// avoids it: on this bundle it degrades to the development locale, so a
+    /// user in Chengdu was shown feet. `preferredLanguages` carries the real
+    /// region — and when it carries none, metric is the right default for a
+    /// travel app sold worldwide.
     private var usesMetric: Bool {
-        Locale.current.measurementSystem == .metric
+        guard let preferred = Locale.preferredLanguages.first else {
+            return true
+        }
+
+        let locale = Locale(identifier: preferred)
+
+        // A bare language tag ("zh", "en") has no region to judge by. Falling
+        // back to Locale.current here would reintroduce the same bug, so the
+        // safer default wins.
+        guard locale.region != nil else {
+            return true
+        }
+
+        return locale.measurementSystem == .metric
     }
 
     /// Format an explicit unit, rounded, with the locale's own number style.

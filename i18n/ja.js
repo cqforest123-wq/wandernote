@@ -356,4 +356,5 @@ alert_logout_confirm: 'ログアウトしますか？',
   diag_copy: 'コピー',
   diag_clear: '消去',
   diag_copied: 'コピーしました。',
+  photo_trip_located_unnamed: '写真の位置から地図に配置しました。行き先の名称は取得できなかったので、旅を開いて入力してください。',
 };

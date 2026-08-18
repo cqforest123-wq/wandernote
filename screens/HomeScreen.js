@@ -529,6 +529,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
       // 明确告诉用户结果，并提示可以改，而不是假装百分百正确。
       logEvent('photo-import', 'draft', {
         days: draft.stats.dayCount,
+        hasCoords: !!draft.stats.hasCoords,
         photos: draft.stats.photoCount,
         hasLocation: !!draft.stats.hasLocation,
         undated: draft.stats.undatedCount,
@@ -543,9 +544,12 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
           // Say which of the two it was. Without library access iOS strips the
           // coordinates on the way in, and that is the user's to change —
           // telling them the photos "have no location" would be a lie.
-          : locationStats.permission !== 'granted'
-            ? t('photo_trip_needs_photo_access')
-            : t('photo_trip_no_location'),
+          : draft.stats.hasCoords
+            // We placed them on the map; only the destination name is missing.
+            ? t('photo_trip_located_unnamed')
+            : locationStats.permission !== 'granted'
+              ? t('photo_trip_needs_photo_access')
+              : t('photo_trip_no_location'),
         draft.stats.undatedCount > 0
           ? t('photo_trip_undated').replace('%d', draft.stats.undatedCount)
           : null,

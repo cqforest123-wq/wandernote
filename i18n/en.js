@@ -448,4 +448,5 @@ export default {
   diag_copy: 'Copy',
   diag_clear: 'Clear',
   diag_copied: 'Copied.',
+  photo_trip_located_unnamed: 'Placed on your map from the photo locations. The destination name could not be looked up — open the trip to fill it in.',
 };

@@ -357,4 +357,5 @@ alert_logout_confirm: 'ออกจากระบบ?',
   diag_copy: 'คัดลอก',
   diag_clear: 'ล้าง',
   diag_copied: 'คัดลอกแล้ว',
+  photo_trip_located_unnamed: 'ปักบนแผนที่จากตำแหน่งของรูปแล้ว แต่ไม่พบชื่อจุดหมาย เปิดทริปเพื่อกรอกได้เลย',
 };

@@ -448,4 +448,5 @@ export default {
   diag_copy: '复制',
   diag_clear: '清空',
   diag_copied: '已复制。',
+  photo_trip_located_unnamed: '已按照片位置标到地图上。目的地名字没查到，进旅程填一下即可。',
 };
