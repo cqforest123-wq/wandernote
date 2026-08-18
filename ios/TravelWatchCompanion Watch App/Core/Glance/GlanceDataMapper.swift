@@ -134,7 +134,9 @@ enum GlanceDataMapper {
             lastUpdatedAt: snapshot.generatedAt,
             isStale: isStale,
             warnings: isStale ? [.staleSnapshot] : [],
-            todaySpendText: snapshot.todaySpendText
+            todaySpendText: snapshot.todaySpendText,
+            pressureText: formatPressure(dailyData?.pressureKPa),
+            pressureFalling: dailyData?.pressureFalling
         )
     }
 
@@ -220,8 +222,20 @@ enum GlanceDataMapper {
             stepsToday: dailyData.stepsToday,
             lastUpdatedAt: dailyData.generatedAt,
             isStale: false,
-            warnings: dailyWarnings(for: dailyData)
+            warnings: dailyWarnings(for: dailyData),
+            todaySpendText: nil,
+            pressureText: formatPressure(dailyData.pressureKPa),
+            pressureFalling: dailyData.pressureFalling
         )
+    }
+
+    /// hPa is what weather reports use; the sensor gives kPa.
+    private static func formatPressure(_ kPa: Double?) -> String? {
+        guard let kPa, kPa > 0 else {
+            return nil
+        }
+
+        return "\(Int((kPa * 10).rounded())) hPa"
     }
 
     private static func dailyWarnings(

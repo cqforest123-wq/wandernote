@@ -110,7 +110,9 @@ public enum WatchStrings {
         "complication.description": "Sunset, daylight left and your parked car, on the watch face.",
         "parking.elapsed": "Parked %@ ago",
         "spend.today": "Spent today",
-        "updated.at": "Updated %@"
+        "updated.at": "Updated %@",
+        "sunrise": "Sunrise",
+        "pressure": "Pressure"
     ]
 
     private static let simplifiedChinese: [String: String] = [
@@ -144,7 +146,9 @@ public enum WatchStrings {
         "complication.description": "把日落、剩余日照和停车时间放到表盘上。",
         "parking.elapsed": "已停车 %@",
         "spend.today": "今日花费",
-        "updated.at": "更新于 %@"
+        "updated.at": "更新于 %@",
+        "sunrise": "日出",
+        "pressure": "气压"
     ]
 
     private static let traditionalChinese: [String: String] = [
@@ -178,7 +182,9 @@ public enum WatchStrings {
         "complication.description": "把日落、剩餘日照和停車時間放到錶盤上。",
         "parking.elapsed": "已停車 %@",
         "spend.today": "今日花費",
-        "updated.at": "更新於 %@"
+        "updated.at": "更新於 %@",
+        "sunrise": "日出",
+        "pressure": "氣壓"
     ]
 
     private static let japanese: [String: String] = [
@@ -212,7 +218,9 @@ public enum WatchStrings {
         "complication.description": "日の入り、残りの日照、駐車からの経過時間を文字盤に。",
         "parking.elapsed": "駐車から %@",
         "spend.today": "今日の支出",
-        "updated.at": "%@ 更新"
+        "updated.at": "%@ 更新",
+        "sunrise": "日の出",
+        "pressure": "気圧"
     ]
 
     private static let korean: [String: String] = [
@@ -246,7 +254,9 @@ public enum WatchStrings {
         "complication.description": "일몰, 남은 낮 시간, 주차 경과 시간을 시계 페이스에.",
         "parking.elapsed": "주차 후 %@",
         "spend.today": "오늘 지출",
-        "updated.at": "%@ 업데이트"
+        "updated.at": "%@ 업데이트",
+        "sunrise": "일출",
+        "pressure": "기압"
     ]
 
     private static let french: [String: String] = [
@@ -280,7 +290,9 @@ public enum WatchStrings {
         "complication.description": "Coucher du soleil, jour restant et stationnement, sur le cadran.",
         "parking.elapsed": "Garé depuis %@",
         "spend.today": "Dépensé aujourd’hui",
-        "updated.at": "Mis à jour à %@"
+        "updated.at": "Mis à jour à %@",
+        "sunrise": "Lever du soleil",
+        "pressure": "Pression"
     ]
 
     private static let spanish: [String: String] = [
@@ -314,7 +326,9 @@ public enum WatchStrings {
         "complication.description": "Puesta de sol, luz restante y aparcamiento, en la esfera.",
         "parking.elapsed": "Aparcado hace %@",
         "spend.today": "Gastado hoy",
-        "updated.at": "Actualizado a las %@"
+        "updated.at": "Actualizado a las %@",
+        "sunrise": "Amanecer",
+        "pressure": "Presión"
     ]
 
     private static let thai: [String: String] = [
@@ -348,6 +362,8 @@ public enum WatchStrings {
         "complication.description": "พระอาทิตย์ตก เวลากลางวันที่เหลือ และเวลาจอดรถ บนหน้าปัด",
         "parking.elapsed": "จอดมาแล้ว %@",
         "spend.today": "ใช้จ่ายวันนี้",
-        "updated.at": "อัปเดตเมื่อ %@"
+        "updated.at": "อัปเดตเมื่อ %@",
+        "sunrise": "พระอาทิตย์ขึ้น",
+        "pressure": "ความกดอากาศ"
     ]
 }

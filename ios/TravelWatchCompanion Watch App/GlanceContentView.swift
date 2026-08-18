@@ -55,12 +55,34 @@ struct GlanceContentView: View {
                 )
             }
 
+            // Sunrise was already being computed and thrown away. Anyone up
+            // early for it on a trip wants the time, not a countdown.
+            if let sunrise = glance.sunrise, sunrise > Date() {
+                metricRow(
+                    icon: "sunrise",
+                    tint: .yellow,
+                    title: WatchStrings.text("sunrise"),
+                    value: formatTime(sunrise)
+                )
+            }
+
             metricRow(
                 icon: "sunset",
                 tint: .orange,
                 title: WatchStrings.text("sunset"),
                 value: formatTime(glance.sunset)
             )
+
+            if let pressure = glance.pressureText {
+                metricRow(
+                    icon: glance.pressureFalling == true
+                        ? "arrow.down.right.circle"
+                        : (glance.pressureFalling == false ? "arrow.up.right.circle" : "gauge.medium"),
+                    tint: glance.pressureFalling == true ? .red : .cyan,
+                    title: WatchStrings.text("pressure"),
+                    value: pressure
+                )
+            }
 
             metricRow(
                 icon: "figure.walk",

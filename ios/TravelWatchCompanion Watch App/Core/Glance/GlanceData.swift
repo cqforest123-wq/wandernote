@@ -33,6 +33,9 @@ struct GlanceData: Equatable {
     /// per-currency decimal rules. Duplicating that money formatting in Swift
     /// would be a second place for it to drift.
     let todaySpendText: String?
+    /// Pre-formatted so the view has no unit logic; trend drives the arrow.
+    let pressureText: String?
+    let pressureFalling: Bool?
 
     init(
         mode: GlanceMode,
@@ -56,7 +59,9 @@ struct GlanceData: Equatable {
         lastUpdatedAt: Date?,
         isStale: Bool,
         warnings: [GlanceStatusLine],
-        todaySpendText: String? = nil
+        todaySpendText: String? = nil,
+        pressureText: String? = nil,
+        pressureFalling: Bool? = nil
     ) {
         self.mode = mode
         self.title = title
@@ -80,6 +85,8 @@ struct GlanceData: Equatable {
         self.isStale = isStale
         self.warnings = warnings
         self.todaySpendText = todaySpendText
+        self.pressureText = pressureText
+        self.pressureFalling = pressureFalling
     }
 
     static func unavailable(

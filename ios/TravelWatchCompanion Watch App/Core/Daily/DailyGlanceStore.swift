@@ -21,6 +21,7 @@ final class DailyGlanceStore: ObservableObject {
     private let parkingStore: ParkingStore
     private let activityStepProvider: ActivityStepProvider?
     private let placeNameResolver: PlaceNameResolver?
+    private let pressureProvider: PressureTrendProvider?
     private var refreshCancellable: AnyCancellable?
     private var hasStarted = false
 
@@ -32,7 +33,8 @@ final class DailyGlanceStore: ObservableObject {
         locationAltitudeProvider: LocationAltitudeProvider? = nil,
         parkingStore: ParkingStore? = nil,
         activityStepProvider: ActivityStepProvider? = nil,
-        placeNameResolver: PlaceNameResolver? = nil
+        placeNameResolver: PlaceNameResolver? = nil,
+        pressureProvider: PressureTrendProvider? = nil
     ) {
         self.data = data ?? DailyGlanceCache.load() ?? .empty()
         self.locationAltitudeProvider =
@@ -41,6 +43,13 @@ final class DailyGlanceStore: ObservableObject {
         self.activityStepProvider =
             activityStepProvider ?? ActivityStepProvider()
         self.placeNameResolver = placeNameResolver ?? PlaceNameResolver()
+        self.pressureProvider = pressureProvider ?? PressureTrendProvider()
+        self.pressureProvider?.onUpdate = { [weak self] kPa, falling in
+            self?.data = self?.data.updatingPressure(
+                kilopascals: kPa,
+                falling: falling
+            ) ?? .empty()
+        }
         self.locationAltitudeProvider?.onUpdate = { [weak self] update in
             self?.apply(locationUpdate: update)
         }
@@ -71,6 +80,7 @@ final class DailyGlanceStore: ObservableObject {
         )
         locationAltitudeProvider?.start()
         activityStepProvider?.start()
+        pressureProvider?.start()
         refreshClock()
         refreshParking()
         startRefreshTimer()

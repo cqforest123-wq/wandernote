@@ -12,7 +12,7 @@ import { getFallbackCityCoords } from '../lib/cityFallbacks';
 import { geocodeCity } from '../lib/geocoding';
 import { searchPlaces } from '../lib/placeSearch';
 import * as ImagePicker from 'expo-image-picker';
-import { buildTripDraftFromPhotos } from '../lib/tripFromPhotos';
+import { buildTripDraftFromPhotos, parseExifCoords } from '../lib/tripFromPhotos';
 import { attachPhotoLocations, requestPhotoLocationAccess } from '../lib/photoLocation';
 import { logEvent } from '../lib/diagnostics';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
@@ -482,7 +482,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
         count: result.assets.length,
         withAssetId: result.assets.filter(a => !!a.assetId).length,
         withExifGps: result.assets.filter(
-          a => !!(a.exif && (a.exif['{GPS}'] || a.exif.GPS))
+          a => parseExifCoords(a.exif) !== null
         ).length,
       });
 
