@@ -174,7 +174,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
     if (!result.canceled) {
       // Same PHPicker limitation as the trip importer: recover coordinates from
       // the library when we already have access, but never prompt for it here.
-      const assets = await attachPhotoLocations(result.assets);
+      const { assets } = await attachPhotoLocations(result.assets);
       const newPhotos = assets.map(a => createPhoto({
         uri: a.uri,
         coords: parseExifCoords(a.exif),

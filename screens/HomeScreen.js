@@ -459,9 +459,14 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsMultipleSelection: true,
-        quality: 0.8,
         exif: true,           // 时间和 GPS 全靠它
         selectionLimit: 0,    // 不限张数：一趟旅行几百张很正常
+        // quality 低于 1 会让 expo-image-picker 逐张解码再重编码，几百张就是
+        // 选完之后十几秒没有任何反馈。设成 1 并要求原始表示，走它的快速通道
+        // 直接拷文件 —— 快得多，画质也不损失。
+        quality: 1,
+        preferredAssetRepresentationMode:
+          ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
       });
       if (result.canceled || !result.assets?.length) return;
 
@@ -473,9 +478,11 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
       // only costs the destination guess and the map footprint — the days are
       // built from timestamps either way.
       await requestPhotoLocationAccess();
-      const assets = await attachPhotoLocations(result.assets, {
+      const located = await attachPhotoLocations(result.assets, {
         onProgress: (p) => setImportProgress(p),
       });
+      const assets = located.assets;
+      const locationStats = located.stats;
 
       const draft = await buildTripDraftFromPhotos(assets, t, {
         onProgress: (p) => setImportProgress(p),
@@ -503,7 +510,12 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
           .replace('%d', draft.stats.dayCount),
         draft.stats.hasLocation
           ? t('photo_trip_located').replace('%s', [draft.city, draft.country].filter(Boolean).join(', '))
-          : t('photo_trip_no_location'),
+          // Say which of the two it was. Without library access iOS strips the
+          // coordinates on the way in, and that is the user's to change —
+          // telling them the photos "have no location" would be a lie.
+          : locationStats.permission !== 'granted'
+            ? t('photo_trip_needs_photo_access')
+            : t('photo_trip_no_location'),
         draft.stats.undatedCount > 0
           ? t('photo_trip_undated').replace('%d', draft.stats.undatedCount)
           : null,

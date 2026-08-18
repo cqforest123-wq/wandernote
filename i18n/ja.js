@@ -347,4 +347,5 @@ alert_logout_confirm: 'ログアウトしますか？',
   notify_departure_body: '明日は%sへ出発です。',
   notify_denied_title: '通知がオフです',
   notify_denied_body: '設定で WanderNote の通知をオンにすると、出発前夜にお知らせします。',
+  photo_trip_needs_photo_access: '写真へのアクセスがないため位置を読み取れず、行き先は空のままです。設定でフル写真アクセスを許可してから読み込み直すと地図に表示されます。',
 };

@@ -439,4 +439,5 @@ export default {
   notify_departure_body: 'You leave for %s tomorrow.',
   notify_denied_title: 'Notifications are off',
   notify_denied_body: 'Turn them on for WanderNote in Settings to get a reminder the evening before you travel.',
+  photo_trip_needs_photo_access: 'Photo locations are off, so the destination is blank. Allow full photo access for WanderNote in Settings and import again to place these on the map.',
 };

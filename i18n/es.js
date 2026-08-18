@@ -348,4 +348,5 @@ alert_logout_confirm: '¿Cerrar sesión?',
   notify_departure_body: 'Mañana sales hacia %s.',
   notify_denied_title: 'Notificaciones desactivadas',
   notify_denied_body: 'Actívalas para WanderNote en Ajustes y te avisaremos la víspera del viaje.',
+  photo_trip_needs_photo_access: 'Sin acceso a las fotos no se pueden leer las ubicaciones y el destino queda vacío. Concede acceso completo en Ajustes y vuelve a importar para situarlas en el mapa.',
 };
