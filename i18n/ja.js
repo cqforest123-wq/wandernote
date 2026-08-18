@@ -357,4 +357,10 @@ alert_logout_confirm: 'ログアウトしますか？',
   diag_clear: '消去',
   diag_copied: 'コピーしました。',
   photo_trip_located_unnamed: '写真の位置から地図に配置しました。行き先の名称は取得できなかったので、旅を開いて入力してください。',
+
+  // 单位偏好
+  units_title: '単位',
+  units_auto: 'システムに従う',
+  units_metric: 'メートル法',
+  units_imperial: 'ヤード・ポンド法',
 };

@@ -449,4 +449,10 @@ export default {
   diag_clear: 'Clear',
   diag_copied: 'Copied.',
   photo_trip_located_unnamed: 'Placed on your map from the photo locations. The destination name could not be looked up — open the trip to fill it in.',
+
+  // 单位偏好
+  units_title: 'Units',
+  units_auto: 'Follow system',
+  units_metric: 'Metric',
+  units_imperial: 'Imperial',
 };

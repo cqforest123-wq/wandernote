@@ -357,4 +357,10 @@ alert_logout_confirm: '로그아웃하시겠습니까？',
   diag_clear: '지우기',
   diag_copied: '복사했습니다.',
   photo_trip_located_unnamed: '사진 위치를 지도에 표시했습니다. 목적지 이름은 찾지 못했으니 여행을 열어 입력해 주세요.',
+
+  // 单位偏好
+  units_title: '단위',
+  units_auto: '시스템 설정 따름',
+  units_metric: '미터법',
+  units_imperial: '야드파운드법',
 };

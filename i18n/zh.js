@@ -449,4 +449,10 @@ export default {
   diag_clear: '清空',
   diag_copied: '已复制。',
   photo_trip_located_unnamed: '已按照片位置标到地图上。目的地名字没查到，进旅程填一下即可。',
+
+  // 单位偏好
+  units_title: '单位',
+  units_auto: '跟随系统',
+  units_metric: '公制',
+  units_imperial: '英制',
 };

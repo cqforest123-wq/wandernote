@@ -373,4 +373,10 @@ alert_logout_confirm: 'Se déconnecter ?',
   diag_clear: 'Effacer',
   diag_copied: 'Copié.',
   photo_trip_located_unnamed: 'Placé sur la carte d’après les lieux des photos. Le nom de la destination n’a pas pu être trouvé — ouvrez le voyage pour le renseigner.',
+
+  // 单位偏好
+  units_title: 'Unités',
+  units_auto: 'Suivre le système',
+  units_metric: 'Métrique',
+  units_imperial: 'Impérial',
 };

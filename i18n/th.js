@@ -358,4 +358,10 @@ alert_logout_confirm: 'ออกจากระบบ?',
   diag_clear: 'ล้าง',
   diag_copied: 'คัดลอกแล้ว',
   photo_trip_located_unnamed: 'ปักบนแผนที่จากตำแหน่งของรูปแล้ว แต่ไม่พบชื่อจุดหมาย เปิดทริปเพื่อกรอกได้เลย',
+
+  // 单位偏好
+  units_title: 'หน่วยวัด',
+  units_auto: 'ตามระบบ',
+  units_metric: 'เมตริก',
+  units_imperial: 'อิมพีเรียล',
 };

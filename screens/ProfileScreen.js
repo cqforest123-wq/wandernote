@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { deleteCurrentAccount } from '../lib/accountDeletion';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
-import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, currencySymbol, getHomeCurrency, setHomeCurrency } from '../lib/currency';
+import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, UNIT_CHOICES, currencySymbol, getHomeCurrency, getUnitPreference, setHomeCurrency, setUnitPreference } from '../lib/currency';
 import { areRemindersEnabled, setRemindersEnabled } from '../lib/notifications';
 import { clearDiagnostics, formatDiagnostics, readDiagnostics } from '../lib/diagnostics';
 import * as Clipboard from 'expo-clipboard';
@@ -33,6 +33,24 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
 
   const [showLangModal, setShowLangModal] = useState(false);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [showUnitsModal, setShowUnitsModal] = useState(false);
+  const [units, setUnits] = useState('auto');
+
+  useEffect(() => {
+    getUnitPreference().then(setUnits);
+  }, []);
+
+  const selectUnits = async (choice) => {
+    setUnits(choice);
+    setShowUnitsModal(false);
+    await setUnitPreference(choice);
+  };
+
+  const unitLabel = (choice) => t(
+    choice === 'metric' ? 'units_metric'
+      : choice === 'imperial' ? 'units_imperial'
+      : 'units_auto'
+  );
   const [homeCurrency, setHomeCurrencyState] = useState(DEFAULT_HOME_CURRENCY);
 
   useEffect(() => {
@@ -355,6 +373,13 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             </Text>
           </TouchableOpacity>
 
+          <TouchableOpacity style={s.settingRow} onPress={()=>setShowUnitsModal(true)}>
+            <Text style={s.settingIcon}>📏</Text>
+            <Text style={s.settingLabel}>{t('units_title')}</Text>
+            <Text style={s.settingValue}>{unitLabel(units)}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity style={s.settingRow} onPress={()=>setShowCurrencyModal(true)}>
             <Text style={s.settingIcon}>💱</Text>
             <Text style={s.settingLabel}>{t('expense_home_currency')}</Text>
@@ -448,6 +473,27 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
               </TouchableOpacity>
             ))}
             <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowLangModal(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 单位：跟随系统 / 公制 / 英制 */}
+      <Modal visible={showUnitsModal} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowUnitsModal(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>{t('units_title')}</Text>
+            {UNIT_CHOICES.map(choice=>(
+              <TouchableOpacity key={choice}
+                style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#222',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                onPress={()=>selectUnits(choice)}>
+                <Text style={{color:'#F0EDE8',fontSize:16}}>{unitLabel(choice)}</Text>
+                {units===choice && <Text style={{color:'#D4AF37',fontSize:16}}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowUnitsModal(false)}>
               <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
