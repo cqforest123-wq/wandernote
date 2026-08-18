@@ -633,6 +633,16 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             value={tripSearch}
             onChangeText={setTripSearch}
           />
+          {/* The field beside this one filters trip titles. This opens the
+              search that also reaches notes, spending and checklists — the
+              things you look for when you have forgotten which trip they were
+              on. */}
+          <TouchableOpacity
+            onPress={()=>navigation.navigate('Search')}
+            accessibilityLabel={t('search_open')}
+            style={{backgroundColor:'#161616',borderRadius:12,paddingHorizontal:12,justifyContent:'center',borderWidth:1,borderColor:'#242424'}}>
+            <Text style={{fontSize:16}}>🔍</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={()=>setSortBy(sortBy==='date'?'name':'date')}
             style={{backgroundColor:'#161616',borderRadius:12,padding:10,borderWidth:1,borderColor:'#242424',justifyContent:'center'}}>
