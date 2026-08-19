@@ -3,14 +3,15 @@ import './i18n';
 import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
 import { initSync, syncTripsUp } from './lib/sync';
-import { initPurchases, checkProStatus } from './lib/purchases';
-import { ENABLE_PURCHASES, BETA_UNLOCK_PRO } from './lib/featureFlags';
 import { supabase } from './lib/supabase';
+import { geocodeCity } from './lib/geocoding';
+import OutdoorGlanceSync from './lib/watch/OutdoorGlanceSync';
+import { syncDepartureReminders } from './lib/notifications';
 import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
@@ -19,29 +20,25 @@ import DayDetailScreen from './screens/DayDetailScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AIScreen from './screens/AIScreen';
 import MapScreen from './screens/MapScreen';
+import SearchScreen from './screens/SearchScreen';
 import MemoScreen from './screens/MemoScreen';
-import YearReportScreen from './screens/YearReportScreen';
-import PhotoFilterScreen from './screens/PhotoFilterScreen';
-import PaywallScreen from './screens/PaywallScreen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
-const FREE_TRIP_LIMIT = 3;
 const STORAGE_KEY = STORAGE_KEYS.trips;
+const GUEST_MODE_KEY = '@wandernote_guest_mode';
 
 const INITIAL_TRIPS = [];
 
-// MainApp：已登录用户的业务逻辑和导航
-function MainApp({ session }) {
+// MainApp：业务逻辑和导航。session 为 null 时即游客模式，全部数据留在本机。
+function MainApp({ session, onRequestSignIn }) {
   const { t, i18n } = useTranslation();
   const [langKey, setLangKey] = useState(Date.now());
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const [isPro, setIsPro] = useState(BETA_UNLOCK_PRO);
-  const [showPaywall, setShowPaywall] = useState(false);
-  const [paywallFeature, setPaywallFeature] = useState(null);
+  const [hasRetriedPendingGeocodes, setHasRetriedPendingGeocodes] = useState(false);
 
   useEffect(() => {
     const handleLangChange = (lng) => {
@@ -51,27 +48,6 @@ function MainApp({ session }) {
     i18n.on('languageChanged', handleLangChange);
     return () => i18n.off('languageChanged', handleLangChange);
   }, [i18n]);
-
-  useEffect(() => {
-    if (BETA_UNLOCK_PRO) {
-      setIsPro(true);
-      return;
-    }
-
-    if (!ENABLE_PURCHASES) {
-      setIsPro(false);
-      return;
-    }
-
-    if (!session?.user?.id) return;
-    initPurchases(session.user.id)
-      .then(() => checkProStatus())
-      .then(status => setIsPro(Boolean(status)))
-      .catch(e => {
-        console.warn('RevenueCat init failed:', e.message);
-        setIsPro(false);
-      });
-  }, [session?.user?.id]);
 
   useEffect(() => {
     const loadTrips = async () => {
@@ -117,32 +93,64 @@ function MainApp({ session }) {
     }
   };
 
+  useEffect(() => {
+    if (hasRetriedPendingGeocodes || !loaded || !Array.isArray(trips) || trips.length === 0) return;
+
+    const pendingTrips = trips.filter(t =>
+      !t?.coords && (t?.geocodeStatus === 'pending' || t?.geocodeStatus === 'failed')
+    );
+    if (pendingTrips.length === 0) {
+      setHasRetriedPendingGeocodes(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const retryPendingGeocodes = async () => {
+      const updates = await Promise.all(
+        pendingTrips.map(async trip => {
+          const coords = await geocodeCity(trip.city, trip.country).catch(() => null);
+          return coords ? { id: trip.id, coords } : null;
+        })
+      );
+
+      if (cancelled) return;
+
+      setHasRetriedPendingGeocodes(true);
+
+      const resolvedUpdates = updates.filter(Boolean);
+      if (resolvedUpdates.length === 0) return;
+
+      setTrips(prev => prev.map(trip => {
+        const update = resolvedUpdates.find(item => item.id === trip.id);
+        return update ? { ...trip, coords: update.coords, geocodeStatus: 'resolved' } : trip;
+      }));
+    };
+
+    retryPendingGeocodes();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasRetriedPendingGeocodes, loaded, trips]);
+
   const setTrips = (newTripsOrFn) => {
     setTripsState(prev => {
       const next = typeof newTripsOrFn === 'function'
         ? newTripsOrFn(prev)
         : newTripsOrFn;
-      if (!isPro && next.length > prev.length && prev.length >= FREE_TRIP_LIMIT) {
-        Alert.alert(
-          t('alert_pro_limit'),
-          t('alert_pro_limit_desc').replace('%d', FREE_TRIP_LIMIT),
-          [
-            {text:t('cancel'),style:'cancel'},
-            {text:t('alert_upgrade'),onPress:()=>openPaywall(t('profile_unlimited'))}
-          ]
-        );
-        return prev;
-      }
       persistTrips(next);
       return next;
     });
   };
 
-  const openPaywall = (featureName = null) => {
-    if (!ENABLE_PURCHASES) return;
-    setPaywallFeature(featureName);
-    setShowPaywall(true);
-  };
+  // Departure reminders are rebuilt whenever trips change, so editing or
+  // deleting a trip can never leave a reminder behind for it. A no-op when the
+  // user has not switched them on.
+  useEffect(() => {
+    if (!loaded) return;
+    syncDepartureReminders(trips, t);
+  }, [trips, loaded, t]);
 
   const tabs = [
     {key:'home', icon:'🗺', label:t('tab_home')},
@@ -161,28 +169,28 @@ function MainApp({ session }) {
 
   return (
     <View key={langKey} style={{flex:1,backgroundColor:'#0D0D0D'}}>
+      <OutdoorGlanceSync trips={trips} loaded={loaded} language={i18n.language}/>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
-            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} openPaywall={openPaywall} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Search'} name="Search">{props=><SearchScreen {...props} trips={trips}/>}</Stack.Screen>
           </>}
           {activeTab==='memo' && (
-            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} isPro={isPro} openPaywall={openPaywall} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
             <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='ai' && (
-            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
-          {activeTab==='profile' && <>
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} isPro={isPro} openPaywall={openPaywall}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'YearReport'} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'PhotoFilter'} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
-          </>}
+          {activeTab==='profile' && (
+            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} onRequestSignIn={onRequestSignIn} onDataRestored={setTripsState}/>}</Stack.Screen>
+          )}
         </Stack.Navigator>
       </NavigationContainer>
       <View style={st.navbar}>
@@ -193,13 +201,6 @@ function MainApp({ session }) {
           </TouchableOpacity>
         ))}
       </View>
-      <Modal visible={ENABLE_PURCHASES && showPaywall} animationType="slide" presentationStyle="pageSheet">
-        <PaywallScreen
-          featureName={paywallFeature}
-          onSuccess={() => { setIsPro(true); setShowPaywall(false); }}
-          onClose={() => setShowPaywall(false)}
-        />
-      </Modal>
     </View>
   );
 }
@@ -210,6 +211,9 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [onboardingLoaded, setOnboardingLoaded] = useState(false);
+  // 游客模式：不登录也能完整使用。账号只用于可选的跨设备同步。
+  const [guestMode, setGuestMode] = useState(false);
+  const [guestLoaded, setGuestLoaded] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => setAuthLoading(false), 10000);
@@ -223,6 +227,11 @@ export default function App() {
     });
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       setSession(session);
+      // 一旦真正登录，就退出游客标记，之后登出会正常回到登录页而不是又静默进游客模式。
+      if (session) {
+        setGuestMode(false);
+        AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
+      }
     });
     return () => { subscription.unsubscribe(); clearTimeout(timeout); };
   }, []);
@@ -242,25 +251,43 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && onboardingLoaded) {
+    AsyncStorage.getItem(GUEST_MODE_KEY)
+      .then(val => setGuestMode(val === 'true'))
+      .catch(() => setGuestMode(false))
+      .finally(() => setGuestLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    if (!authLoading && onboardingLoaded && guestLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [authLoading, onboardingLoaded]);
+  }, [authLoading, onboardingLoaded, guestLoaded]);
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
     setHasSeenOnboarding(true);
   };
 
-  if (authLoading || !onboardingLoaded) return (
+  const continueAsGuest = async () => {
+    setGuestMode(true);
+    await AsyncStorage.setItem(GUEST_MODE_KEY, 'true').catch(() => {});
+  };
+
+  // 从游客模式回到登录页。本地旅程数据保持不变。
+  const requestSignIn = async () => {
+    setGuestMode(false);
+    await AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
+  };
+
+  if (authLoading || !onboardingLoaded || !guestLoaded) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
       <ActivityIndicator color="#D4AF37" size="large"/>
     </View>
   );
 
   if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
-  if (!session) return <AuthScreen/>;
-  return <MainApp session={session}/>;
+  if (!session && !guestMode) return <AuthScreen onContinueAsGuest={continueAsGuest}/>;
+  return <MainApp session={session} onRequestSignIn={session ? null : requestSignIn}/>;
 }
 
 const st = StyleSheet.create({

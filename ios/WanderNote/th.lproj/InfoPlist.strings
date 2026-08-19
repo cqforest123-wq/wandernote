@@ -1,0 +1,6 @@
+/* Purpose strings shown in the system permission prompts. */
+
+"NSCameraUsageDescription" = "ถ่ายรูประหว่างการเดินทางและบันทึกลงในบันทึกของวันนั้นโดยตรง";
+"NSPhotoLibraryUsageDescription" = "เพิ่มรูปของคุณลงในทริป เมื่อสร้างทริปจากรูปภาพ แอปจะอ่านวันที่และตำแหน่งของรูปภายในเครื่องของคุณ เพื่อจัดเรียงตามวันและแสดงบนแผนที่";
+"NSLocationWhenInUseUsageDescription" = "แสดงระยะทางถึงจุดหมาย บันทึกเส้นทางลงแผนที่ และส่งความสูงกับเวลากลางวันไปยัง Apple Watch";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "บันทึกสถานที่ที่คุณแวะพัก เพื่อให้แผนที่ทริปเติมเต็มตัวเองโดยที่คุณไม่ต้องทำอะไร ข้อมูลเก็บไว้ในเครื่องนี้เท่านั้นและไม่เคยถูกอัปโหลด";

@@ -10,6 +10,7 @@ import { STORAGE_KEYS } from '../lib/storageKeys';
 import { createMemo } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { GLOBAL_PACKING_TEMPLATES } from '../lib/globalPackingTemplates';
+import { buildLocalPackingGroups } from '../lib/travelStoryFallback';
 
 const STORAGE_KEY = STORAGE_KEYS.memos;
 
@@ -205,7 +206,7 @@ const pg = StyleSheet.create({
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
-export default function MemoScreen({ route, navigation, isPro, openPaywall, trips = [] }) {
+export default function MemoScreen({ route, navigation, trips = [] }) {
   const { t, i18n } = useTranslation();
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
@@ -244,7 +245,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
       try {
         // 先尝试云端
         const { data: { user } } = await supabase.auth.getUser();
-        if (isPro && user?.id) {
+        if (user?.id) {
           const cloudMemos = await syncMemosDown(user.id);
           if (Array.isArray(cloudMemos)) {
             setMemos(cloudMemos);
@@ -287,18 +288,16 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
       mounted = false;
       timers.forEach(clearTimeout);
     };
-  }, [tripId, isPro]);
+  }, [tripId]);
 
   const saveMemos = async (next) => {
     setMemos(next);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 同步到云端（仅 Pro 用户）
-    if (isPro) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) syncMemosUpWithTripId(user.id, next);
-      } catch (e) {}
-    }
+    // 已登录时同步到云端。游客模式下 getUser() 拿不到 user，自然跳过。
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user?.id) syncMemosUpWithTripId(user.id, next);
+    } catch (e) {}
   };
 
   const openNew = (defaultCat = 'note') => {
@@ -317,21 +316,8 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
     setShowAdd(true);
   };
 
-  const FREE_PACKING_LIMIT = 3;
   const saveMemo = async () => {
     if (!title.trim() && items.every(i => !i.text.trim())) return;
-    // 非会员打包清单限制
-    if (!isPro && category === 'packing' && !editingMemo) {
-      const packCount = memos.filter(m => m.category === 'packing').length;
-      if (packCount >= FREE_PACKING_LIMIT) {
-        Alert.alert(
-          t('alert_pro_limit'),
-          t('memo_free_packing_limit').replace('%d', FREE_PACKING_LIMIT),
-          [{ text: t('ok'), style: 'cancel' }]
-        );
-        return;
-      }
-    }
     const validItems = items.filter(i => i.text.trim());
     const now = new Date();
     const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
@@ -349,6 +335,7 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
           items: validItems,
           category,
           tripId: tripId || null,
+          untitledLabel: t('memo_untitled'),
         }),
         ...memos,
       ]);
@@ -757,13 +744,13 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
               {!showAIGen ? (
                 <TouchableOpacity
                   style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16,flexDirection:'row',alignItems:'center',gap:12}}
-                  onPress={()=>{ if(!isPro){ setShowTemplate(false); openPaywall&&openPaywall(t('memo_ai_checklist')); return; } setShowAIGen(true); }}>
+                  onPress={()=>setShowAIGen(true)}>
                   <Text style={{fontSize:28}}>✦</Text>
                   <View style={{flex:1}}>
                     <Text style={{color:'#A78BFA',fontSize:15,fontWeight:'500'}}>{t('memo_ai_suggestions')}</Text>
                     <Text style={{color:'#A78BFA60',fontSize:12,marginTop:2}}>{t('memo_ai_suggestions_desc')}</Text>
                   </View>
-                  {!isPro && <Text style={{color:'#A78BFA',fontSize:11,backgroundColor:'#A78BFA20',paddingHorizontal:8,paddingVertical:3,borderRadius:8}}>Pro</Text>}
+
                 </TouchableOpacity>
               ) : (
                 <View style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16}}>
@@ -792,28 +779,31 @@ export default function MemoScreen({ route, navigation, isPro, openPaywall, trip
                   </View>
                   <TouchableOpacity
                     style={{backgroundColor: aiGenerating?'#555':'#A78BFA',borderRadius:12,padding:14,alignItems:'center'}}
-                    disabled={aiGenerating || !aiDestination.trim()}
+                    disabled={aiGenerating}
                     onPress={async()=>{
                       if (aiPackingGeneratingRef.current) return;
-                      if (!aiDestination.trim()) return;
+                      const destination = aiDestination.trim() || tripName || t('memo_ai_checklist');
 
                       aiPackingGeneratingRef.current = true;
                       setAIGenerating(true);
                       try {
-                        const { callClaude } = require('../lib/claude');
-                        const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${aiDestination}.
+                        const { callAI } = require('../lib/ai');
+                        const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${destination}.
 Requirements:
 1. Return pure JSON only, with no extra text.
-2. Format: {"title":"${aiDestination} ${aiDays}-day packing list","groups":{"Category name":["item 1","item 2"]}}
+2. Format: {"title":"${destination} ${aiDays}-day packing list","groups":{"Category name":["item 1","item 2"]}}
 3. Use these groups: Documents, Money, Electronics, Clothing, Toiletries, Special items.
 4. Each group should include 5-8 items, each with a suitable emoji.
 5. Adapt the suggestions to the destination.`;
-                        const text = await callClaude(prompt, 1500);
+                        const text = await callAI(prompt, 1500);
                         const clean = text.replace(/```json|```/g, '').trim();
                         const parsed = JSON.parse(clean);
+                        if (!parsed?.groups || typeof parsed.groups !== 'object') {
+                          throw new Error('AI packing response missing groups');
+                        }
                         const newMemo = createMemo({
                           category: 'packing',
-                          title: parsed.title || `${aiDestination} ${t('memo_ai_checklist')}`,
+                          title: parsed.title || `${destination} ${t('memo_ai_checklist')}`,
                           items: Object.entries(parsed.groups).flatMap(([group, items]) =>
                             items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
                           ),
@@ -823,9 +813,25 @@ Requirements:
                         await saveMemos(next);
                         setShowAIGen(false);
                         setShowTemplate(false);
-                        Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', aiDestination));
+                        Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', destination));
                       } catch(e) {
-                        Alert.alert(t('memo_ai_failed'), e.message || t('profile_try_later'));
+                        const fallback = buildLocalPackingGroups(destination, aiDays);
+                        const newMemo = createMemo({
+                          category: 'packing',
+                          title: fallback.title,
+                          items: Object.entries(fallback.groups).flatMap(([group, items]) =>
+                            items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
+                          ),
+                          tripId: tripId || null,
+                        });
+                        const next = [...memos, newMemo];
+                        await saveMemos(next);
+                        setShowAIGen(false);
+                        setShowTemplate(false);
+                        Alert.alert(
+                          t('memo_ai_success_title'),
+                          t('ai_offline_notice')
+                        );
                       } finally {
                         aiPackingGeneratingRef.current = false;
                         setAIGenerating(false);

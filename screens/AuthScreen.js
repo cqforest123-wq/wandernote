@@ -2,41 +2,104 @@ import React, { useState } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
+import { logEvent } from '../lib/diagnostics';
 
 
 
-export default function AuthScreen({ onAuth }) {
+
+/**
+ * Record why sign-in or sign-up failed.
+ *
+ * The alert already shows the message, but it is gone the moment it is
+ * dismissed — leaving a user able to report only "registration failed". The
+ * status separates a rejected request from a server that could not be reached
+ * at all, which matters here: supabase.co is not reliably reachable from
+ * mainland China.
+ */
+function noteAuthFailure(step, error) {
+  logEvent('auth', `${step}-failed`, {
+    status: error?.status ?? 'none',
+    code: String(error?.code || error?.name || 'unknown').slice(0, 30),
+    message: String(error?.message || '').slice(0, 80),
+  });
+}
+
+export default function AuthScreen({ onAuth, onContinueAsGuest }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
 
+  /**
+   * What the user typed, minus what the keyboard added.
+   *
+   * iOS predictive text and paste both append a trailing space readily, and
+   * Supabase rejects that outright as "invalid format" — a confusing thing to
+   * be told about an address you can see is correct.
+   */
+  const cleanEmail = () => email.trim();
+
   const handleLogin = async () => {
-    if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
+    if (!email.trim() || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email: cleanEmail(), password });
     setLoading(false);
-    if (error) Alert.alert(t('auth_login_failed'), error.message);
+    if (error) {
+      noteAuthFailure('login', error);
+      Alert.alert(t('auth_login_failed'), error.message);
+    }
   };
 
   const handleRegister = async () => {
-    if (!email || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
+    if (!email.trim() || !password) { Alert.alert(t('confirm'), t('alert_fill_fields')); return; }
     if (password.length < 6) { Alert.alert(t('notice'), t('auth_password_min')); return; }
     setLoading(true);
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({ email: cleanEmail(), password });
     setLoading(false);
-    if (error) { Alert.alert(t('auth_register_failed'), error.message); return; }
+
+    if (error) {
+      noteAuthFailure('register', error);
+
+      // Being told "User already registered" and left on the sign-up form is a
+      // dead end; the thing to do next is sign in, so offer it.
+      if (error?.code === 'user_already_exists' || /already registered/i.test(error?.message || '')) {
+        Alert.alert(t('auth_already_registered_title'), t('auth_already_registered_body'), [
+          { text: t('cancel'), style: 'cancel' },
+          { text: t('auth_go_login'), onPress: () => setMode('login') },
+        ]);
+        return;
+      }
+
+      Alert.alert(t('auth_register_failed'), error.message);
+      return;
+    }
+
+    logEvent('auth', 'registered', { session: !!data?.session });
+
+    // Whether a confirmation email is needed is a server setting, and this
+    // project has auto-confirm on — so telling everyone to go and check their
+    // inbox sent them looking for a message that was never sent. A session in
+    // the response means they are already signed in.
+    if (data?.session) {
+      Alert.alert(t('auth_register_success'), t('auth_registered_signed_in'));
+      return;
+    }
+
     Alert.alert(t('auth_register_success'), t('auth_check_email'));
     setMode('login');
   };
 
   const handleReset = async () => {
-    if (!email) { Alert.alert(t('notice'), t('auth_enter_email')); return; }
+    if (!email.trim()) { Alert.alert(t('notice'), t('auth_enter_email')); return; }
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail());
     setLoading(false);
-    if (error) { Alert.alert(t('failed'), error.message); return; }
+    if (error) {
+      noteAuthFailure('reset', error);
+      Alert.alert(t('failed'), error.message);
+      return;
+    }
     Alert.alert(t('auth_sent'), t('auth_reset_email_sent'));
     setMode('login');
   };
@@ -73,6 +136,9 @@ export default function AuthScreen({ onAuth }) {
             onChangeText={setEmail}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
+            spellCheck={false}
+            textContentType="emailAddress"
           />
 
           {mode !== 'reset' && <>
@@ -113,6 +179,18 @@ export default function AuthScreen({ onAuth }) {
           </View>
         </View>
 
+        <View style={s.guestArea}>
+          <View style={s.guestDivider}>
+            <View style={s.guestLine}/>
+            <Text style={s.guestOr}>{t('auth_or')}</Text>
+            <View style={s.guestLine}/>
+          </View>
+          <TouchableOpacity style={s.guestBtn} onPress={onContinueAsGuest} disabled={loading}>
+            <Text style={s.guestBtnText}>{t('auth_continue_as_guest')}</Text>
+          </TouchableOpacity>
+          <Text style={s.guestHint}>{t('auth_guest_hint')}</Text>
+        </View>
+
         <Text style={s.footer}>{t('auth_footer')}</Text>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -135,5 +213,12 @@ const s = StyleSheet.create({
   mainBtnText:{color:'#0D0D0D',fontSize:16,fontWeight:'700'},
   switchRow:{flexDirection:'row',justifyContent:'space-between',marginTop:16},
   switchText:{color:'#D4AF37',fontSize:13},
-  footer:{textAlign:'center',color:'#333',fontSize:12},
+  guestArea:{marginTop:24},
+  guestDivider:{flexDirection:'row',alignItems:'center',marginBottom:16},
+  guestLine:{flex:1,height:1,backgroundColor:'#242424'},
+  guestOr:{color:'#555',fontSize:12,marginHorizontal:12,textTransform:'uppercase',letterSpacing:2},
+  guestBtn:{borderWidth:1,borderColor:'#D4AF3760',borderRadius:14,padding:16,alignItems:'center'},
+  guestBtnText:{color:'#D4AF37',fontSize:15,fontWeight:'600'},
+  guestHint:{textAlign:'center',color:'#555',fontSize:12,marginTop:10,lineHeight:18},
+  footer:{textAlign:'center',color:'#333',fontSize:12,marginTop:24},
 });

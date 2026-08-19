@@ -1,13 +1,29 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking, Platform } from 'react-native';
 import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import { deleteCurrentAccount } from '../lib/accountDeletion';
+import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
+import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, UNIT_CHOICES, currencySymbol, getHomeCurrency, getUnitPreference, setHomeCurrency, setUnitPreference } from '../lib/currency';
+import { disableVisitTracking, enableVisitTracking, getVisitStatus, visitsSupported } from '../lib/visits';
+import { areRemindersEnabled, setRemindersEnabled } from '../lib/notifications';
+import { clearDiagnostics, formatDiagnostics, readDiagnostics } from '../lib/diagnostics';
+import * as Clipboard from 'expo-clipboard';
+// 直接读 app.json，避免版本号在这里再次写死后跟着 bump 漂移
+import appConfig from '../app.json';
 
-export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPaywall, navigation }) {
+const APP_VERSION = appConfig.expo.version;
+// Without the build number every install today read "v1.1.0", which made two
+// weeks of builds indistinguishable on the device. scripts/checkVersions.mjs
+// keeps app.json in step with the pbxproj, so this is the real number.
+const APP_BUILD = appConfig.expo.ios?.buildNumber;
+
+export default function ProfileScreen({ session, trips, navigation, onRequestSignIn, onDataRestored }) {
+  // 游客模式：没有 session，数据只在本机，不显示登出/注销账号。
+  const isGuest = !session;
   const { t, i18n } = useTranslation();
-  const [showPricing, setShowPricing] = useState(false);
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
   const LANGS = [
@@ -20,8 +36,123 @@ export default function ProfileScreen({ session, trips, isPro, onUpgrade, openPa
     { code: 'th', label: 'ภาษาไทย' },
   ];
 
-const ENABLE_YEAR_REPORT = false;
   const [showLangModal, setShowLangModal] = useState(false);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [showUnitsModal, setShowUnitsModal] = useState(false);
+  const [units, setUnits] = useState('auto');
+
+  useEffect(() => {
+    getUnitPreference().then(setUnits);
+  }, []);
+
+  const selectUnits = async (choice) => {
+    setUnits(choice);
+    setShowUnitsModal(false);
+    await setUnitPreference(choice);
+  };
+
+  const unitLabel = (choice) => t(
+    choice === 'metric' ? 'units_metric'
+      : choice === 'imperial' ? 'units_imperial'
+      : 'units_auto'
+  );
+  const [homeCurrency, setHomeCurrencyState] = useState(DEFAULT_HOME_CURRENCY);
+
+  useEffect(() => {
+    getHomeCurrency().then(setHomeCurrencyState);
+  }, []);
+
+  const [remindersOn, setRemindersOn] = useState(false);
+  const [togglingReminders, setTogglingReminders] = useState(false);
+
+  useEffect(() => {
+    areRemindersEnabled().then(setRemindersOn);
+  }, []);
+
+  // The permission prompt only ever appears here, when the user reaches for the
+  // switch. If they decline, the switch goes back rather than lying.
+  const toggleReminders = async () => {
+    if (togglingReminders) return;
+    setTogglingReminders(true);
+    try {
+      const next = await setRemindersEnabled(!remindersOn, trips, t);
+      setRemindersOn(next);
+      if (!remindersOn && !next) {
+        Alert.alert(t('notify_denied_title'), t('notify_denied_body'));
+      }
+    } finally {
+      setTogglingReminders(false);
+    }
+  };
+
+  const [visitsOn, setVisitsOn] = useState(false);
+  const [togglingVisits, setTogglingVisits] = useState(false);
+
+  useEffect(() => {
+    getVisitStatus().then(status => setVisitsOn(!!status?.enabled));
+  }, []);
+
+  /**
+   * Turn automatic footprints on or off.
+   *
+   * This asks for Always location, which is a lot to ask, so it is off until
+   * the user reaches for it here and the switch goes back if iOS refuses —
+   * showing "on" over a permission that was declined would be a lie.
+   */
+  const toggleVisits = async () => {
+    if (togglingVisits) return;
+    setTogglingVisits(true);
+
+    try {
+      if (visitsOn) {
+        await disableVisitTracking();
+        setVisitsOn(false);
+        return;
+      }
+
+      const reason = await enableVisitTracking();
+
+      if (reason) {
+        setVisitsOn(false);
+        Alert.alert(
+          t('visits_denied_title'),
+          reason === 'needs-always-authorization'
+            ? t('visits_denied_body')
+            : t('visits_unavailable_body')
+        );
+        return;
+      }
+
+      setVisitsOn(true);
+    } finally {
+      setTogglingVisits(false);
+    }
+  };
+
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticsText, setDiagnosticsText] = useState('');
+
+  const openDiagnostics = async () => {
+    const entries = await readDiagnostics();
+    setDiagnosticsText(formatDiagnostics(entries));
+    setShowDiagnostics(true);
+  };
+
+  const copyDiagnostics = async () => {
+    await Clipboard.setStringAsync(diagnosticsText || '');
+    Alert.alert('', t('diag_copied'));
+  };
+
+  const wipeDiagnostics = async () => {
+    await clearDiagnostics();
+    setDiagnosticsText('');
+  };
+
+  const selectCurrency = async (code) => {
+    setHomeCurrencyState(code);
+    setShowCurrencyModal(false);
+    await setHomeCurrency(code);
+  };
   const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
   const selectLanguage = async (code) => {
     try {
@@ -33,10 +164,12 @@ const ENABLE_YEAR_REPORT = false;
       Alert.alert(t('profile_language_switch_failed'), e.message || t('profile_try_later'));
     }
   };
-  const [selectedPlan, setSelectedPlan] = useState('annual');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   React.useEffect(() => {
     const loadProfile = async () => {
@@ -88,13 +221,131 @@ const ENABLE_YEAR_REPORT = false;
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
   const totalMemos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0);
   const totalPhotos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0);
-  const totalVideos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0);
+
+  const formatMB = (bytes) => `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+
+  const runExport = async (includePhotos) => {
+    try {
+      setIsExporting(true);
+      const r = await exportBackup({ includePhotos });
+      const parts = [
+        t('backup_export_done_trips').replace('%d', r.tripCount),
+        t('backup_export_done_lists').replace('%d', r.memoCount),
+      ];
+      if (r.photoFailed > 0) {
+        parts.push(t('backup_export_photos_failed').replace('%d', r.photoFailed));
+      }
+      Alert.alert(t('backup_export_done'), parts.join('\n'));
+    } catch (e) {
+      // 用户在分享面板点取消也会走到这里，不必当成错误吓唬人
+      if (!/cancel/i.test(e?.message || '')) {
+        Alert.alert(t('backup_export_failed'), e?.message || t('profile_try_later'));
+      }
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (isExporting) return;
+    try {
+      // 相机拍的照片只在 app 沙盒里，系统相册没有副本，所以默认要带上。
+      // 但整包可能很大，先估一下体积再让用户决定。
+      const est = await estimatePhotoBytes(trips);
+      if (est.count > 0 && est.encodedBytes > PHOTO_SIZE_WARN_BYTES) {
+        Alert.alert(
+          t('backup_large_title'),
+          t('backup_large_message')
+            .replace('%d', est.count)
+            .replace('%s', formatMB(est.encodedBytes)),
+          [
+            { text: t('cancel'), style: 'cancel' },
+            { text: t('backup_without_photos'), onPress: () => runExport(false) },
+            { text: t('backup_with_photos'), onPress: () => runExport(true) },
+          ]
+        );
+        return;
+      }
+      await runExport(true);
+    } catch (e) {
+      setIsExporting(false);
+      Alert.alert(t('backup_export_failed'), e?.message || t('profile_try_later'));
+    }
+  };
+
+  const handleImport = async () => {
+    if (isImporting) return;
+    try {
+      setIsImporting(true);
+      const r = await importBackup();
+      if (!r) return; // 用户取消了选择
+      Alert.alert(
+        t('backup_import_done'),
+        [
+          t('backup_import_added').replace('%d', r.addedTrips).replace('%m', r.addedMemos),
+          r.skippedTrips + r.skippedMemos > 0
+            ? t('backup_import_skipped').replace('%d', r.skippedTrips + r.skippedMemos)
+            : null,
+          r.restoredPhotos > 0
+            ? t('backup_import_photos').replace('%d', r.restoredPhotos)
+            : null,
+        ].filter(Boolean).join('\n'),
+        [{ text: t('ok'), onPress: () => onDataRestored && onDataRestored(r.trips) }]
+      );
+    } catch (e) {
+      const key = e?.message === 'NOT_A_BACKUP' || e?.message === 'INVALID_JSON'
+        ? 'backup_import_invalid'
+        : 'backup_import_failed';
+      Alert.alert(t('backup_import_failed'), t(key));
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
       {text:t('cancel'),style:'cancel'},
       {text:t('profile_logout_action'),style:'destructive',onPress:async()=>{ await supabase.auth.signOut(); }},
     ]);
+  };
+
+  const handleDeleteAccount = () => {
+    if (isDeletingAccount) return;
+
+    Alert.alert(
+      t('profile_delete_account_title'),
+      t('profile_delete_account_message'),
+      [
+        { text: t('cancel'), style: 'cancel' },
+        {
+          text: t('profile_delete_account_confirm'),
+          style: 'destructive',
+          onPress: () => {
+            Alert.alert(
+              t('profile_delete_account_final_title'),
+              t('profile_delete_account_final_message'),
+              [
+                { text: t('cancel'), style: 'cancel' },
+                {
+                  text: t('profile_delete_account_final_confirm'),
+                  style: 'destructive',
+                  onPress: async () => {
+                    try {
+                      setIsDeletingAccount(true);
+                      await deleteCurrentAccount();
+                    } catch (e) {
+                      Alert.alert(t('profile_delete_account_failed'), e?.message || t('profile_try_later'));
+                    } finally {
+                      setIsDeletingAccount(false);
+                    }
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -116,76 +367,44 @@ const ENABLE_YEAR_REPORT = false;
           <TouchableOpacity onPress={()=>setShowEditProfile(true)}>
             <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
-          <Text style={s.email}>{email}</Text>
-          <TouchableOpacity style={[s.planBadge,isPro&&{backgroundColor:'#D4AF3720',borderColor:'#D4AF3750'}]} onPress={()=>!isPro&&setShowPricing(true)}>
-            <Text style={[s.planText,isPro&&{color:'#D4AF37'}]}>{isPro ? t('profile_pro_member') : t('profile_free_upgrade')}</Text>
-          </TouchableOpacity>
+          <Text style={s.email}>{isGuest ? t('profile_guest_desc') : email}</Text>
+          <View style={s.planBadge}>
+            <Text style={s.planText}>{isGuest ? t('profile_guest_title') : t('profile_free')}</Text>
+          </View>
         </View>
 
         <View style={s.statsGrid}>
           {[
-            [String(trips.length),t('profile_stat_trips'),isPro?'∞':'3'],
-            [String(totalDays),t('profile_stat_days'),''],
-            [String(totalMemos),t('profile_stat_memos'),''],
-            [String(totalPhotos),t('profile_stat_photos'),''],
-            [String(totalVideos),t('profile_stat_videos'),''],
-          ].map(([n,l,limit])=>(
+            [String(trips.length),t('profile_stat_trips')],
+            [String(totalDays),t('profile_stat_days')],
+            [String(totalMemos),t('profile_stat_memos')],
+            [String(totalPhotos),t('profile_stat_photos')],
+          ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
-              <Text style={s.statNum}>{n}{limit?<Text style={s.statLimit}>/{limit}</Text>:null}</Text>
+              <Text style={s.statNum}>{n}</Text>
               <Text style={s.statLabel}>{l}</Text>
             </View>
           ))}
         </View>
 
-        <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('PhotoFilter')} >
-          <View>
-            <Text style={s.reportTitle}>🎨 {t('profile_photo_filter')}</Text>
-            <Text style={s.reportDesc}>{t('profile_photo_filter_desc')}</Text>
-          </View>
-          <Text style={s.reportArrow}>→</Text>
-        </TouchableOpacity>
-
-        {ENABLE_YEAR_REPORT && (
-          <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
-          <View>
-            <Text style={s.reportTitle}>📊 {t('profile_year_report')}</Text>
-            <Text style={s.reportDesc}>{t('profile_year_report_desc')}</Text>
-          </View>
-          <Text style={s.reportArrow}>→</Text>
+        <Text style={s.sectionTitle}>{t('profile_data')}</Text>
+        <View style={s.settingList}>
+          <TouchableOpacity style={s.settingRow} onPress={handleExport} disabled={isExporting}>
+            <Text style={s.settingIcon}>📦</Text>
+            <Text style={s.settingLabel}>
+              {isExporting ? t('backup_exporting') : t('backup_export')}
+            </Text>
+            <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
-        )}
-
-        {!isPro && (
-          <TouchableOpacity style={s.upgradeCard} onPress={()=>openPaywall ? openPaywall(t('profile_pro_member')) : setShowPricing(true)}>
-            <View>
-              <Text style={s.upgradeTitle}>✦ {t('profile_upgrade_pro')}</Text>
-              <Text style={s.upgradeDesc}>{t('profile_upgrade_desc')}</Text>
-            </View>
-            <Text style={s.upgradeArrow}>→</Text>
+          <TouchableOpacity style={s.settingRow} onPress={handleImport} disabled={isImporting}>
+            <Text style={s.settingIcon}>📥</Text>
+            <Text style={s.settingLabel}>
+              {isImporting ? t('backup_importing') : t('backup_import')}
+            </Text>
+            <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
-        )}
-
-        <Text style={s.sectionTitle}>{t('profile_feature_compare')}</Text>
-        <View style={s.featureList}>
-          {[
-            {icon:'🗺',label:t('profile_feature_trip_count'),free:t('profile_max_3'),pro:t('profile_unlimited')},
-            {icon:'☁️',label:t('profile_feature_cloud_backup'),free:'❌',pro:'✅'},
-            {icon:'🤖',label:t('profile_feature_ai_diary'),free:'❌',pro:'✅'},
-            {icon:'🖼',label:t('profile_feature_album'),free:'❌',pro:'✅'},
-            {icon:'📸',label:t('profile_feature_photo_storage'),free:t('profile_local'),pro:t('profile_unlimited_cloud')},
-            // {icon:'🎬',label:'视频存储',free:'本地',pro:'无限云端'}, // v2.0
-            {icon:'📊',label:t('profile_feature_year_report'),free:'✅',pro:'✅'},
-            {icon:'🎨',label:t('profile_feature_photo_filter'),free:'✅',pro:'✅'},
-            {icon:'🌐',label:t('profile_feature_language'),free:'✅',pro:'✅'},
-          ].map(f=>(
-            <View key={f.label} style={s.featureRow}>
-              <Text style={s.featureIcon}>{f.icon}</Text>
-              <Text style={s.featureLabel}>{f.label}</Text>
-              <Text style={[s.featureVal,{color:'#555'}]}>{f.free}</Text>
-              <Text style={[s.featureVal,{color:'#D4AF37'}]}>{f.pro}</Text>
-            </View>
-          ))}
         </View>
+        <Text style={s.settingHint}>{t('backup_hint')}</Text>
 
         <Text style={s.sectionTitle}>{t('profile_account_settings')}</Text>
         <View style={s.settingList}>
@@ -195,7 +414,39 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:predestina@msn.com')}>
+          <TouchableOpacity style={s.settingRow} onPress={toggleReminders} disabled={togglingReminders}>
+            <Text style={s.settingIcon}>🔔</Text>
+            <Text style={s.settingLabel}>{t('notify_departure_setting')}</Text>
+            <Text style={[s.settingValue, remindersOn && {color:'#D4AF37'}]}>
+              {remindersOn ? t('notify_on') : t('notify_off')}
+            </Text>
+          </TouchableOpacity>
+
+          {visitsSupported() && (
+            <TouchableOpacity style={s.settingRow} onPress={toggleVisits} disabled={togglingVisits}>
+              <Text style={s.settingIcon}>👣</Text>
+              <Text style={s.settingLabel}>{t('visits_setting')}</Text>
+              <Text style={[s.settingValue, visitsOn && {color:'#D4AF37'}]}>
+                {visitsOn ? t('notify_on') : t('notify_off')}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity style={s.settingRow} onPress={()=>setShowUnitsModal(true)}>
+            <Text style={s.settingIcon}>📏</Text>
+            <Text style={s.settingLabel}>{t('units_title')}</Text>
+            <Text style={s.settingValue}>{unitLabel(units)}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.settingRow} onPress={()=>setShowCurrencyModal(true)}>
+            <Text style={s.settingIcon}>💱</Text>
+            <Text style={s.settingLabel}>{t('expense_home_currency')}</Text>
+            <Text style={s.settingValue}>{homeCurrency}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('mailto:cqforest123@gmail.com')}>
             <Text style={s.settingIcon}>📧</Text>
             <Text style={s.settingLabel}>{t('profile_contact')}</Text>
             <Text style={s.settingArrow}>→</Text>
@@ -205,18 +456,38 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.settingLabel}>{t('profile_privacy_policy')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/idYOUR_APP_ID?action=write-review')}>
+          <TouchableOpacity style={s.settingRow} onPress={openDiagnostics}>
+            <Text style={s.settingIcon}>🩺</Text>
+            <Text style={s.settingLabel}>{t('diag_title')}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/id6769281736?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
             <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-          <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
-        </TouchableOpacity>
+        {isGuest ? (
+          <TouchableOpacity style={s.signInBtn} onPress={onRequestSignIn}>
+            <Text style={s.signInText}>{t('profile_sign_in_to_sync')}</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            <TouchableOpacity style={s.deleteAccountBtn} onPress={handleDeleteAccount} disabled={isDeletingAccount}>
+              <Text style={s.deleteAccountText}>
+                {isDeletingAccount ? t('profile_deleting_account') : t('profile_delete_account')}
+              </Text>
+            </TouchableOpacity>
 
-        <Text style={s.version}>WanderNote v1.0.0 · {t('profile_version_slogan')}</Text>
+            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
+              <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
+            </TouchableOpacity>
+          </>
+        )}
+
+        <Text style={s.version}>WanderNote v{APP_VERSION} ({APP_BUILD}) · {t('profile_version_slogan')}</Text>
       </ScrollView>
 
       <Modal visible={showEditProfile} animationType="slide" transparent>
@@ -246,38 +517,6 @@ const ENABLE_YEAR_REPORT = false;
         </View>
       </Modal>
 
-      <Modal visible={showPricing} animationType="slide" transparent>
-        <View style={s.overlay}>
-          <TouchableOpacity style={{flex:1}} onPress={()=>setShowPricing(false)}/>
-          <View style={s.pricingSheet}>
-            <Text style={s.pricingTitle}>{t('profile_upgrade_pro')}</Text>
-            <Text style={s.pricingSubtitle}>{t('profile_unlock_full')}</Text>
-            <View style={s.planToggle}>
-              {['monthly','annual'].map(p=>(
-                <TouchableOpacity key={p} style={[s.planBtn,selectedPlan===p&&s.planBtnActive]} onPress={()=>setSelectedPlan(p)}>
-                  <Text style={[s.planBtnText,selectedPlan===p&&s.planBtnTextActive]}>
-                    {p==='monthly'?t('profile_monthly'):t('profile_annual_save')}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={s.priceBox}>
-              <Text style={s.priceNum}>¥{selectedPlan==='monthly'?'28':'19'}</Text>
-              <Text style={s.pricePer}>/ {t('profile_month')}{selectedPlan==='annual'?` · ${t('profile_billed_yearly')} ¥228`:''}</Text>
-            </View>
-            {[t('profile_pro_unlimited_trips'),t('profile_pro_cloud_backup'),t('profile_pro_ai_diary'),t('profile_pro_album_export'),t('profile_pro_media_cloud'),t('profile_pro_year_report')].map(f=>(
-              <View key={f} style={s.pricingFeatureRow}>
-                <Text style={s.check}>✦</Text>
-                <Text style={s.pricingFeatureText}>{f}</Text>
-              </View>
-            ))}
-            <TouchableOpacity style={s.subscribeBtn} onPress={()=>{ setShowPricing(false); openPaywall && openPaywall(t('profile_pro_member')); }}>
-              <Text style={s.subscribeBtnText}>{t('profile_subscribe_now')} →</Text>
-            </TouchableOpacity>
-            <Text style={s.pricingNote}>{t('profile_cancel_anytime')}</Text>
-          </View>
-        </View>
-      </Modal>
       {/* 语言选择弹窗 */}
       <Modal visible={showLangModal} animationType="slide" transparent>
         <View style={s.overlay}>
@@ -293,6 +532,77 @@ const ENABLE_YEAR_REPORT = false;
               </TouchableOpacity>
             ))}
             <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowLangModal(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 单位：跟随系统 / 公制 / 英制 */}
+      <Modal visible={showUnitsModal} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowUnitsModal(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>{t('units_title')}</Text>
+            {UNIT_CHOICES.map(choice=>(
+              <TouchableOpacity key={choice}
+                style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#222',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                onPress={()=>selectUnits(choice)}>
+                <Text style={{color:'#F0EDE8',fontSize:16}}>{unitLabel(choice)}</Text>
+                {units===choice && <Text style={{color:'#D4AF37',fontSize:16}}>✓</Text>}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowUnitsModal(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 诊断日志：只记录发生了什么，不记录你写了什么 */}
+      <Modal visible={showDiagnostics} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowDiagnostics(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>{t('diag_title')}</Text>
+            <Text style={{color:'#555',fontSize:12,marginBottom:10}}>{t('diag_hint')}</Text>
+            <ScrollView style={{maxHeight:300,backgroundColor:'#111',borderRadius:10,padding:10}}>
+              <Text style={{color:'#8A8A8A',fontSize:11,fontFamily:Platform.OS==='ios'?'Menlo':'monospace'}}>
+                {diagnosticsText || t('diag_empty')}
+              </Text>
+            </ScrollView>
+            <View style={{flexDirection:'row',gap:12,marginTop:14}}>
+              <TouchableOpacity style={[s.editCancelBtn,{flex:1}]} onPress={wipeDiagnostics}>
+                <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('diag_clear')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.editCancelBtn,{flex:1,borderColor:'#D4AF3750',backgroundColor:'#D4AF3715'}]} onPress={copyDiagnostics}>
+                <Text style={{color:'#D4AF37',fontSize:15,textAlign:'center'}}>{t('diag_copy')}</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowDiagnostics(false)}>
+              <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 本币选择 */}
+      <Modal visible={showCurrencyModal} animationType="slide" transparent>
+        <View style={s.overlay}>
+          <TouchableOpacity style={{flex:1}} onPress={()=>setShowCurrencyModal(false)}/>
+          <View style={s.editSheet}>
+            <Text style={s.editTitle}>{t('expense_home_currency')}</Text>
+            <ScrollView style={{maxHeight:320}}>
+              {COMMON_CURRENCIES.map(item=>(
+                <TouchableOpacity key={item.code}
+                  style={{paddingVertical:14,borderBottomWidth:1,borderBottomColor:'#222',flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                  onPress={()=>selectCurrency(item.code)}>
+                  <Text style={{color:'#F0EDE8',fontSize:16}}>{`${item.code}  ${currencySymbol(item.code)}`}</Text>
+                  {homeCurrency===item.code && <Text style={{color:'#D4AF37',fontSize:16}}>✓</Text>}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowCurrencyModal(false)}>
               <Text style={{color:'#555',fontSize:15,textAlign:'center'}}>{t('cancel')}</Text>
             </TouchableOpacity>
           </View>
@@ -323,46 +633,25 @@ const s = StyleSheet.create({
   statsGrid:{flexDirection:'row',gap:10,marginBottom:20},
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:20,color:'#D4AF37',fontWeight:'300'},
-  statLimit:{fontSize:11,color:'#555'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},
   reportCard:{backgroundColor:'#0D1A2E',borderWidth:1,borderColor:'#4ECDC440',borderRadius:14,padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12},
   reportTitle:{fontSize:16,color:'#4ECDC4',marginBottom:4},
   reportDesc:{fontSize:12,color:'#888'},
   reportArrow:{color:'#4ECDC4',fontSize:18},
-  upgradeCard:{backgroundColor:'#D4AF3715',borderWidth:1,borderColor:'#D4AF3740',borderRadius:14,padding:18,flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:24},
-  upgradeTitle:{fontSize:16,color:'#D4AF37',marginBottom:4},
-  upgradeDesc:{fontSize:12,color:'#888'},
-  upgradeArrow:{color:'#D4AF37',fontSize:18},
   sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:12},
-  featureList:{backgroundColor:'#161616',borderRadius:14,borderWidth:1,borderColor:'#242424',marginBottom:24,overflow:'hidden'},
-  featureRow:{flexDirection:'row',alignItems:'center',padding:14,borderBottomWidth:1,borderBottomColor:'#1E1E1E',gap:10},
-  featureIcon:{fontSize:16,width:24},
-  featureLabel:{flex:1,fontSize:14,color:'#888'},
-  featureVal:{width:56,fontSize:12,textAlign:'center'},
   settingList:{backgroundColor:'#161616',borderRadius:14,borderWidth:1,borderColor:'#242424',marginBottom:20,overflow:'hidden'},
   settingRow:{flexDirection:'row',alignItems:'center',padding:16,borderBottomWidth:1,borderBottomColor:'#1E1E1E',gap:12},
   settingIcon:{fontSize:18,width:28},
   settingLabel:{flex:1,fontSize:15,color:'#C8C4BC'},
   settingArrow:{color:'#444',fontSize:14},
+  settingValue:{color:'#666',fontSize:14},
+  deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
+  deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
+  settingHint:{fontSize:12,color:'#555',lineHeight:18,marginTop:8,marginBottom:4,paddingHorizontal:4},
+  signInBtn:{borderWidth:1,borderColor:'#D4AF3760',borderRadius:14,padding:16,alignItems:'center',marginBottom:20,backgroundColor:'#D4AF3710'},
+  signInText:{color:'#D4AF37',fontSize:15,fontWeight:'600'},
   logoutBtn:{borderWidth:1,borderColor:'#FF6B6B40',borderRadius:14,padding:16,alignItems:'center',marginBottom:20},
   logoutText:{color:'#FF6B6B',fontSize:15},
   version:{textAlign:'center',color:'#333',fontSize:11},
   overlay:{flex:1,backgroundColor:'#000000BB',justifyContent:'flex-end'},
-  pricingSheet:{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:28,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A'},
-  pricingTitle:{fontSize:24,color:'#F0EDE8',fontWeight:'300',textAlign:'center',marginBottom:6},
-  pricingSubtitle:{fontSize:14,color:'#555',textAlign:'center',marginBottom:24},
-  planToggle:{flexDirection:'row',backgroundColor:'#1A1A1A',borderRadius:12,padding:4,marginBottom:20},
-  planBtn:{flex:1,padding:10,borderRadius:10,alignItems:'center'},
-  planBtnActive:{backgroundColor:'#D4AF37'},
-  planBtnText:{fontSize:14,color:'#555'},
-  planBtnTextActive:{color:'#0D0D0D',fontWeight:'700'},
-  priceBox:{alignItems:'center',marginBottom:20},
-  priceNum:{fontSize:48,color:'#D4AF37',fontWeight:'300'},
-  pricePer:{fontSize:13,color:'#555'},
-  pricingFeatureRow:{flexDirection:'row',gap:10,alignItems:'center',paddingVertical:8,borderBottomWidth:1,borderBottomColor:'#1A1A1A'},
-  check:{color:'#D4AF37',fontSize:12},
-  pricingFeatureText:{fontSize:14,color:'#888'},
-  subscribeBtn:{backgroundColor:'#D4AF37',borderRadius:14,padding:16,alignItems:'center',marginTop:20,marginBottom:8},
-  subscribeBtnText:{color:'#0D0D0D',fontSize:16,fontWeight:'700'},
-  pricingNote:{textAlign:'center',color:'#444',fontSize:12},
 });

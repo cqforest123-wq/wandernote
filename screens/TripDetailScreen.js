@@ -6,8 +6,40 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, Touch
 import { useTranslation } from 'react-i18next';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
-import { createDay } from '../lib/models';
+import { createDay, pluralUnit } from '../lib/models';
+import {
+  collectTripExpenses,
+  formatMoney,
+  getHomeCurrency,
+  loadRates,
+  sumByCategory,
+  sumExpenses,
+} from '../lib/currency';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
+import TripShareCard, { TRIP_CARD_WIDTH } from '../components/TripShareCard';
+import { buildTripShareStats } from '../lib/tripShareStats';
+import { resolveUsesMetric } from '../lib/currency';
+import { loadVisits, visitsSupported } from '../lib/visits';
+import { mergeVisitsIntoTrip, summariseDayVisits } from '../lib/visitsToDays';
+
+const EXPENSE_CATEGORY_LABEL_KEYS = {
+  food: 'expense_cat_food',
+  transport: 'expense_cat_transport',
+  stay: 'expense_cat_stay',
+  ticket: 'expense_cat_ticket',
+  shopping: 'expense_cat_shopping',
+  other: 'expense_cat_other',
+};
+const EXPENSE_CATEGORY_COLORS = {
+  food: '#FF8C69',
+  transport: '#64B5F6',
+  stay: '#FFB347',
+  ticket: '#9B8EC4',
+  shopping: '#F06292',
+  other: '#6BCB77',
+};
 
 const WEEKDAY_KEYS = ['weekday_sun','weekday_mon','weekday_tue','weekday_wed','weekday_thu','weekday_fri','weekday_sat'];
 
@@ -31,6 +63,21 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [weather, setWeather] = useState(null);
   const [useFahrenheit, setUseFahrenheit] = useState(false);
   const [forecast, setForecast] = useState(null);
+  const [homeCurrency, setHomeCurrency] = useState('');
+  const [rates, setRates] = useState(null);
+  const [usesMetric, setUsesMetric] = useState(true);
+  const [savingCard, setSavingCard] = useState(false);
+  const cardRef = React.useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getHomeCurrency().then(code => !cancelled && setHomeCurrency(code));
+    loadRates().then(result => !cancelled && setRates(result));
+    resolveUsesMetric().then(metric => !cancelled && setUsesMetric(metric));
+
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -59,6 +106,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   }, [trip?.coords, trip?.city, i18n.language]);
 
   if (!trip) return null;
+
+  const tripExpenses = collectTripExpenses(trip);
+  const tripTotal = sumExpenses(tripExpenses, homeCurrency, rates);
+  const categoryTotals = sumByCategory(tripExpenses, homeCurrency, rates);
+  const categoryRows = Object.entries(categoryTotals)
+    .filter(([, value]) => value > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const categoryTotal = categoryRows.reduce((sum, [, value]) => sum + value, 0);
 
   const today = new Date();
   today.setHours(23,59,59,999);
@@ -116,9 +171,9 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         onPress: async () => {
           setIsDeleting(true);
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error(t('auth_not_logged_in'));
-            await deleteTripAndRelated(user.id, trip.id);
+            // 游客没有 user：旅程只在本机，本地删掉即可。
+            const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+            await deleteTripAndRelated(user?.id ?? null, trip.id);
             setTrips(prev => prev.filter(t => t.id !== trip.id));
             navigation.goBack();
           } catch (e) {
@@ -139,6 +194,66 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     ]);
   };
 
+  /**
+   * Fill this trip's days in from the places the phone recorded stopping.
+   *
+   * Explicit rather than automatic: the visits are the user's movements, and
+   * folding them into a journal is their decision to make each time, not a
+   * background behaviour they have to notice and undo.
+   */
+  const fillFromVisits = async () => {
+    const visits = await loadVisits();
+    const { trip: merged, matchedDays, addedVisits } = mergeVisitsIntoTrip(trip, visits);
+
+    if (addedVisits === 0) {
+      Alert.alert(t('visits_fill_title'), t('visits_fill_none'));
+      return;
+    }
+
+    setTrips(prev => prev.map(item => (item.id === trip.id ? merged : item)));
+    Alert.alert(
+      t('visits_fill_title'),
+      t('visits_fill_done').replace('%1', String(addedVisits)).replace('%2', String(matchedDays))
+    );
+  };
+
+  const shareStats = buildTripShareStats(trip, { homeCurrency, rates, usesMetric });
+
+  /**
+   * Share the trip as a picture.
+   *
+   * The text share says where you went; this shows it. A travel journal whose
+   * trips cannot be shown to anyone is missing the thing people most want to
+   * do with a trip, and it was the app's only route to being seen at all.
+   */
+  const shareTripImage = async () => {
+    if (savingCard) return;
+
+    try {
+      setSavingCard(true);
+      // Let the off-screen card lay out before capturing it.
+      await new Promise(requestAnimationFrame);
+
+      const uri = await captureRef(cardRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+        pixelRatio: 3,
+      });
+
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(t('trip_share_card_failed'), t('profile_try_later'));
+        return;
+      }
+
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png' });
+    } catch (e) {
+      Alert.alert(t('trip_share_card_failed'), e?.message || t('profile_try_later'));
+    } finally {
+      setSavingCard(false);
+    }
+  };
+
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
@@ -146,6 +261,11 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         <View style={s.topRow}>
           <TouchableOpacity onPress={()=>navigation.goBack()}><Text style={s.backText}>← {t('back')}</Text></TouchableOpacity>
           <View style={{flexDirection:'row',gap:12}}>
+            <TouchableOpacity onPress={shareTripImage} disabled={savingCard}>
+              <Text style={{color:'#D4AF37',fontSize:13,opacity:savingCard?0.5:1}}>
+                {savingCard ? t('trip_share_card_making') : `${t('trip_share_card')} ▣`}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={shareTrip}><Text style={{color:'#4ECDC4',fontSize:13}}>{t('share')} ↗</Text></TouchableOpacity>
             <TouchableOpacity onPress={deleteTrip}><Text style={s.deleteText}>{t('trip_delete')}</Text></TouchableOpacity>
           </View>
@@ -153,7 +273,9 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 
         {/* 旅程标题 — 点击可编辑 */}
         <TouchableOpacity style={s.tripHeader} onPress={()=>{setEditCity(trip.city);setShowEditTrip(true);}}>
-          <Text style={s.tripEmoji}>{trip.emoji}</Text>
+          {trip.coverUri
+              ? <Image source={{uri:trip.coverUri}} style={s.tripCover} resizeMode="cover"/>
+              : <Text style={s.tripEmoji}>{trip.emoji}</Text>}
           <View style={{flex:1}}>
             <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
               <Text style={s.tripCity} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
@@ -224,7 +346,6 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             [String(trip.days.length),t('stat_days')],
             [String(trip.days.reduce((a,d)=>a+d.memos.length,0)),t('stat_memos')],
             [String(trip.days.reduce((a,d)=>a+(d.photos||[]).length,0)),t('stat_photos')],
-            // [String(trip.days.reduce((a,d)=>a+(d.videos||[]).length,0)),'视频'], // v2.0
           ].map(([n,l])=>(
             <View key={l} style={s.statBox}>
               <Text style={s.statNum}>{n}</Text>
@@ -232,6 +353,49 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             </View>
           ))}
         </View>
+
+        {tripExpenses.length>0 && (
+          <View style={s.spendCard}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <Text style={s.spendLabel}>{t('expense_trip_total')}</Text>
+              <View style={{alignItems:'flex-end'}}>
+                <Text style={s.spendTotal}>{formatMoney(tripTotal.total, homeCurrency)}</Text>
+                {tripTotal.unconvertible.length>0 && (
+                  <Text style={s.spendWarn}>{t('expense_partial_total')}</Text>
+                )}
+                {rates?.stale && tripTotal.unconvertible.length===0 && (
+                  <Text style={s.spendWarn}>{t('expense_stale_rate')}</Text>
+                )}
+              </View>
+            </View>
+
+            {/* No rates at all: say so instead of rendering a bar of zeroes. */}
+            {categoryTotal<=0 ? (
+              <Text style={s.spendWarn}>{t('expense_no_rate_notice')}</Text>
+            ) : (
+              <>
+                <View style={s.spendBar}>
+                  {categoryRows.map(([cat,value])=>(
+                    <View key={cat} style={{
+                      flex:value,
+                      backgroundColor:EXPENSE_CATEGORY_COLORS[cat]||'#666',
+                    }}/>
+                  ))}
+                </View>
+                <View style={s.spendLegend}>
+                  {categoryRows.map(([cat,value])=>(
+                    <View key={cat} style={s.spendLegendItem}>
+                      <View style={[s.spendDot,{backgroundColor:EXPENSE_CATEGORY_COLORS[cat]||'#666'}]}/>
+                      <Text style={s.spendLegendText}>
+                        {`${t(EXPENSE_CATEGORY_LABEL_KEYS[cat]||'expense_cat_other')} ${Math.round(value/categoryTotal*100)}%`}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </>
+            )}
+          </View>
+        )}
 
         {/* 打包清单入口 */}
         <TouchableOpacity style={s.packingBtn}
@@ -261,7 +425,14 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           </View>
         ) : (
           <>
-            <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {t('unit_days')}</Text>
+            <View style={s.logHeader}>
+              <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {pluralUnit(t, trip.days.length, 'unit_day_one', 'unit_days')}</Text>
+              {visitsSupported() && (
+                <TouchableOpacity onPress={fillFromVisits} hitSlop={{top:8,bottom:8,left:8,right:8}}>
+                  <Text style={s.logAction}>{t('visits_fill_action')} 👣</Text>
+                </TouchableOpacity>
+              )}
+            </View>
             {[...trip.days].reverse().map((day,i)=>{
               const photos = day.photos||[];
               return (
@@ -287,6 +458,21 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                     <View style={s.dayStats}>
                       {day.memos.length>0 && <Text style={s.dayStat}>📝 {day.memos.length}</Text>}
                       {photos.length>0 && <Text style={s.dayStat}>📸 {photos.length}</Text>}
+                      {(() => {
+                        // Automatic footprints only paid off on the map, which
+                        // is a separate tab — so the day they belong to said
+                        // nothing about them.
+                        const visited = summariseDayVisits(day);
+                        if (!visited) return null;
+                        const duration = visited.hours > 0
+                          ? t('visits_day_hm').replace('%1', visited.hours).replace('%2', visited.remainderMinutes)
+                          : t('visits_day_m').replace('%1', visited.minutes);
+                        return (
+                          <Text style={s.dayStat}>
+                            {`👣 ${t('visits_day_places').replace('%1', visited.places)} · ${duration}`}
+                          </Text>
+                        );
+                      })()}
                     </View>
                   </View>
                   <Text style={s.dayArrow}>→</Text>
@@ -296,6 +482,22 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           </>
         )}
       </ScrollView>
+
+      {/* Off-screen, purely as input to view-shot. */}
+      <View style={s.offscreen} pointerEvents="none">
+        <TripShareCard
+          cardRef={cardRef}
+          stats={shareStats}
+          emoji={trip.emoji}
+          labels={{
+            days: t('stat_days'),
+            photos: t('stat_photos'),
+            distance: t('trip_share_distance'),
+            spend: t('expense_trip_total'),
+            untitled: t('search_untitled'),
+          }}
+        />
+      </View>
 
       {/* 记录今天弹窗 — 使用iOS原生日期选择器 */}
       <Modal visible={showAddDay} animationType="slide" transparent>
@@ -421,17 +623,30 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 }
 
 const s = StyleSheet.create({
+  offscreen:{position:'absolute',left:-9999,top:0,width:TRIP_CARD_WIDTH},
   container:{flex:1,backgroundColor:'#0D0D0D'},
   scroll:{padding:24,paddingBottom:100},
-  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20},
+  topRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20,gap:16},
+  logHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
+  logAction:{color:'#6BCB77',fontSize:13},
   backText:{color:'#D4AF37',fontSize:15},
   deleteText:{color:'#FF6B6B',fontSize:13},
   tripHeader:{flexDirection:'row',alignItems:'center',gap:16,marginBottom:24},
   tripEmoji:{fontSize:48},
+  tripCover:{width:64,height:64,borderRadius:16},
   tripCity:{fontSize:28,color:'#F0EDE8',fontWeight:'300'},
   editHint:{fontSize:16,color:'#444'},
   tripMeta:{fontSize:14,color:'#555',marginTop:4},
   statsRow:{flexDirection:'row',gap:12,marginBottom:24},
+  spendCard:{backgroundColor:'#161616',borderRadius:16,padding:18,marginBottom:24,borderWidth:1,borderColor:'#2A2A2A'},
+  spendLabel:{fontSize:11,color:'#555',letterSpacing:2,textTransform:'uppercase'},
+  spendTotal:{fontSize:24,color:'#D4AF37',fontWeight:'300'},
+  spendWarn:{fontSize:10,color:'#8A7B4A',marginTop:4},
+  spendBar:{flexDirection:'row',height:6,borderRadius:3,overflow:'hidden',marginTop:16,backgroundColor:'#222'},
+  spendLegend:{flexDirection:'row',flexWrap:'wrap',gap:12,marginTop:12},
+  spendLegendItem:{flexDirection:'row',alignItems:'center',gap:5},
+  spendDot:{width:7,height:7,borderRadius:4},
+  spendLegendText:{fontSize:11,color:'#666'},
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
   statLabel:{fontSize:10,color:'#555',marginTop:4},

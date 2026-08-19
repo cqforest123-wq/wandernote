@@ -1,0 +1,5 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "读取步数，在速览里显示你今天走了多远。";
+"NSLocationWhenInUseUsageDescription" = "显示你的位置、海拔和剩余日照，并记住你把车停在哪里。";
+"NSMotionUsageDescription" = "读取气压计，显示气压及其升降趋势——户外变天最早的信号。";

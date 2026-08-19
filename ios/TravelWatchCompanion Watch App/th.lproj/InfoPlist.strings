@@ -1,0 +1,5 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "อ่านจำนวนก้าวเพื่อแสดงว่าวันนี้คุณเดินไปเท่าไร";
+"NSLocationWhenInUseUsageDescription" = "แสดงตำแหน่ง ความสูง และเวลากลางวันที่เหลือ พร้อมจดจำจุดที่คุณจอดรถ";
+"NSMotionUsageDescription" = "อ่านบารอมิเตอร์เพื่อแสดงความกดอากาศและแนวโน้มขึ้นลง สัญญาณเริ่มต้นของสภาพอากาศที่กำลังเปลี่ยน";

@@ -3,12 +3,19 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../lib/supabase';
 import { deleteTripAndRelated } from '../lib/sync';
-import { createTrip } from '../lib/models';
+import { createTrip, pluralUnit } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { getFallbackCityCoords } from '../lib/cityFallbacks';
+import { geocodeCity } from '../lib/geocoding';
+import { searchPlaces } from '../lib/placeSearch';
+import * as ImagePicker from 'expo-image-picker';
+import { buildTripDraftFromPhotos, parseExifCoords } from '../lib/tripFromPhotos';
+import { attachPhotoLocations, requestPhotoLocationAccess } from '../lib/photoLocation';
+import { logEvent } from '../lib/diagnostics';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 
 const CONTINENTS = [
   { name:'🌏 亚洲', countries:[
@@ -201,6 +208,7 @@ const EMOJIS = [
 
 
 function CountdownCard({ trips }) {
+  const { t } = useTranslation();
   const today = new Date();
   today.setHours(0,0,0,0);
 
@@ -223,7 +231,7 @@ function CountdownCard({ trips }) {
     <View style={cd.card}>
       <View style={cd.left}>
         <Text style={cd.days}>{diff}</Text>
-        <Text style={cd.daysLabel}>天后出发</Text>
+        <Text style={cd.daysLabel}>{t('countdown_days')}</Text>
       </View>
       <View style={cd.right}>
         <Text style={cd.emoji}>{upcoming.emoji}</Text>
@@ -247,109 +255,11 @@ const cd = StyleSheet.create({
   glow:{position:'absolute',right:-20,top:-20,width:80,height:80,borderRadius:40,backgroundColor:'#4ECDC4',opacity:0.08},
 });
 
-async function nominatimSearch(query) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
-  try {
-    const res = await fetch(url, {
-      headers: { 'User-Agent': 'WanderNote/1.0' },
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    const data = await res.json();
-    if (data?.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  } catch (e) {
-    clearTimeout(timer);
-  }
-  return null;
-}
-
-// 中英文双重geocode，提升小地名识别率
-const ZH_TO_EN = {
-  // 欧洲
-  '哈尔施塔特': 'Hallstatt', '因特拉肯': 'Interlaken', '少女峰': 'Jungfrau',
-  '采尔马特': 'Zermatt', '卡帕多奇亚': 'Cappadocia', '棉花堡': 'Pamukkale',
-  '圣托里尼': 'Santorini', '杜布罗夫尼克': 'Dubrovnik', '普利特维采': 'Plitvice Lakes',
-  '克鲁姆洛夫': 'Cesky Krumlov', '新天鹅堡': 'Neuschwanstein Castle',
-  '罗腾堡': 'Rothenburg ob der Tauber', '科托尔': 'Kotor',
-  '布莱德湖': 'Lake Bled', '波斯托伊纳洞穴': 'Postojna Cave',
-  '五渔村': 'Cinque Terre', '阿马尔菲': 'Amalfi',
-  '罗弗敦群岛': 'Lofoten Islands', '盖朗厄尔峡湾': 'Geirangerfjord',
-  '弗洛姆': 'Flam', '特罗姆瑟': 'Tromso',
-  '卡罗维发利': 'Karlovy Vary', '大特尔诺沃': 'Veliko Tarnovo',
-  '里拉修道院': 'Rila Monastery', '马特洪峰': 'Matterhorn',
-  '科孚岛': 'Corfu', '克里特岛': 'Crete', '米科诺斯': 'Mykonos',
-  '罗德岛': 'Rhodes', '萨拉热窝': 'Sarajevo', '莫斯塔尔': 'Mostar',
-  '布德瓦': 'Budva', '黑山': 'Montenegro',
-  '辛特拉': 'Sintra', '阿尔加维': 'Algarve',
-  '科茨沃尔德': 'Cotswolds', '湖区': 'Lake District',
-  '苏格兰高地': 'Scottish Highlands',
-  // 亚洲
-  '吴哥窟': 'Angkor Wat', '琅勃拉邦': 'Luang Prabang',
-  '蒲甘': 'Bagan', '茵莱湖': 'Inle Lake', '万荣': 'Vang Vieng',
-  '会安': 'Hoi An', '下龙湾': 'Ha Long Bay', '顺化': 'Hue',
-  '大叻': 'Da Lat', '富国岛': 'Phu Quoc',
-  '龙目岛': 'Lombok', '科莫多岛': 'Komodo Island',
-  '长滩岛': 'Boracay', '巴拉望岛': 'Palawan',
-  '白川乡': 'Shirakawago', '高山': 'Takayama',
-  '箱根': 'Hakone', '镰仓': 'Kamakura',
-  '虎穴寺': 'Tiger Nest Monastery', '普纳卡': 'Punakha',
-  '锡吉里亚': 'Sigiriya', '加勒': 'Galle',
-  '洪扎谷地': 'Hunza Valley', '帕米尔高原': 'Pamir Plateau',
-  '卡兹别吉': 'Kazbegi', '第比利斯': 'Tbilisi',
-  '布哈拉': 'Bukhara', '撒马尔罕': 'Samarkand', '希瓦': 'Khiva',
-  '佩特拉': 'Petra', '瓦迪拉姆': 'Wadi Rum',
-  '以弗所': 'Ephesus', '博德鲁姆': 'Bodrum',
-  '棉花堡': 'Pamukkale', '安塔利亚': 'Antalya',
-  '设拉子': 'Shiraz', '伊斯法罕': 'Isfahan', '亚兹德': 'Yazd',
-  '瓦拉纳西': 'Varanasi', '拉达克': 'Ladakh',
-  '泰姬陵': 'Taj Mahal', '斋浦尔': 'Jaipur',
-  '喀拉拉邦': 'Kerala',
-  // 美洲
-  '马丘比丘': 'Machu Picchu', '乌尤尼盐湖': 'Uyuni Salt Flat',
-  '彩虹山': 'Rainbow Mountain Peru', '的的喀喀湖': 'Lake Titicaca',
-  '巴塔哥尼亚': 'Patagonia', '乌斯怀亚': 'Ushuaia',
-  '伊瓜苏瀑布': 'Iguazu Falls', '安赫尔瀑布': 'Angel Falls',
-  '加拉帕戈斯群岛': 'Galapagos Islands',
-  '托雷斯德尔潘恩': 'Torres del Paine', '阿塔卡马沙漠': 'Atacama Desert',
-  '科潘遗址': 'Copan Ruins', '蒂卡尔': 'Tikal',
-  '阿蒂特兰湖': 'Lake Atitlan', '安提瓜': 'Antigua Guatemala',
-  '卡塔赫纳': 'Cartagena Colombia', '咖啡产区': 'Coffee Region Colombia',
-  '大峡谷': 'Grand Canyon', '黄石公园': 'Yellowstone',
-  // 非洲
-  '马赛马拉': 'Masai Mara', '塞伦盖蒂': 'Serengeti',
-  '恩戈罗恩戈罗': 'Ngorongoro', '桑给巴尔': 'Zanzibar',
-  '纳米布沙漠': 'Namib Desert', '鱼河峡谷': 'Fish River Canyon',
-  '维多利亚瀑布': 'Victoria Falls', '奥卡万戈三角洲': 'Okavango Delta',
-  '舍夫沙万': 'Chefchaouen', '梅尔祖卡沙漠': 'Merzouga Desert',
-  '拉利贝拉': 'Lalibela', '达纳基尔': 'Danakil Depression',
-  '戈雷岛': 'Goree Island',
-  // 大洋洲/极地
-  '乌鲁鲁': 'Uluru', '大堡礁': 'Great Barrier Reef',
-  '蓝山': 'Blue Mountains', '塔斯马尼亚': 'Tasmania',
-  '峡湾国家公园': 'Fiordland National Park', '霍比特屯': 'Hobbiton',
-  '朗伊尔城': 'Longyearbyen', '迪纳利国家公园': 'Denali National Park',
-  '冰川湾': 'Glacier Bay', '卡伊图尔瀑布': 'Kaieteur Falls',
-};
-
-async function geocodeCity(cityName, countryName) {
-  // 先用中文搜
-  const result = await nominatimSearch(`${cityName} ${countryName}`);
-  if (result) return result;
-  // 中文失败，尝试英文映射
-  const enName = ZH_TO_EN[cityName];
-  if (enName) {
-    const result2 = await nominatimSearch(enName);
-    if (result2) return result2;
-  }
-  // 最后只用城市名再试一次
-  return await nominatimSearch(cityName);
-}
-
-export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
+export default function HomeScreen({ navigation, trips, setTrips }) {
   const { t, i18n } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState(null);
   const [step, setStep] = useState(1);
   const [selectedContinent, setSelectedContinent] = useState(null);
   const [selectedCountry, setSelectedCountry] = useState(null);
@@ -357,6 +267,9 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   const [customCity, setCustomCity] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState(null);
   const [search, setSearch] = useState('');
+  const [placeResults, setPlaceResults] = useState([]);
+  const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [plannedDate, setPlannedDate] = useState('');
   const [plannedDateObj, setPlannedDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
   const [enableCountdown, setEnableCountdown] = useState(false);
@@ -387,6 +300,37 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
     [destinationSource]
   );
 
+  React.useEffect(() => {
+    const query = search.trim();
+
+    if (!showAdd || step !== 1 || query.length < 2) {
+      setPlaceResults([]);
+      setPlaceSearchLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPlaceSearchLoading(true);
+
+    const timer = setTimeout(() => {
+      searchPlaces(query, i18n.language)
+        .then(results => {
+          if (!cancelled) setPlaceResults(results);
+        })
+        .catch(() => {
+          if (!cancelled) setPlaceResults([]);
+        })
+        .finally(() => {
+          if (!cancelled) setPlaceSearchLoading(false);
+        });
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [search, showAdd, step, i18n.language]);
+
   // 监听城市名变化自动获取天气，不依赖步骤
   React.useEffect(() => {
     const cityName = customCity.trim() || selectedCities[0];
@@ -400,9 +344,32 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
       .finally(() => setForecastLoading(false));
   }, [customCity, selectedCities, i18n.language]);
 
+  const useOnlinePlaceDestination = (place) => {
+    if (!place) return;
+
+    setSelectedCountry(place.country ? { name: place.country, cities: [] } : null);
+    setSelectedCities([]);
+    setSelectedPlace(place);
+    setCustomCity(place.name || search.trim());
+    setStep(3);
+  };
+
+  const useSearchAsCustomDestination = () => {
+    const destinationName = search.trim();
+    if (!destinationName) return;
+
+    const firstMatchedCountry = searchResults?.[0]?.country || selectedCountry || null;
+
+    setSelectedCountry(firstMatchedCountry);
+    setSelectedCities([]);
+    setSelectedPlace(null);
+    setCustomCity(destinationName);
+    setStep(3);
+  };
+
   const resetForm = () => {
     setStep(1); setSelectedContinent(null); setSelectedCountry(null);
-    setSelectedCities([]); setCustomCity(''); setSelectedEmoji(null);
+    setSelectedCities([]); setCustomCity(''); setSelectedEmoji(null); setSelectedPlace(null);
     setSearch('');
     setPlannedDate('');
     setPlannedDateObj(new Date(Date.now() + 7*24*60*60*1000));
@@ -418,22 +385,32 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
       const d = plannedDateObj;
       return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
     })() : null;
+    const initialCoords = selectedPlace?.coords || getFallbackCityCoords(cityName, selectedCountry?.name || '');
+    const countryName = selectedPlace?.country || selectedCountry?.name || '';
+
     const newTrip = createTrip({
       city: cityName,
-      country: selectedCountry?.name || '',
+      country: countryName,
       emoji,
       plannedDate: plannedDateValue,
-      coords: null,
+      coords: initialCoords,
     });
     setTrips(prev => [newTrip, ...prev]);
     resetForm(); setShowAdd(false);
     navigation.navigate('TripDetail', { tripId: newTrip.id });
-    // 异步获取坐标，不阻塞UI
-    geocodeCity(cityName, selectedCountry?.name || '').then(coords => {
-      if (coords) {
-        setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, coords } : t));
-      }
-    }).catch(() => {});
+    // 异步获取坐标，不阻塞UI。在线候选地点或 fallback 已有坐标时不再覆盖。
+    if (!initialCoords) {
+      Alert.alert('', t('trip_location_pending_notice'));
+      geocodeCity(cityName, countryName).then(coords => {
+        if (coords) {
+          setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, coords, geocodeStatus: 'resolved' } : t));
+        } else {
+          setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, geocodeStatus: 'failed' } : t));
+        }
+      }).catch(() => {
+        setTrips(prev => prev.map(t => t.id === newTrip.id ? { ...t, geocodeStatus: 'failed' } : t));
+      });
+    }
   };
 
   const deleteTrip = (tripId, cityName) => {
@@ -446,9 +423,9 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         onPress: async () => {
           setDeletingId(tripId);
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error(t('auth_not_logged_in'));
-            await deleteTripAndRelated(user.id, tripId);
+            // 游客没有 user：旅程只在本机，本地删掉即可。
+            const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: {} }));
+            await deleteTripAndRelated(user?.id ?? null, tripId);
             setTrips(prev => prev.filter(t => t.id !== tripId));
           } catch (e) {
             console.error('deleteTrip error:', e.message);
@@ -462,12 +439,137 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const handleNewTrip = () => {
-    if (!isPro && trips.length >= (freeTripLimit||3)) {
-      Alert.alert(t('alert_pro_limit'), t('alert_pro_limit_desc').replace('%d', freeTripLimit||3), [{text:t('cancel'), style:'cancel'},{text:t('alert_upgrade'), onPress:()=>{}}]
-      );
-      return;
-    }
     resetForm(); setShowAdd(true);
+  };
+
+  /**
+   * 从照片建旅程。
+   *
+   * 人在旅途中只会拍照，不会写日记。而每张照片本来就带着拍摄时间和 GPS ——
+   * 一份完整的旅行日志已经在相册里了，只是没人把它组织起来。
+   */
+  const handleCreateFromPhotos = async () => {
+    if (importing) return;
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(t('alert_need_permission'), t('alert_permission_album'));
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        exif: true,           // 时间和 GPS 全靠它
+        selectionLimit: 0,    // 不限张数：一趟旅行几百张很正常
+        // quality 低于 1 会让 expo-image-picker 逐张解码再重编码，几百张就是
+        // 选完之后十几秒没有任何反馈。设成 1 并要求原始表示，走它的快速通道
+        // 直接拷文件 —— 快得多，画质也不损失。
+        quality: 1,
+        preferredAssetRepresentationMode:
+          ImagePicker.UIImagePickerPreferredAssetRepresentationMode.Current,
+      });
+      if (result.canceled || !result.assets?.length) return;
+
+      setImporting(true);
+      setImportProgress(null);
+
+      // iOS strips GPS from anything the photo picker hands over, so the
+      // coordinates have to be read back from the library itself. Declining
+      // only costs the destination guess and the map footprint — the days are
+      // built from timestamps either way.
+      logEvent('photo-import', 'picked', {
+        count: result.assets.length,
+        withAssetId: result.assets.filter(a => !!a.assetId).length,
+        withExifGps: result.assets.filter(
+          a => parseExifCoords(a.exif) !== null
+        ).length,
+      });
+
+      // Key names only — never values. Which keys iOS actually hands over is
+      // the thing we cannot otherwise see, and it is not personal data.
+      const sampleKeys = Object.keys(result.assets[0]?.exif || {});
+      logEvent('photo-import', 'exif-keys', {
+        n: sampleKeys.length,
+        keys: sampleKeys.filter(k => /gps|date/i.test(k)).slice(0, 8),
+        sample: sampleKeys.slice(0, 10),
+      });
+
+      const granted = await requestPhotoLocationAccess();
+      const located = await attachPhotoLocations(result.assets, {
+        onProgress: (p) => setImportProgress(p),
+      });
+      const assets = located.assets;
+      const locationStats = located.stats;
+
+      logEvent('photo-import', 'located', {
+        granted,
+        ...locationStats,
+      });
+
+      const draft = await buildTripDraftFromPhotos(assets, t, {
+        onProgress: (p) => setImportProgress(p),
+        language: i18n.language,
+      });
+
+      if (draft?.error === 'NO_USABLE_PHOTOS') {
+        Alert.alert(t('photo_trip_failed'), t('photo_trip_no_usable'));
+        return;
+      }
+
+      const newTrip = createTrip({
+        city: draft.city || '',
+        country: draft.country || '',
+        emoji: '📷',
+        coords: draft.coords,
+      });
+      newTrip.days = draft.days;
+      // A photo of the place beats a generic camera glyph — and this trip was
+      // built from photos, so there is always one to use.
+      newTrip.coverUri = draft.days
+        .flatMap((d) => d.photos || [])
+        .find((photo) => photo?.uri)?.uri || null;
+      setTrips(prev => [newTrip, ...prev]);
+
+      // 目的地是从坐标猜的，可能猜错，也可能因为照片没 GPS 而为空。
+      // 明确告诉用户结果，并提示可以改，而不是假装百分百正确。
+      logEvent('photo-import', 'draft', {
+        days: draft.stats.dayCount,
+        hasCoords: !!draft.stats.hasCoords,
+        photos: draft.stats.photoCount,
+        hasLocation: !!draft.stats.hasLocation,
+        undated: draft.stats.undatedCount,
+      });
+
+      const lines = [
+        t('photo_trip_summary')
+          .replace('%p', draft.stats.photoCount)
+          .replace('%d', draft.stats.dayCount),
+        draft.stats.hasLocation
+          ? t('photo_trip_located').replace('%s', [draft.city, draft.country].filter(Boolean).join(', '))
+          // Say which of the two it was. Without library access iOS strips the
+          // coordinates on the way in, and that is the user's to change —
+          // telling them the photos "have no location" would be a lie.
+          : draft.stats.hasCoords
+            // We placed them on the map; only the destination name is missing.
+            ? t('photo_trip_located_unnamed')
+            : locationStats.permission !== 'granted'
+              ? t('photo_trip_needs_photo_access')
+              : t('photo_trip_no_location'),
+        draft.stats.undatedCount > 0
+          ? t('photo_trip_undated').replace('%d', draft.stats.undatedCount)
+          : null,
+      ].filter(Boolean);
+
+      Alert.alert(t('photo_trip_done'), lines.join('\n'), [
+        { text: t('ok'), onPress: () => navigation.navigate('TripDetail', { tripId: newTrip.id }) },
+      ]);
+    } catch (e) {
+      Alert.alert(t('photo_trip_failed'), e?.message || t('profile_try_later'));
+    } finally {
+      setImporting(false);
+      setImportProgress(null);
+    }
   };
 
   const [tripSearch, setTripSearch] = useState('');
@@ -502,7 +604,8 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             <Text style={s.subtitle}>{t('home_subtitle')}</Text>
           </View>
           <TouchableOpacity style={s.addBtn} onPress={handleNewTrip}>
-            <Text style={s.addBtnText}>+ {t('home_new_trip')}</Text>
+            {/* The "+" is already part of the string in all seven languages. */}
+            <Text style={s.addBtnText}>{t('home_new_trip')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -512,7 +615,6 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             [String(trips.length),t('stat_trips')],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0)),t('stat_memos')],
             [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0)),t('stat_photos')],
-            // [String(trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0)),t('stat_videos')], // v2.0
             [String(trips.reduce((a,t)=>a+t.days.length,0)),t('stat_days')],
           ].map(([n,l]) => (
             <View key={l} style={s.statBox}>
@@ -531,6 +633,16 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             value={tripSearch}
             onChangeText={setTripSearch}
           />
+          {/* The field beside this one filters trip titles. This opens the
+              search that also reaches notes, spending and checklists — the
+              things you look for when you have forgotten which trip they were
+              on. */}
+          <TouchableOpacity
+            onPress={()=>navigation.navigate('Search')}
+            accessibilityLabel={t('search_open')}
+            style={{backgroundColor:'#161616',borderRadius:12,paddingHorizontal:12,justifyContent:'center',borderWidth:1,borderColor:'#242424'}}>
+            <Text style={{fontSize:16}}>🔍</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             onPress={()=>setSortBy(sortBy==='date'?'name':'date')}
             style={{backgroundColor:'#161616',borderRadius:12,padding:10,borderWidth:1,borderColor:'#242424',justifyContent:'center'}}>
@@ -549,15 +661,43 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
             </View>
           </View>
         )}
+
+        {/* 从照片建旅程。放在列表上方而不是埋进新建流程里：
+            对回来才想起整理的人来说，这是最省事的入口，值得第一眼看到。 */}
+        <TouchableOpacity
+          style={[s.photoImportBtn, importing && { opacity: 0.7 }]}
+          onPress={handleCreateFromPhotos}
+          disabled={importing}
+        >
+          {importing ? (
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
+              <ActivityIndicator color="#4ECDC4" size="small" />
+              <Text style={s.photoImportText}>
+                {importProgress
+                  ? t('photo_trip_locating').replace('%d', importProgress.done + 1).replace('%t', importProgress.total)
+                  : t('photo_trip_reading')}
+              </Text>
+            </View>
+          ) : (
+            <>
+              <Text style={s.photoImportText}>📷 {t('photo_trip_action')}</Text>
+              <Text style={s.photoImportHint}>{t('photo_trip_hint')}</Text>
+            </>
+          )}
+        </TouchableOpacity>
         {filteredTrips.map(trip => (
           <TouchableOpacity key={trip.id} style={s.card}
             onPress={() => navigation.navigate('TripDetail', { tripId: trip.id })}
             onLongPress={() => deleteTrip(trip.id, trip.city)}
             disabled={deletingId === trip.id}>
-            <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
+            <View style={s.cardEmoji}>
+              {trip.coverUri
+                ? <Image source={{uri:trip.coverUri}} style={s.cardCover} resizeMode="cover"/>
+                : <Text style={{fontSize:22}}>{trip.emoji}</Text>}
+            </View>
             <View style={{flex:1}}>
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
-              <Text style={s.countryName}>{trip.country} · {trip.days.length} {t('unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {t('unit_memos')}</Text>
+              <Text style={s.countryName}>{trip.country} · {trip.days.length} {pluralUnit(t, trip.days.length, 'unit_day_one', 'unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {pluralUnit(t, trip.days.reduce((a,d)=>a+d.memos.length,0), 'unit_memo_one', 'unit_memos')}</Text>
             </View>
             <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
           </TouchableOpacity>
@@ -579,6 +719,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
               <ScrollView style={{maxHeight:420}} nestedScrollEnabled>
                 {searchResults && searchResults.map((item, idx)=>(
                   <TouchableOpacity key={idx} style={s.listItem} onPress={()=>{
+                    setSelectedPlace(null);
                     setSelectedCountry(item.country);
                     if (item.type === 'city') {
                       setSelectedCities([item.city]);
@@ -592,6 +733,38 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                     </Text>
                   </TouchableOpacity>
                 ))}
+                {placeSearchLoading && (
+                  <View style={s.placeSearchLoading}>
+                    <Text style={s.placeSearchLoadingText}>
+                      {i18n.language?.startsWith('zh') ? '正在搜索真实地点...' : 'Searching places...'}
+                    </Text>
+                  </View>
+                )}
+                {placeResults.map(place => (
+                  <TouchableOpacity
+                    key={place.id}
+                    style={s.placeCandidateItem}
+                    onPress={() => useOnlinePlaceDestination(place)}>
+                    <Text style={s.placeCandidateTitle} numberOfLines={1}>
+                      {place.name}
+                    </Text>
+                    <Text style={s.placeCandidateMeta} numberOfLines={2}>
+                      {place.displayName || place.country || place.type}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {!!search.trim() && (
+                  <TouchableOpacity style={s.customDestinationItem} onPress={useSearchAsCustomDestination}>
+                    <Text style={s.customDestinationTitle}>
+                      {i18n.language?.startsWith('zh') ? `使用“${search.trim()}”创建目的地` : `Use “${search.trim()}” as destination`}
+                    </Text>
+                    <Text style={s.customDestinationHint}>
+                      {i18n.language?.startsWith('zh')
+                        ? '适合城市、小镇、小岛、景区或自定义地点'
+                        : 'For cities, towns, islands, attractions, or custom places'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
                 {!search && !selectedContinent && destinationSource.map(cont=>(
                   <TouchableOpacity key={cont.name} style={s.continentItem} onPress={()=>setSelectedContinent(cont)}>
                     <Text style={s.continentText}>{cont.name}</Text>
@@ -625,6 +798,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                       key={c}
                       style={[s.cityChip, selectedCities.includes(c) && s.cityChipActive]}
                       onPress={()=>{
+                        setSelectedPlace(null);
                         setCustomCity('');
                         setSelectedCities(prev =>
                           prev.includes(c) ? prev.filter(x=>x!==c) : [...prev, c]
@@ -644,7 +818,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
                 placeholder={t("new_trip_city_placeholder")}
                 placeholderTextColor="#444"
                 value={customCity}
-                onChangeText={t=>{setCustomCity(t); if(t) setSelectedCities([]);}}
+                onChangeText={t=>{setSelectedPlace(null); setCustomCity(t); if(t) setSelectedCities([]);}}
               />
 
               {hasSelection && (
@@ -764,8 +938,12 @@ const s = StyleSheet.create({
   emptyHint:{fontSize:13,color:'#333',marginTop:6},
   emptyBtn:{backgroundColor:'#D4AF3720',borderWidth:1,borderColor:'#D4AF3750',borderRadius:20,paddingHorizontal:20,paddingVertical:10},
   emptyBtnText:{color:'#D4AF37',fontSize:14},
+  photoImportBtn:{borderWidth:1,borderColor:'#4ECDC440',backgroundColor:'#4ECDC410',borderRadius:14,padding:16,alignItems:'center',marginBottom:16},
+  photoImportText:{color:'#4ECDC4',fontSize:15,fontWeight:'600'},
+  photoImportHint:{color:'#5A7A78',fontSize:12,marginTop:5,textAlign:'center'},
   card:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:'#242424'},
-  cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center'},
+  cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center',overflow:'hidden'},
+  cardCover:{width:'100%',height:'100%'},
   cityName:{fontSize:16,color:'#F0EDE8'},
   countryName:{fontSize:12,color:'#555',marginTop:3},
   cardDate:{fontSize:11,color:'#444'},
@@ -780,6 +958,52 @@ const s = StyleSheet.create({
   continentItem:{padding:18,borderBottomWidth:1,borderBottomColor:'#1A1A1A',flexDirection:'row',justifyContent:'space-between',alignItems:'center'},
   continentText:{fontSize:17,color:'#CCC'},
   continentArrow:{color:'#444',fontSize:16},
+  placeSearchLoading:{
+    paddingVertical:10,
+    paddingHorizontal:12,
+  },
+  placeSearchLoadingText:{
+    color:'#777',
+    fontSize:12,
+  },
+  placeCandidateItem:{
+    backgroundColor:'#0F1715',
+    borderWidth:1,
+    borderColor:'#4ECDC440',
+    borderRadius:14,
+    padding:14,
+    marginBottom:10,
+  },
+  placeCandidateTitle:{
+    color:'#4ECDC4',
+    fontSize:15,
+    fontWeight:'700',
+    marginBottom:4,
+  },
+  placeCandidateMeta:{
+    color:'#888',
+    fontSize:12,
+    lineHeight:18,
+  },
+  customDestinationItem:{
+    backgroundColor:'#111',
+    borderWidth:1,
+    borderColor:'#D4AF3740',
+    borderRadius:14,
+    padding:14,
+    marginBottom:10,
+  },
+  customDestinationTitle:{
+    color:'#D4AF37',
+    fontSize:15,
+    fontWeight:'700',
+    marginBottom:4,
+  },
+  customDestinationHint:{
+    color:'#777',
+    fontSize:12,
+    lineHeight:18,
+  },
   listItem:{padding:16,borderBottomWidth:1,borderBottomColor:'#1A1A1A'},
   listItemText:{fontSize:16,color:'#888'},
   inputLabel:{fontSize:11,color:'#555',letterSpacing:2,textTransform:'uppercase',marginBottom:10},

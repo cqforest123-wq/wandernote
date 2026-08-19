@@ -1,0 +1,779 @@
+import SwiftUI
+
+/// Pure rendering of a single `GlanceData` snapshot, split out of
+/// `ContentView` so it can be driven by mock data in SwiftUI Previews
+/// without touching the live snapshot/daily stores.
+struct GlanceContentView: View {
+    @Environment(\.openURL) private var openURL
+    @ObservedObject private var link = WatchLinkStatus.shared
+
+    let glance: GlanceData
+    let canRecordParking: Bool
+    let onSaveParking: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            headerView
+
+            glanceBody
+        }
+    }
+
+    @ViewBuilder
+    private var glanceBody: some View {
+        switch glance.mode {
+        case .unavailable:
+            unavailableView
+
+        case .travel, .daily, .stale:
+            daylightHero
+
+            metricRow(
+                icon: "mappin.and.ellipse",
+                tint: .teal,
+                title: WatchStrings.text("location"),
+                value: formatLocation(glance)
+            )
+
+            metricRow(
+                icon: "mountain.2",
+                tint: .green,
+                title: WatchStrings.text("altitude"),
+                value: formatAltitude(glance.altitudeMeters)
+            )
+
+            // Weather rides on the iPhone snapshot's destination forecast, so
+            // Daily mode can never have one. Showing a permanently empty row
+            // there just wastes a line of a very small screen.
+            if glance.mode != .daily {
+                metricRow(
+                    icon: "thermometer.medium",
+                    tint: .orange,
+                    title: WatchStrings.text("weather"),
+                    value: formatTemperature(
+                        glance.temperatureCelsius
+                    )
+                )
+            }
+
+            // Sunrise was already being computed and thrown away. Anyone up
+            // early for it on a trip wants the time, not a countdown.
+            if let sunrise = glance.sunrise, sunrise > Date() {
+                metricRow(
+                    icon: "sunrise",
+                    tint: .yellow,
+                    title: WatchStrings.text("sunrise"),
+                    value: formatTime(sunrise)
+                )
+            }
+
+            metricRow(
+                icon: "sunset",
+                tint: .orange,
+                title: WatchStrings.text("sunset"),
+                value: formatTime(glance.sunset)
+            )
+
+            if let pressure = glance.pressureText {
+                metricRow(
+                    icon: glance.pressureFalling == true
+                        ? "arrow.down.right.circle"
+                        : (glance.pressureFalling == false ? "arrow.up.right.circle" : "gauge.medium"),
+                    tint: glance.pressureFalling == true ? .red : .cyan,
+                    title: WatchStrings.text("pressure"),
+                    value: pressure
+                )
+            }
+
+            metricRow(
+                icon: "figure.walk",
+                tint: .mint,
+                title: WatchStrings.text("steps"),
+                value: formatSteps(glance.stepsToday)
+            )
+
+            if let spend = glance.todaySpendText {
+                metricRow(
+                    icon: "creditcard",
+                    tint: .yellow,
+                    title: WatchStrings.text("spend.today"),
+                    value: spend
+                )
+            }
+
+            Divider()
+
+            metricRow(
+                icon: "parkingsign.circle",
+                tint: .blue,
+                title: WatchStrings.text("car"),
+                value: formatParking(glance)
+            )
+
+            parkingControls
+
+            Text(
+                WatchStrings.format(
+                    "updated.at",
+                    formatTime(glance.lastUpdatedAt)
+                )
+            )
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .padding(.top, 4)
+
+            // Only while there is no trip data: saying "Daily Glance" without
+            // saying why the phone's trip never arrived leaves the wearer with
+            // nothing to act on, and nowhere to read a log.
+            if glance.mode == .daily {
+                linkStatusView
+            }
+        }
+    }
+
+    /// The one thing worth seeing without reading: how much daylight is left.
+    ///
+    /// Falls back to a plain sunset time when the sun times are unknown rather
+    /// than drawing an empty ring, which would read as "no daylight left".
+    @ViewBuilder
+    private var daylightHero: some View {
+        if let remaining = glance.daylightRemaining {
+            HStack(spacing: 14) {
+                // The ring needs a sunrise/sunset pair to measure against. When
+                // only the remaining time is known the number still shows —
+                // losing the ring must never cost us the value itself.
+                if let fraction = daylightFraction {
+                    Gauge(value: fraction) {
+                        Image(systemName: "sun.horizon.fill")
+                    } currentValueLabel: {
+                        Image(systemName: "sun.max.fill")
+                            .font(.caption)
+                    }
+                    .gaugeStyle(.accessoryCircular)
+                    .tint(
+                        Gradient(colors: [.orange, .yellow])
+                    )
+                } else {
+                    Image(systemName: "sun.horizon.fill")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(WatchStrings.text("daylight"))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+
+                    Text(formatDuration(remaining))
+                        .font(.title3.weight(.semibold))
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.vertical, 2)
+        } else {
+            metricRow(
+                icon: "sun.horizon",
+                tint: .orange,
+                title: WatchStrings.text("daylight"),
+                value: WatchStrings.text("value.unavailable")
+            )
+        }
+    }
+
+    /// Share of today's daylight still ahead, clamped so dusk never renders as
+    /// a negative or overfull ring.
+    private var daylightFraction: Double? {
+        guard let sunrise = glance.sunrise,
+              let sunset = glance.sunset,
+              let remaining = glance.daylightRemaining,
+              sunset > sunrise else {
+            return nil
+        }
+
+        let total = sunset.timeIntervalSince(sunrise)
+
+        guard total > 0 else {
+            return nil
+        }
+
+        return min(max(remaining / total, 0), 1)
+    }
+
+    private var linkStatusView: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("link: \(link.activation)\(link.reachable ? " · reachable" : "")")
+
+            if let bytes = link.receivedBytes, let at = link.receivedAt {
+                Text("rx: \(bytes)B at \(formatTime(at))")
+            } else {
+                Text("rx: none")
+            }
+
+            if let error = link.lastError {
+                Text(error).lineLimit(2)
+            }
+        }
+        .font(.system(size: 9))
+        .foregroundStyle(.tertiary)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 2)
+    }
+
+    private var headerView: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title(for: glance))
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+
+            // In Daily mode the title is the mode name, so it would simply
+            // repeat the label above it. The subtitle is dropped entirely
+            // because it is the same place the Location row already shows.
+            if glance.title != title(for: glance) {
+                Text(glance.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+            }
+
+            if glance.isStale {
+                Label(
+                    WatchStrings.text("status.stale"),
+                    systemImage: "exclamationmark.triangle"
+                )
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var unavailableView: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Label(
+                WatchStrings.text("status.waiting"),
+                systemImage: "iphone"
+            )
+            .font(.body.weight(.semibold))
+
+            Text(WatchStrings.text("status.waitingDetail"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private func title(
+        for glance: GlanceData
+    ) -> String {
+        switch glance.mode {
+        case .daily, .unavailable:
+            return WatchStrings.text("mode.daily")
+        case .travel, .stale:
+            return WatchStrings.text("app.title")
+        }
+    }
+
+    private func formatLocation(
+        _ glance: GlanceData
+    ) -> String {
+        if let locationName = glance.currentLocationName {
+            return locationName
+        }
+
+        if let latitude = glance.latitude,
+           let longitude = glance.longitude {
+            return String(
+                format: "%.4f, %.4f",
+                latitude,
+                longitude
+            )
+        }
+
+        switch glance.locationAuthorization {
+        case .authorized:
+            return WatchStrings.text("value.unavailable")
+        case .notDetermined:
+            return WatchStrings.text("location.permissionNeeded")
+        case .denied:
+            return WatchStrings.text("location.permissionDenied")
+        case .restricted:
+            return WatchStrings.text("location.permissionRestricted")
+        case .unavailable:
+            return WatchStrings.text("location.unavailable")
+        }
+    }
+
+    private func metricRow(
+        icon: String,
+        tint: Color,
+        title: String,
+        value: String
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption2)
+                .foregroundStyle(tint)
+                .frame(width: 16, alignment: .leading)
+
+            Text(title)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+
+            Spacer(minLength: 6)
+
+            Text(value)
+                .font(.body.weight(.semibold))
+                .multilineTextAlignment(.trailing)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
+        }
+    }
+
+    private var parkingControls: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Button(
+                action: onSaveParking,
+                label: {
+                    Label(
+                        WatchStrings.text("parking.save"),
+                        systemImage: "parkingsign.circle"
+                    )
+                }
+            )
+            .disabled(!canRecordParking)
+
+            Button(
+                action: {
+                    openParkingDirections(glance)
+                },
+                label: {
+                    Label(
+                        WatchStrings.text("parking.directions"),
+                        systemImage: "map"
+                    )
+                }
+            )
+            .disabled(!hasParkingCoordinate(glance))
+        }
+    }
+
+    private func hasParkingCoordinate(
+        _ glance: GlanceData
+    ) -> Bool {
+        glance.parkingLatitude != nil &&
+            glance.parkingLongitude != nil
+    }
+
+    /// Rounded, locale-aware measurement text. `.naturalScale` converts to the
+    /// region's own system, so an American traveller sees feet and Fahrenheit
+    /// rather than the metric values the snapshot happens to carry.
+    /// Metric unless the wearer's own region says otherwise.
+    ///
+    /// Deliberately not `Locale.current`, for the same reason `WatchStrings`
+    /// avoids it: on this bundle it degrades to the development locale, so a
+    /// user in Chengdu was shown feet. `preferredLanguages` carries the real
+    /// region — and when it carries none, metric is the right default for a
+    /// travel app sold worldwide.
+    private var usesMetric: Bool {
+        // The iPhone decides when it can: its locale is trustworthy, this
+        // bundle's is not. Only guess when no snapshot has arrived.
+        if let fromPhone = glance.usesMetric {
+            return fromPhone
+        }
+
+        guard let preferred = Locale.preferredLanguages.first else {
+            return true
+        }
+
+        let locale = Locale(identifier: preferred)
+
+        // A bare language tag ("zh", "en") has no region to judge by. Falling
+        // back to Locale.current here would reintroduce the same bug, so the
+        // safer default wins.
+        guard locale.region != nil else {
+            return true
+        }
+
+        return locale.measurementSystem == .metric
+    }
+
+    /// Format an explicit unit, rounded, with the locale's own number style.
+    private func measurementText<T: Dimension>(
+        _ value: Double,
+        _ unit: T,
+        fractionDigits: Int = 0
+    ) -> String {
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .providedUnit
+        formatter.numberFormatter.maximumFractionDigits = fractionDigits
+
+        return formatter.string(
+            from: Measurement(value: value, unit: unit)
+        )
+    }
+
+    /// Altitude is feet or metres — never yards.
+    ///
+    /// `.naturalScale` picks a unit by magnitude, and for a few hundred metres
+    /// in an imperial locale it lands on yards: "537 yd" for a mountain is not
+    /// a unit anyone reports altitude in.
+    private func formatAltitude(
+        _ meters: Double?
+    ) -> String {
+        guard let meters else {
+            return WatchStrings.text("value.unavailable")
+        }
+
+        if usesMetric {
+            return measurementText(meters, UnitLength.meters)
+        }
+
+        let feet = Measurement(value: meters, unit: UnitLength.meters)
+            .converted(to: .feet)
+
+        return measurementText(feet.value, UnitLength.feet)
+    }
+
+    private func formatTemperature(
+        _ celsius: Double?
+    ) -> String {
+        guard let celsius else {
+            return WatchStrings.text("value.unavailable")
+        }
+
+        // Temperature is the one place the region's own unit is unambiguous.
+        let formatter = MeasurementFormatter()
+        formatter.unitOptions = .naturalScale
+        formatter.numberFormatter.maximumFractionDigits = 0
+
+        return formatter.string(
+            from: Measurement(value: celsius, unit: UnitTemperature.celsius)
+        )
+    }
+
+    private func formatTime(
+        _ date: Date?
+    ) -> String {
+        guard let date else {
+            return WatchStrings.text("value.unavailable")
+        }
+
+        return date.formatted(
+            date: .omitted,
+            time: .shortened
+        )
+    }
+
+    private func formatDuration(
+        _ duration: TimeInterval?
+    ) -> String {
+        guard let duration, duration > 0 else {
+            return WatchStrings.text("value.unavailable")
+        }
+
+        let totalMinutes = Int(
+            duration / 60
+        )
+
+        return WatchStrings.format(
+            "duration.hoursMinutes",
+            totalMinutes / 60,
+            totalMinutes % 60
+        )
+    }
+
+    private func formatSteps(
+        _ value: Int?
+    ) -> String {
+        guard let value else {
+            return WatchStrings.text("value.unavailable")
+        }
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+
+        return formatter.string(
+            from: NSNumber(value: value)
+        ) ?? "\(value)"
+    }
+
+    private func formatParking(
+        _ glance: GlanceData
+    ) -> String {
+        guard let distance = glance.parkingDistanceMeters else {
+            if hasParkingCoordinate(glance) {
+                return WatchStrings.text("parking.saved")
+            }
+
+            return WatchStrings.text("parking.notSaved")
+        }
+
+        // Walking distance: metres then kilometres, or feet then miles. Yards
+        // would creep in here too if the unit were chosen by magnitude alone.
+        if usesMetric {
+            return distance < 1_000
+                ? measurementText(distance, UnitLength.meters)
+                : measurementText(distance / 1_000, UnitLength.kilometers, fractionDigits: 1)
+        }
+
+        let feet = Measurement(value: distance, unit: UnitLength.meters)
+            .converted(to: .feet)
+
+        if feet.value < 1_000 {
+            return measurementText(feet.value, UnitLength.feet)
+        }
+
+        let miles = Measurement(value: distance, unit: UnitLength.meters)
+            .converted(to: .miles)
+
+        return measurementText(miles.value, UnitLength.miles, fractionDigits: 1)
+    }
+
+    private func openParkingDirections(
+        _ glance: GlanceData
+    ) {
+        guard let latitude = glance.parkingLatitude,
+              let longitude = glance.parkingLongitude,
+              let url = URL(
+                string: "http://maps.apple.com/?daddr=\(latitude),\(longitude)"
+              ) else {
+            return
+        }
+
+        openURL(url)
+    }
+}
+
+#if DEBUG
+/// Mock `GlanceData` fixtures for SwiftUI Previews only.
+/// Not referenced by the live runtime.
+private enum GlanceContentPreviewData {
+    static let referenceDate = Date(timeIntervalSince1970: 1_750_000_000)
+
+    static let travel = GlanceData(
+        mode: .travel,
+        title: "Kyoto Trip · Day 3",
+        subtitle: "Arashiyama Bamboo Grove",
+        currentLocationName: "Arashiyama Bamboo Grove",
+        locationAuthorization: .authorized,
+        latitude: 35.0094,
+        longitude: 135.6717,
+        altitudeMeters: 62,
+        temperatureCelsius: 24,
+        weatherSummary: "clear",
+        sunrise: referenceDate.addingTimeInterval(-3600 * 6),
+        sunset: referenceDate.addingTimeInterval(3600 * 3),
+        daylightRemaining: 3600 * 3,
+        parkingLatitude: 35.0102,
+        parkingLongitude: 135.6725,
+        parkingDistanceMeters: 240,
+        parkingSavedAt: referenceDate.addingTimeInterval(-1800),
+        stepsToday: 6_842,
+        lastUpdatedAt: referenceDate,
+        isStale: false,
+        warnings: []
+    )
+
+    static let daily = GlanceData(
+        mode: .daily,
+        title: "Daily Glance",
+        subtitle: "Home",
+        currentLocationName: "Home",
+        locationAuthorization: .authorized,
+        latitude: 37.3349,
+        longitude: -122.0090,
+        altitudeMeters: 18,
+        temperatureCelsius: nil,
+        weatherSummary: nil,
+        sunrise: referenceDate.addingTimeInterval(-3600 * 5),
+        sunset: referenceDate.addingTimeInterval(3600 * 4),
+        daylightRemaining: 3600 * 4,
+        parkingLatitude: nil,
+        parkingLongitude: nil,
+        parkingDistanceMeters: nil,
+        parkingSavedAt: nil,
+        stepsToday: 2_140,
+        lastUpdatedAt: referenceDate,
+        isStale: false,
+        warnings: []
+    )
+
+    static let stale = GlanceData(
+        mode: .stale,
+        title: "Kyoto Trip · Day 3",
+        subtitle: "Arashiyama Bamboo Grove",
+        currentLocationName: "Arashiyama Bamboo Grove",
+        locationAuthorization: .authorized,
+        latitude: 35.0094,
+        longitude: 135.6717,
+        altitudeMeters: 62,
+        temperatureCelsius: 24,
+        weatherSummary: "clear",
+        sunrise: referenceDate.addingTimeInterval(-3600 * 6),
+        sunset: referenceDate.addingTimeInterval(3600 * 3),
+        daylightRemaining: 3600 * 3,
+        parkingLatitude: 35.0102,
+        parkingLongitude: 135.6725,
+        parkingDistanceMeters: 240,
+        parkingSavedAt: referenceDate.addingTimeInterval(-1800),
+        stepsToday: 6_842,
+        lastUpdatedAt: referenceDate.addingTimeInterval(-3600 * 5),
+        isStale: true,
+        warnings: [.staleSnapshot]
+    )
+
+    static let unavailable = GlanceData.unavailable(at: referenceDate)
+
+    static let noLocationPermission = GlanceData(
+        mode: .daily,
+        title: "Daily Glance",
+        subtitle: nil,
+        currentLocationName: nil,
+        locationAuthorization: .denied,
+        latitude: nil,
+        longitude: nil,
+        altitudeMeters: nil,
+        temperatureCelsius: nil,
+        weatherSummary: nil,
+        sunrise: nil,
+        sunset: nil,
+        daylightRemaining: nil,
+        parkingLatitude: nil,
+        parkingLongitude: nil,
+        parkingDistanceMeters: nil,
+        parkingSavedAt: nil,
+        stepsToday: nil,
+        lastUpdatedAt: referenceDate,
+        isStale: false,
+        warnings: [.locationPermissionDenied]
+    )
+
+    static let parkingSaved = GlanceData(
+        mode: .daily,
+        title: "Daily Glance",
+        subtitle: "Downtown Garage",
+        currentLocationName: "Downtown Garage",
+        locationAuthorization: .authorized,
+        latitude: 37.7749,
+        longitude: -122.4194,
+        altitudeMeters: 12,
+        temperatureCelsius: nil,
+        weatherSummary: nil,
+        sunrise: referenceDate.addingTimeInterval(-3600 * 5),
+        sunset: referenceDate.addingTimeInterval(3600 * 4),
+        daylightRemaining: 3600 * 4,
+        parkingLatitude: 37.7751,
+        parkingLongitude: -122.4198,
+        parkingDistanceMeters: nil,
+        parkingSavedAt: referenceDate.addingTimeInterval(-600),
+        stepsToday: 980,
+        lastUpdatedAt: referenceDate,
+        isStale: false,
+        warnings: []
+    )
+
+    static let noParkingSaved = GlanceData(
+        mode: .daily,
+        title: "Daily Glance",
+        subtitle: "Home",
+        currentLocationName: "Home",
+        locationAuthorization: .authorized,
+        latitude: 37.3349,
+        longitude: -122.0090,
+        altitudeMeters: 18,
+        temperatureCelsius: nil,
+        weatherSummary: nil,
+        sunrise: referenceDate.addingTimeInterval(-3600 * 5),
+        sunset: referenceDate.addingTimeInterval(3600 * 4),
+        daylightRemaining: 3600 * 4,
+        parkingLatitude: nil,
+        parkingLongitude: nil,
+        parkingDistanceMeters: nil,
+        parkingSavedAt: nil,
+        stepsToday: 2_140,
+        lastUpdatedAt: referenceDate,
+        isStale: false,
+        warnings: []
+    )
+}
+
+#Preview("Travel Mode") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.travel,
+            canRecordParking: true,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+
+#Preview("Daily Mode") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.daily,
+            canRecordParking: true,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+
+#Preview("Stale Mode") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.stale,
+            canRecordParking: true,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+
+#Preview("Unavailable / No Permission") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.unavailable,
+            canRecordParking: false,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+
+#Preview("Daily · Location Permission Denied") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.noLocationPermission,
+            canRecordParking: false,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+
+#Preview("Parking Saved") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.parkingSaved,
+            canRecordParking: true,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+
+#Preview("No Parking Saved") {
+    ScrollView {
+        GlanceContentView(
+            glance: GlanceContentPreviewData.noParkingSaved,
+            canRecordParking: true,
+            onSaveParking: {}
+        )
+        .padding()
+    }
+}
+#endif

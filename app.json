@@ -2,7 +2,7 @@
   "expo": {
     "name": "WanderNote",
     "slug": "wandernote",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
@@ -17,11 +17,10 @@
         "NSLocationWhenInUseUsageDescription": "WanderNote uses your location to estimate distance to your travel destinations and display travel footprints on the map.",
         "NSPhotoLibraryUsageDescription": "WanderNote needs access to your photo library so you can add travel photos to your trip records.",
         "NSCameraUsageDescription": "WanderNote needs camera access so you can take travel photos and save them to your trip records.",
-        "NSPhotoLibraryAddUsageDescription": "WanderNote needs permission to save edited travel photos to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.litao0729.wandernote",
-      "buildNumber": "3"
+      "buildNumber": "15"
     },
     "android": {
       "adaptiveIcon": {
@@ -40,8 +39,24 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "WanderNote uses your location to estimate distance to your travel destinations and display travel footprints on the map.",
+          "locationAlwaysAndWhenInUsePermission": false,
+          "locationAlwaysPermission": false,
+          "isIosBackgroundLocationEnabled": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "WanderNote needs access to your photo library so you can add travel photos to your trip records.",
+          "cameraPermission": "WanderNote needs camera access so you can take travel photos and save them to your trip records.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "eas": {

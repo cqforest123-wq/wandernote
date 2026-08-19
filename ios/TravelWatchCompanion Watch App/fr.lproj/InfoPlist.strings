@@ -1,0 +1,5 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "Lire votre nombre de pas pour afficher la distance parcourue aujourd’hui.";
+"NSLocationWhenInUseUsageDescription" = "Afficher où vous êtes, votre altitude et la lumière du jour restante, et retenir où vous êtes garé.";
+"NSMotionUsageDescription" = "Lire le baromètre pour afficher la pression et son évolution — un signe précoce de changement de temps en plein air.";

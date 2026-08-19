@@ -55,11 +55,6 @@ const checks = [
     name: 'Expo Go / __DEV__ logic',
     regex: /__DEV__|Expo Go|Browser Mode/,
   },
-  {
-    level: 'WARN',
-    name: 'Hidden YearReport v1 flag',
-    regex: /ENABLE_YEAR_REPORT\s*=\s*false/,
-  },
 ];
 
 let findings = [];

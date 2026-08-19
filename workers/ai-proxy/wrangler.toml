@@ -1,0 +1,13 @@
+name = "wandernote-ai-proxy"
+main = "src/index.js"
+compatibility_date = "2026-01-15"
+
+# Secrets are NOT set here. Set them once after the first deploy:
+#   npx wrangler secret put GEMINI_API_KEY
+#   npx wrangler secret put APP_TOKEN
+#
+# APP_TOKEN is optional. If it is unset the worker accepts any caller; if it is
+# set, the app must send the same value in the x-app-token header.
+
+[observability]
+enabled = true

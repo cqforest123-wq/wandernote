@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as Clipboard from 'expo-clipboard';
+import * as Sharing from 'expo-sharing';
+import { captureRef } from 'react-native-view-shot';
+import ShareCard, { CARD_WIDTH } from '../components/ShareCard';
+import {
+  buildLocalItinerary,
+  buildLocalTravelStory,
+  extractReadableAiText,
+} from '../lib/travelStoryFallback';
 
 const ITINERARY_STYLES = [
   { key: 'balanced', labelKey: 'ai_style_balanced' },
@@ -39,9 +47,10 @@ function getAiOutputLanguage(lang) {
   return map[code] || 'English';
 }
 
-import { callClaude } from '../lib/claude';
+import { callAI } from '../lib/ai';
+import { logEvent } from '../lib/diagnostics';
 
-export default function AIScreen({ trips, isPro, openPaywall }) {
+export default function AIScreen({ trips }) {
   const { t, i18n } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
@@ -52,7 +61,15 @@ export default function AIScreen({ trips, isPro, openPaywall }) {
   const [itineraryStyle, setItineraryStyle] = useState('balanced');
   const aiOutputLanguage = getAiOutputLanguage(i18n.language);
   const daysUnit = t('unit_days');
-  const [mode, setMode] = useState('diary');
+  // 还没有任何旅程时，默认落在路书模式：它只需要输入目的地，不依赖本地记录，
+  // 新装用户（以及审核员）打开这一页就能立刻生成出东西。
+  const [mode, setMode] = useState(trips.length ? 'diary' : 'itinerary');
+  const [savingCard, setSavingCard] = useState(false);
+  const cardRef = useRef(null);
+  // 线上 AI 不可用时的兜底提示
+  const localFallbackNotice = t('ai_offline_notice');
+  // 本机还没有记录可写时的提示。这跟"服务挂了"是两回事，不能共用同一句话。
+  const emptyDataNotice = t('ai_sample_notice');
 
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
@@ -123,12 +140,35 @@ Requirements:
 
   const generate = async () => {
     if (mode === 'itinerary') {
-      // if (!isPro) { openPaywall && openPaywall('AI路书生成'); return; } // TEST: 暂时跳过付费验证
-      if (!itineraryDest.trim()) { Alert.alert(t('ai_alert_title'), t('ai_enter_destination')); return; }
       setGenerating(true);
       setResult('');
+      const fallback = buildLocalItinerary({
+        destination: itineraryDest,
+        days: itineraryDays,
+        style: t(`ai_style_${itineraryStyle}`),
+        // 复用真实 AI 分支already用的那批标签，兜底结果不会再中英混排
+        labels: {
+          title: (dest, n) => `${dest} · ${n} ${daysUnit}`,
+          dayNumber: (n) => t('ai_day_number').replace('%d', n),
+          morning: t('ai_morning'),
+          afternoon: t('ai_afternoon'),
+          evening: t('ai_evening'),
+          distance: t('ai_distance'),
+          duration: t('ai_duration'),
+          status: t('ai_opening_status'),
+          tips: t('ai_tips'),
+          morningText: t('ai_local_morning'),
+          afternoonText: t('ai_local_afternoon'),
+          eveningText: t('ai_local_evening'),
+          distanceText: t('ai_local_distance'),
+          durationText: t('ai_local_duration'),
+          statusText: t('ai_local_status'),
+          tipsText: t('ai_local_tips'),
+        },
+      });
       try {
-        const prompt = `You are a professional travel planner. Create a detailed ${itineraryDays}-day itinerary for ${itineraryDest}.
+        const destination = itineraryDest.trim() || 'your next destination';
+        const prompt = `You are a professional travel planner. Create a detailed ${itineraryDays}-day itinerary for ${destination}.
 Travel style: ${t(`ai_style_${itineraryStyle}`)}.
 Output language for all JSON values: ${aiOutputLanguage}.
 
@@ -139,9 +179,61 @@ Strict requirements:
 4. Keep each day concise: attractions + time + transport.
 5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
 6. Keep each field short and ensure valid complete JSON.`;
-        const text = await callClaude(prompt, 8000, { responseMimeType: 'application/json' });
-        const clean = text.replace(/```json|```/g, '').trim().replace(/\n/g, ' ');
-        const parsed = parseAiJsonObject(text);
+        // A schema constrains the decoder, so the model cannot emit the stray
+        // quote that used to make this response unparseable and drop the whole
+        // itinerary back to a local template.
+        const daySchema = {
+          type: 'OBJECT',
+          properties: {
+            day: { type: 'INTEGER' },
+            theme: { type: 'STRING' },
+            morning: { type: 'STRING' },
+            afternoon: { type: 'STRING' },
+            evening: { type: 'STRING' },
+            tips: { type: 'STRING' },
+            distance: { type: 'STRING' },
+            hours: { type: 'STRING' },
+            status: { type: 'STRING' },
+          },
+          required: ['day', 'theme', 'morning', 'afternoon', 'evening', 'tips'],
+        };
+
+        const text = await callAI(prompt, 8000, {
+          feature: 'itinerary',
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: {
+              title: { type: 'STRING' },
+              days: { type: 'ARRAY', items: daySchema },
+            },
+            required: ['title', 'days'],
+          },
+        });
+        if (!String(text || '').trim()) {
+          setResult(localFallbackNotice + '\n\n' + fallback);
+          return;
+        }
+
+        let parsed = null;
+        try {
+          parsed = parseAiJsonObject(text);
+        } catch (parseError) {
+          // Worth knowing about: this path means the AI answered and we threw
+          // the answer away, which looks identical to the AI being down.
+          logEvent('ai', 'itinerary-unparseable', {
+            chars: String(text || '').length,
+          });
+          const readable = extractReadableAiText(text);
+          setResult(readable ? `${localFallbackNotice}\n\n${readable}` : `${localFallbackNotice}\n\n${fallback}`);
+          return;
+        }
+
+        if (!Array.isArray(parsed.days) || parsed.days.length === 0) {
+          setResult(localFallbackNotice + '\n\n' + fallback);
+          return;
+        }
+
         // 格式化展示
         const disclaimer = t('ai_disclaimer');
         const formatted = parsed.days.map(d => {
@@ -155,30 +247,48 @@ Strict requirements:
           dayText += '\n💡 ' + t('ai_tips') + ': ' + d.tips;
           return dayText;
         }).join('\n\n');
-        setResult('🗺 ' + parsed.title + '\n\n' + disclaimer + '\n\n' + formatted);
+        setResult('🗺 ' + (parsed.title || destination) + '\n\n' + disclaimer + '\n\n' + formatted);
       } catch (e) {
-        Alert.alert(t('ai_generate_failed'), e.message || t('ai_network_retry'));
+        setResult(localFallbackNotice + '\n\n' + fallback);
       } finally {
         setGenerating(false);
       }
       return;
     }
-    if (!selectedTrip) {
-      Alert.alert(t('ai_notice'), t('ai_select_trip_first'));
+    setGenerating(true);
+    setResult('');
+    const fallback = buildLocalTravelStory({
+      mode,
+      trip: selectedTrip,
+      day: mode === 'summary' ? null : selectedDay,
+      // Without these the body came out in English under a Chinese heading.
+      labels: {
+        place: t('fb_place'),
+        diaryTitle: dest => `${dest} · ${t('ai_diary')}`,
+        summaryTitle: dest => `${dest} · ${t('ai_summary')}`,
+        stats: (days, notes, photos) =>
+          t('fb_stats')
+            .replace('%1', String(days))
+            .replace('%2', String(notes))
+            .replace('%3', String(photos)),
+        notes: t('fb_notes'),
+        empty: t('fb_empty'),
+        hashtags: t('fb_hashtags'),
+      },
+    });
+
+    if (!selectedTrip || (mode !== 'summary' && !selectedDay)) {
+      setResult(emptyDataNotice + '\n\n' + fallback);
+      setGenerating(false);
       return;
     }
 
-    if (mode !== 'summary' && !selectedDay) {
-      Alert.alert(t('ai_notice'), t('ai_select_day_first'));
-      return;
-    }
-    setGenerating(true);
-    setResult('');
     try {
-      const text = await callClaude(buildPrompt(), 1200);
-      setResult(text);
+      const text = await callAI(buildPrompt(), 1200, { feature: mode });
+      const readable = extractReadableAiText(text) || String(text || '').trim();
+      setResult(readable || `${localFallbackNotice}\n\n${fallback}`);
     } catch (e) {
-      Alert.alert('Generation Failed', e.message || 'Please check your network and try again');
+      setResult(localFallbackNotice + '\n\n' + fallback);
     } finally {
       setGenerating(false);
     }
@@ -187,6 +297,52 @@ Strict requirements:
   const shareResult = async () => {
     if (!result) return;
     await Share.share({ message: result });
+  };
+
+  // 卡片上不该出现「连不上 AI 服务」这类运行状态说明，
+  // 那是给当前用户看的，不是给收到分享的人看的。
+  const cardBody = result
+    .replace(localFallbackNotice, '')
+    .replace(emptyDataNotice, '')
+    .replace(t('ai_disclaimer'), '')
+    .trim();
+
+  const cardTitle = mode === 'itinerary'
+    ? (itineraryDest.trim() || t('ai_destination'))
+    : [selectedTrip?.city, selectedTrip?.country].filter(Boolean).join(' · ');
+
+  const cardSubtitle = mode === 'itinerary'
+    ? `${itineraryDays} ${daysUnit} · ${t(`ai_style_${itineraryStyle}`)}`
+    : (selectedDay?.date || selectedTrip?.date || '');
+
+  const cardPhoto = mode === 'itinerary'
+    ? null
+    : (selectedDay?.photos?.[0]?.uri
+        || selectedTrip?.days?.find(d => d.photos?.length)?.photos?.[0]?.uri
+        || null);
+
+  const shareAsImage = async () => {
+    if (!result || savingCard) return;
+    try {
+      setSavingCard(true);
+      // 等一帧，确保离屏卡片已经完成布局再截图
+      await new Promise(requestAnimationFrame);
+      const uri = await captureRef(cardRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+        pixelRatio: 3,
+      });
+      if (!(await Sharing.isAvailableAsync())) {
+        Alert.alert(t('ai_share_card_failed'), t('profile_try_later'));
+        return;
+      }
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', UTI: 'public.png' });
+    } catch (e) {
+      Alert.alert(t('ai_share_card_failed'), e?.message || t('profile_try_later'));
+    } finally {
+      setSavingCard(false);
+    }
   };
 
   const copyResult = async () => {
@@ -218,15 +374,6 @@ Strict requirements:
           {MODES.map(m=>(
             <TouchableOpacity key={m.key} style={[s.modeCard, mode===m.key&&s.modeCardActive]}
               onPress={()=>{
-                if (m.key !== 'itinerary') {
-                  if (trips.length === 0) {
-                    Alert.alert(t('ai_notice'), t('ai_create_trip_first'));
-                  } else if (!selectedTrip) {
-                    Alert.alert(t('ai_notice'), t('ai_select_trip_first'));
-                  } else if (m.key !== 'summary' && !selectedDay) {
-                    Alert.alert(t('ai_notice'), t('ai_select_day_first'));
-                  }
-                }
                 setMode(m.key);
                 setResult('');
                 if (m.key === 'summary' || m.key === 'itinerary') {
@@ -321,18 +468,16 @@ Strict requirements:
           </>
         )}
 
-        {(mode==='itinerary' || (selectedTrip && (mode==='summary' || selectedDay))) && (
-          <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={()=>{Keyboard.dismiss();generate();}} disabled={generating}>
-            {generating ? (
-              <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
-                <ActivityIndicator color="#0D0D0D" size="small"/>
-                <Text style={s.generateBtnText}>{t('ai_generating')}</Text>
-              </View>
-            ) : (
-              <Text style={s.generateBtnText}>✦ {t('ai_generate_action')}</Text>
-            )}
-          </TouchableOpacity>
-        )}
+        <TouchableOpacity style={[s.generateBtn, generating&&{opacity:0.7}]} onPress={()=>{Keyboard.dismiss();generate();}} disabled={generating}>
+          {generating ? (
+            <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
+              <ActivityIndicator color="#0D0D0D" size="small"/>
+              <Text style={s.generateBtnText}>{t('ai_generating')}</Text>
+            </View>
+          ) : (
+            <Text style={s.generateBtnText}>✦ {t('ai_generate_action')}</Text>
+          )}
+        </TouchableOpacity>
 
         {result !== '' && (
           <View style={s.resultCard}>
@@ -348,6 +493,22 @@ Strict requirements:
               </View>
             </View>
             <Text style={s.resultText}>{result}</Text>
+
+            <TouchableOpacity
+              style={[s.cardBtn, savingCard && { opacity: 0.7 }]}
+              onPress={shareAsImage}
+              disabled={savingCard}
+            >
+              {savingCard ? (
+                <View style={{flexDirection:'row',gap:10,alignItems:'center'}}>
+                  <ActivityIndicator color="#0D0D0D" size="small"/>
+                  <Text style={s.cardBtnText}>{t('ai_share_card_making')}</Text>
+                </View>
+              ) : (
+                <Text style={s.cardBtnText}>🖼 {t('ai_share_card')}</Text>
+              )}
+            </TouchableOpacity>
+
             <TouchableOpacity style={s.regenerateBtn} onPress={generate}>
               <Text style={s.regenerateBtnText}>{t('ai_regenerate')}</Text>
             </TouchableOpacity>
@@ -355,6 +516,21 @@ Strict requirements:
         )}
       </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* 离屏渲染，只作为截图输入。放在负偏移而不是 display:none，
+          否则 iOS 上截出来会是空白。 */}
+      {result !== '' && (
+        <View style={s.offscreen} pointerEvents="none">
+          <ShareCard
+            cardRef={cardRef}
+            emoji={mode === 'itinerary' ? '🗺' : (selectedTrip?.emoji || '🌍')}
+            title={cardTitle}
+            subtitle={cardSubtitle}
+            body={cardBody}
+            photoUri={cardPhoto}
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -388,6 +564,9 @@ const s = StyleSheet.create({
   shareBtn:{backgroundColor:'#D4AF3720',borderWidth:1,borderColor:'#D4AF3750',borderRadius:20,paddingHorizontal:14,paddingVertical:6},
   shareBtnText:{color:'#D4AF37',fontSize:13},
   resultText:{fontSize:15,color:'#C8C4BC',lineHeight:26},
+  cardBtn:{marginTop:18,padding:15,borderRadius:12,backgroundColor:'#D4AF37',alignItems:'center'},
+  cardBtnText:{color:'#0D0D0D',fontSize:15,fontWeight:'700'},
+  offscreen:{position:'absolute',left:-9999,top:0,width:CARD_WIDTH},
   regenerateBtn:{marginTop:16,padding:12,borderRadius:12,backgroundColor:'#1A1A1A',alignItems:'center'},
   regenerateBtnText:{color:'#666',fontSize:13},
 });

@@ -1,0 +1,5 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "歩数を読み取り、今日どれだけ歩いたかをひと目で表示します。";
+"NSLocationWhenInUseUsageDescription" = "現在地・標高・日没までの時間を表示し、駐車位置を記憶します。";
+"NSMotionUsageDescription" = "気圧計を読み取り、気圧とその上下を表示します。屋外での天候変化の早いサインです。";

@@ -1,0 +1,5 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "걸음 수를 읽어 오늘 얼마나 걸었는지 한눈에 보여줍니다.";
+"NSLocationWhenInUseUsageDescription" = "현재 위치와 고도, 남은 낮 시간을 표시하고 주차 위치를 기억합니다.";
+"NSMotionUsageDescription" = "기압계를 읽어 기압과 오르내림을 표시합니다. 야외에서 날씨 변화를 알리는 이른 신호입니다.";
