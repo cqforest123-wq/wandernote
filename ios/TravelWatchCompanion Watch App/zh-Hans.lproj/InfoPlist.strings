@@ -3,3 +3,4 @@
 "NSHealthShareUsageDescription" = "读取步数，在速览里显示你今天走了多远。";
 "NSLocationWhenInUseUsageDescription" = "显示你的位置、海拔和剩余日照，并记住你把车停在哪里。";
 "NSMotionUsageDescription" = "读取气压计，显示气压及其升降趋势——户外变天最早的信号。";
+"NSHealthUpdateUsageDescription" = "WanderNote 从不向「健康」写入任何数据，只读取你的步数，因此这项权限不会被用到。";

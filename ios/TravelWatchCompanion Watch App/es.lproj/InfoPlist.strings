@@ -3,3 +3,4 @@
 "NSHealthShareUsageDescription" = "Leer tus pasos para mostrar cuánto has caminado hoy.";
 "NSLocationWhenInUseUsageDescription" = "Mostrar dónde estás, tu altitud y la luz que queda, y recordar dónde aparcaste.";
 "NSMotionUsageDescription" = "Leer el barómetro para mostrar la presión y si sube o baja: una señal temprana de cambio de tiempo al aire libre.";
+"NSHealthUpdateUsageDescription" = "WanderNote nunca escribe nada en Salud. Solo lee tu recuento de pasos, así que este permiso no se usa nunca.";
