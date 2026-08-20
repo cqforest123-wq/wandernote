@@ -97,7 +97,13 @@ export default {
 
     const maxTokens = Math.min(Math.max(Number(body?.maxTokens) || 4096, 1024), 12000);
 
-    const wantsJson = String(body?.responseMimeType || '').includes('json');
+    // A schema is only honoured by Gemini when the mime type asks for JSON.
+    // Sent alone it is silently dropped and the answer comes back as prose
+    // wrapped in a code fence — the exact failure this proxy exists to stop,
+    // and one that raises no error anywhere. Treat the schema as the caller's
+    // real intent and supply the mime type they forgot.
+    const hasSchema = !!body?.responseSchema && typeof body.responseSchema === 'object';
+    const wantsJson = hasSchema || String(body?.responseMimeType || '').includes('json');
 
     // Which feature asked. Cloudflare's observability shows request counts but
     // cannot tell a diary from an itinerary, and deciding which AI features
@@ -121,11 +127,13 @@ export default {
 
     if (body?.responseMimeType) {
       generationConfig.responseMimeType = String(body.responseMimeType);
+    } else if (hasSchema) {
+      generationConfig.responseMimeType = 'application/json';
     }
 
     // A schema constrains the decoder itself, so malformed JSON becomes
     // impossible rather than merely unlikely.
-    if (body?.responseSchema && typeof body.responseSchema === 'object') {
+    if (hasSchema) {
       generationConfig.responseSchema = body.responseSchema;
     }
 
