@@ -1,8 +1,5 @@
 import assert from 'node:assert/strict';
-import { execSync } from 'node:child_process';
-
-execSync('node /tmp/extract-notif.mjs', { cwd: process.cwd() });
-const { reminderDateFor, planReminders } = await import('/tmp/notifPure.mjs');
+import { reminderDateFor, planReminders } from '../lib/notificationSchedule.js';
 
 const NOW = new Date(2026, 7, 14, 12, 0); // 2026-08-14 12:00 local
 

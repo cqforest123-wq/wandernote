@@ -204,24 +204,21 @@ struct GlanceContentView: View {
     }
 
     private var linkStatusView: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text("link: \(link.activation)\(link.reachable ? " · reachable" : "")")
-
-            if let bytes = link.receivedBytes, let at = link.receivedAt {
-                Text("rx: \(bytes)B at \(formatTime(at))")
-            } else {
-                Text("rx: none")
-            }
+        VStack(alignment: .leading, spacing: 2) {
+            Text(LinkExplanation.text(activation: link.activation,
+                                      reachable: link.reachable,
+                                      hasReceived: link.receivedBytes != nil))
 
             if let error = link.lastError {
                 Text(error).lineLimit(2)
             }
         }
-        .font(.system(size: 9))
+        .font(.system(size: 11))
         .foregroundStyle(.tertiary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.top, 2)
     }
+
 
     private var headerView: some View {
         VStack(alignment: .leading, spacing: 4) {
