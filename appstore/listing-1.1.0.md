@@ -1,58 +1,93 @@
-# App Store listing — 1.1.0 (build 15)
+# App Store listing — 1.1.0 (build 16)
 
-## What's New (English)
+商店页当前状态：描述停留在 1.0.1，没有提到 1.1.0 的任何新功能。
+以下三段是定稿，直接替换。
 
-Your photos already know where you went and when. WanderNote can now build a
-trip out of them: pick the pictures and they sort themselves into days, land on
-a map, and wait for you to add the words.
-
-- Build a trip from photos — dates and places come from the pictures themselves
-- A map of your footprints, each pin the photograph taken there
-- Spending in any currency, with a per-trip breakdown
-- Search across trips, notes, spending and packing lists at once
-- Share a trip as a picture
-- Apple Watch: daylight, altitude, weather and sun times, plus a watch-face
-  complication
-- Departure reminders, and export or back up everything you have written
-
-Everything stays on your device. An account is optional and only syncs between
-your own devices.
-
-## 更新内容（简体中文）
-
-你的照片本来就记得你去过哪里、哪一天去的。现在 WanderNote 可以直接用它们生成一段旅程：
-选好照片，它们会自己分好天、落在地图上，剩下的只等你写几句话。
-
-- 从照片生成旅程 —— 日期和地点都取自照片本身
-- 足迹地图，每个图钉就是在那里拍下的照片
-- 多币种记账，按旅程给出花费构成
-- 一次搜索，同时找遍旅程、笔记、花费和清单
-- 把一段旅程分享成一张图
-- Apple Watch：日照、海拔、天气与日出日落，另有表盘复杂功能
-- 出发提醒，以及导出备份你写下的全部内容
-
-所有内容都留在你的设备上。账号是可选的，只用于在你自己的设备之间同步。
+已核对过的一件事：描述里**没有**照片滤镜、年度报告、内购、旅程数量上限
+——这些在 1.0.1 就清理干净了，不是隐患。
 
 ---
 
-## 提交前必须核对的商店描述
+## Description（替换整段）
 
-这几项功能**已从代码中彻底移除（0 引用）**。若现有描述仍提及，即为「描述与实际不符」，
-是独立于功能之外的拒审理由：
+WanderNote is a travel journal that starts from the photographs you already took.
 
-- [ ] 照片滤镜
-- [ ] 年度报告 / Year in Review
-- [ ] 任何内购、订阅、付费解锁的措辞
-- [ ] 视频相关功能
-- [ ] 「最多 3 个旅程」「最多 3 个清单」等数量上限（上限已取消）
+Pick your travel pictures and WanderNote reads the date and the place already inside them: the dates become the days of a trip, the places become a map. All you add are the words.
 
-另需核对：
-- [ ] 描述里若写了「需要注册/登录」，须改为账号可选 —— 六月 5.1.1 拒审就是因为强制登录
-- [ ] 隐私政策链接指向 https://cqforest123-wq.github.io/wandernote-privacy/ 且可访问
-- [ ] App 隐私（Privacy Nutrition Label）中，位置与照片的用途须与实际一致：
-      均在本机处理、不上传
+Features:
+
+• Build a trip from photos
+Choose your pictures and they sort themselves into days and land on a map. With no network, a bundled table still names the place.
+
+• Footprints on a map
+Every pin is the photograph taken there, with each day's route drawn between them.
+
+• Trips, days and notes
+Notes, photographs and places for every day, tagged by feeling, food, idea or plan.
+
+• Spending in any currency
+Record what you spent in the currency you spent it in, and see a per-trip breakdown by category. When a rate is unavailable the total is withheld rather than quietly understated.
+
+• Search everything at once
+One search reaches trips, notes, spending and packing lists.
+
+• Packing lists
+Checklists tied to a trip, with templates to start from.
+
+• Share a trip as a picture
+Turn a journey into a single image worth sending.
+
+• Apple Watch
+Daylight remaining, altitude, weather and sun times on your wrist, plus a watch-face complication.
+
+• Departure reminders, export and backup
+A reminder before you leave, and a backup of everything you have written.
+
+• AI writing help, grounded in your own trip
+Turn your notes into a diary entry, a summary, or something to post. It works from what you wrote — it does not invent places you did not go.
+
+Everything stays on your device. An account is optional and only syncs between your own devices. No account is needed to use the app.
+
+---
+
+## What's New（替换整段）
+
+Version 1.1.0
+
+Your photos already know where you went and when. WanderNote can now build a trip out of them.
+
+• Build a trip from photos — the dates and places come from the pictures themselves
+• A map of your footprints, each pin the photograph taken there
+• Spending in any currency, with a per-trip breakdown
+• One search across trips, notes, spending and packing lists
+• Share a trip as a picture
+• Apple Watch: daylight, altitude, weather and sun times, plus a watch-face complication
+• Departure reminders, export and backup
+• No account required — sign in only if you want to sync between your own devices
+
+Also fixed: singular and plural in English counts, a map that now fits a trip's own footprints instead of a fixed wide view, and a less crowded trip screen.
+
+---
+
+## App Review Information — 备注（替换整段）
+
+Version 1.1.0, build 16.
+
+RE the 5.1.1(v) rejection of 1.0.1 — registration is no longer required.
+
+On first launch the app shows a short introduction, then a screen with "Continue without an account". Tapping it opens the full app: creating trips, importing photos, notes, the map, spending, search, packing lists, sharing, and the Apple Watch companion all work with no account at all.
+
+An account is optional and does exactly one thing: sync between the user's own devices. No feature is gated behind it.
+
+To verify: launch the app, tap "Skip" on the introduction, then "Continue without an account".
+
+A demo account is supplied above if you wish to test syncing, but it is not needed to review the app.
+
+Privacy: trips, photos, notes and spending are stored on the device. Location is used only to place footprints and to show distance and daylight, and is never uploaded. The optional AI writing feature sends the user's own note text to a Cloudflare Worker we operate, which forwards it to Google Gemini; nothing is retained server-side, and it never runs unless the user taps it.
+
+---
 
 ## 截图
 
-`appstore/screenshots-en/` 六张，1320×2868（6.9 吋）。
-注意：图中的「照片」是生成的占位渐变，不是真实旅行照片。
+`appstore/screenshots-en/` 六张，1320×2868。
+⚠️ 图中「照片」是生成的占位渐变，不是真实旅行照片。上架后建议用自己的照片重拍。
