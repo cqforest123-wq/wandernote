@@ -205,13 +205,12 @@ struct GlanceContentView: View {
 
     private var linkStatusView: some View {
         VStack(alignment: .leading, spacing: 2) {
+            // Only the sentence. `link.lastError` carries internal tokens
+            // such as "empty-context" and "context-keys:a,b" — they belong in
+            // the diagnostics log, which already records them, not on a wrist.
             Text(LinkExplanation.text(activation: link.activation,
                                       reachable: link.reachable,
                                       hasReceived: link.receivedBytes != nil))
-
-            if let error = link.lastError {
-                Text(error).lineLimit(2)
-            }
         }
         .font(.system(size: 11))
         .foregroundStyle(.tertiary)
