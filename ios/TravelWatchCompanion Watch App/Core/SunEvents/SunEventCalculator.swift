@@ -73,6 +73,46 @@ enum SunEventCalculator {
         )
     }
 
+    /// The next sunrise from `date` — today's if it has not happened yet,
+    /// otherwise tomorrow's.
+    ///
+    /// After the sun goes down there is no daylight left to count, and saying
+    /// so as "unavailable" reads as a fault rather than as nightfall. What the
+    /// wearer wants then is the same thing Weather shows them: when it comes
+    /// back.
+    static func nextSunrise(
+        after date: Date = Date(),
+        latitude: Double?,
+        longitude: Double?,
+        calendar: Calendar = .current
+    ) -> Date? {
+        let today = events(
+            on: date,
+            latitude: latitude,
+            longitude: longitude,
+            calendar: calendar
+        )
+
+        if let sunrise = today.sunrise, sunrise > date {
+            return sunrise
+        }
+
+        guard let tomorrow = calendar.date(
+            byAdding: .day,
+            value: 1,
+            to: date
+        ) else {
+            return nil
+        }
+
+        return events(
+            on: tomorrow,
+            latitude: latitude,
+            longitude: longitude,
+            calendar: calendar
+        ).sunrise
+    }
+
     private static func eventTime(
         on date: Date,
         latitude: Double,

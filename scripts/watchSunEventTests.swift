@@ -16,6 +16,9 @@ struct WatchSunEventTests {
         testInvalidCoordinates()
         testPolarDayDoesNotCrash()
         testSunriseAndSunsetLandOnTheSameLocalDay()
+        testNextSunriseAfterSunsetIsTomorrows()
+        testNextSunriseBeforeDawnIsTodays()
+        testNextSunriseWithoutCoordinatesIsNil()
         print("watch sun event tests passed")
     }
 
@@ -127,5 +130,59 @@ struct WatchSunEventTests {
         )
 
         assert(events.daylightRemaining == nil, "polar day should be gracefully empty")
+    }
+
+    /// The evening case that made the watch say "no data" every night: after
+    /// sunset there is no daylight left to count, and the wearer wants the
+    /// next sunrise, not a blank.
+    private static func testNextSunriseAfterSunsetIsTomorrows() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+
+        // Kyoto, well after sunset.
+        let evening = cal.date(from: DateComponents(
+            year: 2026, month: 8, day: 24, hour: 21, minute: 0
+        ))!
+
+        let next = SunEventCalculator.nextSunrise(
+            after: evening,
+            latitude: 35.0116,
+            longitude: 135.7681,
+            calendar: cal
+        )
+
+        assert(next != nil, "an evening should still know when the sun returns")
+        assert(next! > evening, "the next sunrise must be in the future")
+
+        let day = cal.component(.day, from: next!)
+        assert(day == 25, "after sunset the next sunrise is tomorrow's, got day \(day)")
+    }
+
+    /// Before dawn the answer is today's sunrise, only hours away.
+    private static func testNextSunriseBeforeDawnIsTodays() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Asia/Tokyo")!
+
+        let beforeDawn = cal.date(from: DateComponents(
+            year: 2026, month: 8, day: 24, hour: 2, minute: 0
+        ))!
+
+        let next = SunEventCalculator.nextSunrise(
+            after: beforeDawn,
+            latitude: 35.0116,
+            longitude: 135.7681,
+            calendar: cal
+        )
+
+        assert(next != nil, "a pre-dawn hour should know when the sun rises")
+        let day = cal.component(.day, from: next!)
+        assert(day == 24, "before dawn the next sunrise is today's, got day \(day)")
+    }
+
+    private static func testNextSunriseWithoutCoordinatesIsNil() {
+        assert(
+            SunEventCalculator.nextSunrise(latitude: nil, longitude: nil) == nil,
+            "no coordinates means no answer, not a wrong one"
+        )
     }
 }

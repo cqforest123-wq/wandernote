@@ -174,6 +174,15 @@ struct GlanceContentView: View {
                 Spacer(minLength: 0)
             }
             .padding(.vertical, 2)
+        } else if let sunrise = nextSunrise {
+            // The sun has gone down. "Unavailable" reads as a fault; the
+            // honest, useful answer is when it comes back.
+            metricRow(
+                icon: "sunrise.fill",
+                tint: .orange,
+                title: WatchStrings.text("sunrise"),
+                value: formatTime(sunrise)
+            )
         } else {
             metricRow(
                 icon: "sun.horizon",
@@ -182,6 +191,14 @@ struct GlanceContentView: View {
                 value: WatchStrings.text("value.unavailable")
             )
         }
+    }
+
+    /// When the sun next comes up, for the hours after it has set.
+    private var nextSunrise: Date? {
+        SunEventCalculator.nextSunrise(
+            latitude: glance.latitude,
+            longitude: glance.longitude
+        )
     }
 
     /// Share of today's daylight still ahead, clamped so dusk never renders as
