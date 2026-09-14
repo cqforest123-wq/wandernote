@@ -18,10 +18,11 @@
     "check:versions": "node scripts/checkVersions.mjs",
     "test:notifications": "node scripts/notificationTests.mjs",
     "test:offline-geocode": "node scripts/offlineGeocodeTests.mjs",
+    "test:date-format": "node scripts/dateFormatTests.mjs",
     "test:search": "node scripts/searchTests.mjs",
     "test:photo-trip": "node scripts/photoTripTests.mjs",
     "test:backup": "node scripts/backupTests.mjs",
-    "test": "npm run --silent test:watch-snapshot && npm run --silent test:watch-glance && npm run --silent test:watch-parking && npm run --silent test:currency && npm run --silent test:watch-complication && npm run --silent test:watch-link && npm run --silent test:watch-sun && npm run --silent test:notifications && npm run --silent test:offline-geocode && npm run --silent test:search && npm run --silent test:photo-trip && npm run --silent test:backup && npm run --silent test:trip-share && npm run --silent test:visits",
+    "test": "npm run --silent test:watch-snapshot && npm run --silent test:watch-glance && npm run --silent test:watch-parking && npm run --silent test:currency && npm run --silent test:watch-complication && npm run --silent test:watch-link && npm run --silent test:watch-sun && npm run --silent test:notifications && npm run --silent test:offline-geocode && npm run --silent test:date-format && npm run --silent test:search && npm run --silent test:photo-trip && npm run --silent test:backup && npm run --silent test:trip-share && npm run --silent test:visits",
     "test:trip-share": "node scripts/tripShareTests.mjs",
     "test:visits": "node scripts/visitTests.mjs",
     "bump": "node scripts/bumpBuild.mjs"

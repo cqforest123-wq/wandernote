@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { displayDate } from '../lib/dateDisplay';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { searchAll } from '../lib/search';
 import { STORAGE_KEYS } from '../lib/storageKeys';
@@ -109,13 +110,13 @@ export default function SearchScreen({ navigation, trips }) {
             <Text style={s.rowTitle} numberOfLines={2}>
               {result.title || t('search_untitled')}
             </Text>
-            {!!result.subtitle && (
+            {!!(result.subtitle || result.date) && (
               <Text style={s.rowSubtitle} numberOfLines={1}>
                 {/* A checklist's subtitle is its item count, which on its own
                     reads as a stray number. */}
                 {result.type === 'checklist'
                   ? t('search_items_count').replace('%1', result.subtitle)
-                  : result.subtitle}
+                  : [result.subtitle, displayDate(result.date)].filter(Boolean).join(' · ')}
               </Text>
             )}
           </TouchableOpacity>

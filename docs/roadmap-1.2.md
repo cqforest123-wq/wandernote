@@ -59,7 +59,12 @@ the proxy fails. No blank screen, no bare error, no endless spinner.
 
 1. Remove Supabase and accounts (this decision). Done.
 2. Show dates and times in the reader's locale. Storage keeps `YYYY.MM.DD`,
-   which backups and day matching depend on; only display changes.
+   which backups and day matching depend on; only display changes. Done:
+   app language plus device region, so English on a German iPhone reads
+   "20. Oct 2026". Weekdays are worked out from the date rather than the text
+   stored at creation. The forecast strip names weekdays instead of "09/15",
+   and its temperatures follow the unit preference — they were Celsius for
+   everyone, with a bare "32°" in the new-trip sheet.
 3. Add German, the largest App Store market in Europe. App, watch and store
    page together.
 4. Privacy policy: drop accounts and sync; state that AI sends the user's own

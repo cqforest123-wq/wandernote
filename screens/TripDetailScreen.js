@@ -4,6 +4,7 @@ import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityC
 import { fetchCurrentWeather, fetchWeatherForecast, formatTemp, getClothingAdvice } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { displayDate, displayDay, displayForecastDay, displayWeekday } from '../lib/dateDisplay';
 import { deleteTripAndRelated } from '../lib/tripDeletion';
 import { createDay, pluralUnit } from '../lib/models';
 import {
@@ -73,7 +74,13 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
 
     getHomeCurrency().then(code => !cancelled && setHomeCurrency(code));
     loadRates().then(result => !cancelled && setRates(result));
-    resolveUsesMetric().then(metric => !cancelled && setUsesMetric(metric));
+    resolveUsesMetric().then(metric => {
+      if (cancelled) return;
+      setUsesMetric(metric);
+      // Temperature follows the same preference as distance. It used to start
+      // in Celsius for everyone, with a tap to switch that nobody knew about.
+      setUseFahrenheit(!metric);
+    });
 
     return () => { cancelled = true; };
   }, []);
@@ -115,6 +122,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const categoryTotal = categoryRows.reduce((sum, [, value]) => sum + value, 0);
 
   const today = new Date();
+  // Stored form of today, the key a day for today would be saved under.
+  const todayKey = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
   today.setHours(23,59,59,999);
 
   const dateStr = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth()+1).padStart(2,'0')}.${String(selectedDate.getDate()).padStart(2,'0')}`;
@@ -152,7 +161,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     const highlights = trip.days.flatMap(d=>d.memos).slice(0,3).map(m=>m.text).join(' | ');
     const lines = [
       trip.emoji + ' ' + trip.city + ' · ' + trip.country,
-      '📅 ' + trip.days.length + ' ' + t('unit_days') + ' · ' + trip.date,
+      '📅 ' + trip.days.length + ' ' + t('unit_days') + ' · ' + displayDate(trip.date),
       '📝 ' + totalMemos + ' ' + t('unit_memos') + ' · 📸 ' + totalPhotos + ' ' + t('stat_photos'),
       highlights ? t('trip_share_highlights') + ': ' + highlights : '',
       '— ' + t('trip_share_from'),
@@ -214,7 +223,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     );
   };
 
-  const shareStats = buildTripShareStats(trip, { homeCurrency, rates, usesMetric });
+  const shareStats = buildTripShareStats(trip, { homeCurrency, rates, usesMetric, formatDate: displayDate });
 
   /**
    * Share the trip as a picture.
@@ -288,7 +297,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
             setEditDateObj(new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2])));
             setShowEditDate(true);
           }} style={{marginBottom:16,flexDirection:'row',alignItems:'center',gap:8}}>
-            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ {t('trip_departure')}: {trip.plannedDate}</Text>
+            <Text style={{fontSize:14,color:'#F0EDE8',fontWeight:'500'}}>✈️ {t('trip_departure')}: {displayDay(trip.plannedDate)}</Text>
             <Text style={{fontSize:12,color:'#4ECDC4'}}>{t('tap_to_edit')}</Text>
           </TouchableOpacity>
         ) : (
@@ -327,7 +336,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                 <View style={{flexDirection:'row',gap:4}}>
                   {forecast.slice(0,7).map((day,i)=>(
                     <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
-                      <Text style={{fontSize:10,color:'#555'}}>{i===0?t('today_short'):day.date.slice(5).replace('-','/')}</Text>
+                      <Text style={{fontSize:10,color:'#555'}}>{i===0?t('today_short'):displayForecastDay(day.date)}</Text>
                       <Text style={{fontSize:14}}>{day.emoji}</Text>
                       <Text style={{fontSize:10,color:'#4ECDC4'}}>{formatTemp(day.maxTemp, useFahrenheit)}</Text>
                       <Text style={{fontSize:10,color:'#555'}}>{formatTemp(day.minTemp, useFahrenheit)}</Text>
@@ -408,7 +417,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           <Text style={s.addDayIcon}>+</Text>
           <View>
             <Text style={s.addDayText}>{t('trip_record_today')}</Text>
-            <Text style={s.addDayHint}>{`${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`} · {t(WEEKDAY_KEYS[today.getDay()])}</Text>
+            <Text style={s.addDayHint}>{displayDay(todayKey)} · {displayWeekday(todayKey, t(WEEKDAY_KEYS[today.getDay()]))}</Text>
           </View>
         </TouchableOpacity>
 
@@ -439,10 +448,10 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                   <View style={s.dayLeft}>
                     <Text style={s.dayNumLabel}>DAY</Text>
                     <Text style={s.dayNumBig}>{trip.days.length-i}</Text>
-                    <Text style={s.dayWeekText}>{day.weekDay}</Text>
+                    <Text style={s.dayWeekText}>{displayWeekday(day.date, day.weekDay)}</Text>
                   </View>
                   <View style={s.dayRight}>
-                    <Text style={s.dayDateText}>{day.date}</Text>
+                    <Text style={s.dayDateText}>{displayDay(day.date)}</Text>
                     {day.memos.length>0 && <Text style={s.dayPreview} numberOfLines={2}>{day.memos[0].text}</Text>}
                     {photos.length>0 && (
                       <View style={s.thumbRow}>

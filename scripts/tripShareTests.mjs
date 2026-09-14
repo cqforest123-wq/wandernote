@@ -103,6 +103,14 @@ for (const [name, value] of [['null', null], ['empty', {}], ['no days', { city: 
 check('a single-day trip shows one date', tripDateRange({ days: [{ date: '2026.01.01' }] }), '2026.01.01');
 check('no days falls back to the planned date',
   tripDateRange({ days: [], plannedDate: '2026.05.01' }), '2026.05.01');
+
+check('the share card formats dates for the reader when given a formatter',
+  tripDateRange({ days: [{ date: '2026.03.15' }, { date: '2026.03.16' }] }, d => `<${d}>`),
+  '<2026.03.15> – <2026.03.16>');
+check('a planned-only trip is formatted too',
+  tripDateRange({ days: [], plannedDate: '2026.05.01' }, d => `<${d}>`), '<2026.05.01>');
+check('no date at all stays empty rather than formatting nothing',
+  tripDateRange({ days: [] }, d => `<${d}>`), '');
 check('countPhotos on null', countPhotos(null), 0);
 
 if (failed) { console.error(`\n${failed} trip share test(s) failed`); process.exit(1); }

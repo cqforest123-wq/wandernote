@@ -4,9 +4,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deleteTripAndRelated } from '../lib/tripDeletion';
 import { createTrip, pluralUnit } from '../lib/models';
 import { useTranslation } from 'react-i18next';
+import { displayDate, displayDay, displayForecastDay } from '../lib/dateDisplay';
 import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
+import { resolveUsesMetric } from '../lib/currency';
 import { getFallbackCityCoords } from '../lib/cityFallbacks';
 import { geocodeCity } from '../lib/geocoding';
 import { searchPlaces } from '../lib/placeSearch';
@@ -235,7 +237,7 @@ function CountdownCard({ trips }) {
       <View style={cd.right}>
         <Text style={cd.emoji}>{upcoming.emoji}</Text>
         <Text style={cd.city}>{upcoming.city}</Text>
-        <Text style={cd.date}>{upcoming.plannedDate}</Text>
+        <Text style={cd.date}>{displayDay(upcoming.plannedDate)}</Text>
       </View>
       <View style={cd.glow}/>
     </View>
@@ -274,6 +276,10 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
   const [enableCountdown, setEnableCountdown] = useState(false);
   const [forecast, setForecast] = useState(null);
   const [forecastLoading, setForecastLoading] = useState(false);
+  // The forecast used to print a bare "32°" of Celsius, which reads as near-
+  // freezing to anyone who thinks in Fahrenheit.
+  const [usesMetric, setUsesMetric] = useState(true);
+  React.useEffect(() => { resolveUsesMetric().then(setUsesMetric).catch(() => {}); }, []);
 
   const isZh = i18n.language?.startsWith('zh');
   const destinationSource = React.useMemo(() => {
@@ -696,7 +702,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
               <Text style={s.countryName}>{trip.country} · {trip.days.length} {pluralUnit(t, trip.days.length, 'unit_day_one', 'unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {pluralUnit(t, trip.days.reduce((a,d)=>a+d.memos.length,0), 'unit_memo_one', 'unit_memos')}</Text>
             </View>
-            <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
+            <Text style={s.cardDate}>{displayDate(trip.plannedDate || trip.date)}</Text>
           </TouchableOpacity>
         ))}
         {trips.length > 0 && <Text style={s.longPressHint}>{t('home_long_press_delete')}</Text>}
@@ -853,10 +859,10 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
                   <View style={{flexDirection:'row',gap:6}}>
                     {forecast.slice(0,7).map((day,i)=>(
                       <View key={i} style={{flex:1,alignItems:'center',gap:2}}>
-                        <Text style={{fontSize:10,color:'#555'}}>{i===0?t('today_short'):day.date.slice(5).replace('-','/')}</Text>
+                        <Text style={{fontSize:10,color:'#555'}}>{i===0?t('today_short'):displayForecastDay(day.date)}</Text>
                         <Text style={{fontSize:16}}>{day.emoji}</Text>
-                        <Text style={{fontSize:10,color:'#4ECDC4'}}>{Math.round(day.maxTemp)}°</Text>
-                        <Text style={{fontSize:10,color:'#555'}}>{Math.round(day.minTemp)}°</Text>
+                        <Text style={{fontSize:10,color:'#4ECDC4'}}>{formatTemp(day.maxTemp, !usesMetric)}</Text>
+                        <Text style={{fontSize:10,color:'#555'}}>{formatTemp(day.minTemp, !usesMetric)}</Text>
                       </View>
                     ))}
                   </View>

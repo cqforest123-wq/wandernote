@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator, Alert, Share, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { displayDate } from '../lib/dateDisplay';
 import * as Clipboard from 'expo-clipboard';
 import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
@@ -313,7 +314,7 @@ Strict requirements:
 
   const cardSubtitle = mode === 'itinerary'
     ? `${itineraryDays} ${daysUnit} · ${t(`ai_style_${itineraryStyle}`)}`
-    : (selectedDay?.date || selectedTrip?.date || '');
+    : displayDate(selectedDay?.date || selectedTrip?.date || '');
 
   const cardPhoto = mode === 'itinerary'
     ? null

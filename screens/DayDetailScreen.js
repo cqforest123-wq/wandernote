@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { displayDay, displayTime, displayWeekday } from '../lib/dateDisplay';
 import * as ImagePicker from 'expo-image-picker';
 import { createPhoto, createExpense, EXPENSE_CATEGORIES } from '../lib/models';
 import { parseExifCoords, parseExifDate } from '../lib/tripFromPhotos';
@@ -296,8 +297,8 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
         <View style={s.dayHeader}>
           <View>
             <Text style={s.dayNum}>DAY {dayIndex}</Text>
-            <Text style={s.dayDate}>{dayDate}</Text>
-            <Text style={s.dayWeek}>{day.weekDay}</Text>
+            <Text style={s.dayDate}>{displayDay(dayDate)}</Text>
+            <Text style={s.dayWeek}>{displayWeekday(day.date, day.weekDay)}</Text>
           </View>
           <View style={s.dayActions}>
             <TouchableOpacity style={s.actionBtn} onPress={openNewMemo}>
@@ -384,7 +385,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
                         <Text style={[s.tagText,{color:TAG_COLORS[normalizeTag(memo.tag)]||'#888'}]}>{t(TAG_LABEL_KEYS[normalizeTag(memo.tag)] || 'day_tag_feeling')}</Text>
                       </View>
                       <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
-                        <Text style={s.memoTime}>{memo.time}</Text>
+                        <Text style={s.memoTime}>{displayTime(memo.time)}</Text>
                         <Text style={s.editHint}>{t('tap_to_edit')}</Text>
                       </View>
                     </View>

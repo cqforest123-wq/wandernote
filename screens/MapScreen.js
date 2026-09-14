@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { SafeAreaView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal, ScrollView, Dimensions, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { displayDate, displayDay } from '../lib/dateDisplay';
 import { pluralUnit } from '../lib/models';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 
@@ -358,7 +359,7 @@ export default function MapScreen({ trips }) {
                 )}
                 <View style={{flex:1}}>
                   <Text style={s.modalCity}>{selectedTrip.city}</Text>
-                  <Text style={s.modalMeta}>{selectedTrip.country} · {selectedTrip.date}</Text>
+                  <Text style={s.modalMeta}>{selectedTrip.country} · {displayDate(selectedTrip.date)}</Text>
                 </View>
                 <TouchableOpacity onPress={() => setSelectedTrip(null)}>
                   <Text style={{color:'#555', fontSize:18}}>✕</Text>
@@ -378,7 +379,7 @@ export default function MapScreen({ trips }) {
               </View>
               {selectedTrip.plannedDate && (
                 <Text style={{color:'#4ECDC4', fontSize:13, textAlign:'center', marginTop:8}}>
-                  ✈️ {t('map_departure_date')}: {selectedTrip.plannedDate}
+                  ✈️ {t('map_departure_date')}: {displayDay(selectedTrip.plannedDate)}
                 </Text>
               )}
             </View>
@@ -402,7 +403,7 @@ export default function MapScreen({ trips }) {
                 resizeMode="contain"
                 pointerEvents="none"
               />
-              <Text style={s.photoViewerMeta}>{viewerPhoto.date}</Text>
+              <Text style={s.photoViewerMeta}>{displayDay(viewerPhoto.date)}</Text>
             </>
           )}
           <TouchableOpacity
