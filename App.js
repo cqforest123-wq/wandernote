@@ -7,12 +7,9 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
-import { initSync, syncTripsUp } from './lib/sync';
-import { supabase } from './lib/supabase';
 import { geocodeCity } from './lib/geocoding';
 import OutdoorGlanceSync from './lib/watch/OutdoorGlanceSync';
 import { syncDepartureReminders } from './lib/notifications';
-import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
 import TripDetailScreen from './screens/TripDetailScreen';
@@ -27,12 +24,11 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
 const STORAGE_KEY = STORAGE_KEYS.trips;
-const GUEST_MODE_KEY = '@wandernote_guest_mode';
 
 const INITIAL_TRIPS = [];
 
-// MainApp：业务逻辑和导航。session 为 null 时即游客模式，全部数据留在本机。
-function MainApp({ session, onRequestSignIn }) {
+// MainApp：业务逻辑和导航。所有数据只存在本机（1.2 起不再有账号和云同步）。
+function MainApp() {
   const { t, i18n } = useTranslation();
   const [langKey, setLangKey] = useState(Date.now());
   const [trips, setTripsState] = useState([]);
@@ -52,15 +48,6 @@ function MainApp({ session, onRequestSignIn }) {
   useEffect(() => {
     const loadTrips = async () => {
       try {
-        const userId = session?.user?.id;
-        if (userId) {
-          const { trips: cloudTrips } = await initSync(userId);
-          if (Array.isArray(cloudTrips)) {
-            setTripsState(cloudTrips);
-            setLoaded(true);
-            return;
-          }
-        }
         const saved = await AsyncStorage.getItem(STORAGE_KEY);
         if (saved !== null) {
           try {
@@ -86,8 +73,6 @@ function MainApp({ session, onRequestSignIn }) {
   const persistTrips = async (next) => {
     try {
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      const userId = session?.user?.id;
-      if (userId) syncTripsUp(userId, next);
     } catch (e) {
       console.warn('保存数据失败:', e.message);
     }
@@ -189,7 +174,7 @@ function MainApp({ session, onRequestSignIn }) {
             <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && (
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips} onRequestSignIn={onRequestSignIn} onDataRestored={setTripsState}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} trips={trips} onDataRestored={setTripsState}/>}</Stack.Screen>
           )}
         </Stack.Navigator>
       </NavigationContainer>
@@ -205,36 +190,10 @@ function MainApp({ session, onRequestSignIn }) {
   );
 }
 
-// App：auth gate + onboarding gate + splash
+// App：onboarding gate + splash
 export default function App() {
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [onboardingLoaded, setOnboardingLoaded] = useState(false);
-  // 游客模式：不登录也能完整使用。账号只用于可选的跨设备同步。
-  const [guestMode, setGuestMode] = useState(false);
-  const [guestLoaded, setGuestLoaded] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setAuthLoading(false), 10000);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(timeout);
-      setSession(session);
-      setAuthLoading(false);
-    }).catch(() => {
-      clearTimeout(timeout);
-      setAuthLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setSession(session);
-      // 一旦真正登录，就退出游客标记，之后登出会正常回到登录页而不是又静默进游客模式。
-      if (session) {
-        setGuestMode(false);
-        AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
-      }
-    });
-    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
-  }, []);
 
   useEffect(() => {
     AsyncStorage.getItem('@wandernote_onboarding_done')
@@ -251,43 +210,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.getItem(GUEST_MODE_KEY)
-      .then(val => setGuestMode(val === 'true'))
-      .catch(() => setGuestMode(false))
-      .finally(() => setGuestLoaded(true));
-  }, []);
-
-  useEffect(() => {
-    if (!authLoading && onboardingLoaded && guestLoaded) {
+    if (onboardingLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [authLoading, onboardingLoaded, guestLoaded]);
+  }, [onboardingLoaded]);
 
   const finishOnboarding = async () => {
     await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
     setHasSeenOnboarding(true);
   };
 
-  const continueAsGuest = async () => {
-    setGuestMode(true);
-    await AsyncStorage.setItem(GUEST_MODE_KEY, 'true').catch(() => {});
-  };
-
-  // 从游客模式回到登录页。本地旅程数据保持不变。
-  const requestSignIn = async () => {
-    setGuestMode(false);
-    await AsyncStorage.removeItem(GUEST_MODE_KEY).catch(() => {});
-  };
-
-  if (authLoading || !onboardingLoaded || !guestLoaded) return (
+  if (!onboardingLoaded) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
       <ActivityIndicator color="#D4AF37" size="large"/>
     </View>
   );
 
   if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
-  if (!session && !guestMode) return <AuthScreen onContinueAsGuest={continueAsGuest}/>;
-  return <MainApp session={session} onRequestSignIn={session ? null : requestSignIn}/>;
+  return <MainApp/>;
 }
 
 const st = StyleSheet.create({

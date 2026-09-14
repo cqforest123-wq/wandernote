@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking, Platform } from 'react-native';
-import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { deleteCurrentAccount } from '../lib/accountDeletion';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
 import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, UNIT_CHOICES, currencySymbol, getHomeCurrency, getUnitPreference, setHomeCurrency, setUnitPreference } from '../lib/currency';
 import { disableVisitTracking, enableVisitTracking, getVisitStatus, visitsSupported } from '../lib/visits';
@@ -20,9 +18,7 @@ const APP_VERSION = appConfig.expo.version;
 // keeps app.json in step with the pbxproj, so this is the real number.
 const APP_BUILD = appConfig.expo.ios?.buildNumber;
 
-export default function ProfileScreen({ session, trips, navigation, onRequestSignIn, onDataRestored }) {
-  // 游客模式：没有 session，数据只在本机，不显示登出/注销账号。
-  const isGuest = !session;
+export default function ProfileScreen({ trips, navigation, onDataRestored }) {
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
@@ -167,21 +163,14 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
   React.useEffect(() => {
     const loadProfile = async () => {
       try {
-        const cloudNick = session?.user?.user_metadata?.nickname;
-        if (cloudNick) {
-          setNickname(cloudNick);
-          await AsyncStorage.setItem('@wn_nickname', cloudNick);
-        } else {
-          const localNick = await AsyncStorage.getItem('@wn_nickname');
-          if (localNick) setNickname(localNick);
-        }
+        const localNick = await AsyncStorage.getItem('@wn_nickname');
+        if (localNick) setNickname(localNick);
 
         const localAvatar = await AsyncStorage.getItem('@wn_avatar');
         if (localAvatar) setAvatarUri(localAvatar);
@@ -189,19 +178,13 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
     };
 
     loadProfile();
-  }, [session?.user?.id, session?.user?.user_metadata?.nickname]);
+  }, []);
 
   const saveProfile = async (newNick, newAvatar) => {
     if (newNick !== undefined) {
       const cleanNick = String(newNick || '').trim();
       setNickname(cleanNick);
       await AsyncStorage.setItem('@wn_nickname', cleanNick);
-
-      try {
-        await supabase.auth.updateUser({
-          data: { nickname: cleanNick },
-        });
-      } catch (e) {}
     }
 
     if (newAvatar !== undefined) {
@@ -217,7 +200,6 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
     if(!result.canceled) saveProfile(undefined, result.assets[0].uri);
   };
 
-  const email = session?.user?.email || '';
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
   const totalMemos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0);
   const totalPhotos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0);
@@ -302,52 +284,6 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
     }
   };
 
-  const handleLogout = () => {
-    Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
-      {text:t('cancel'),style:'cancel'},
-      {text:t('profile_logout_action'),style:'destructive',onPress:async()=>{ await supabase.auth.signOut(); }},
-    ]);
-  };
-
-  const handleDeleteAccount = () => {
-    if (isDeletingAccount) return;
-
-    Alert.alert(
-      t('profile_delete_account_title'),
-      t('profile_delete_account_message'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('profile_delete_account_confirm'),
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              t('profile_delete_account_final_title'),
-              t('profile_delete_account_final_message'),
-              [
-                { text: t('cancel'), style: 'cancel' },
-                {
-                  text: t('profile_delete_account_final_confirm'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      setIsDeletingAccount(true);
-                      await deleteCurrentAccount();
-                    } catch (e) {
-                      Alert.alert(t('profile_delete_account_failed'), e?.message || t('profile_try_later'));
-                    } finally {
-                      setIsDeletingAccount(false);
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  };
-
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
@@ -359,7 +295,7 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
               <Image source={{uri:avatarUri}} style={s.avatarImg}/>
             ) : (
               <View style={s.avatar}>
-                <Text style={s.avatarText}>{nickname?nickname[0].toUpperCase():email[0]?.toUpperCase()||'W'}</Text>
+                <Text style={s.avatarText}>{nickname ? nickname[0].toUpperCase() : 'W'}</Text>
               </View>
             )}
             <View style={s.avatarEditBadge}><Text style={{fontSize:10}}>✏️</Text></View>
@@ -367,10 +303,7 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
           <TouchableOpacity onPress={()=>setShowEditProfile(true)}>
             <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
-          <Text style={s.email}>{isGuest ? t('profile_guest_desc') : email}</Text>
-          <View style={s.planBadge}>
-            <Text style={s.planText}>{isGuest ? t('profile_guest_title') : t('profile_free')}</Text>
-          </View>
+          <Text style={s.email}>{t('profile_guest_desc')}</Text>
         </View>
 
         <View style={s.statsGrid}>
@@ -468,24 +401,6 @@ export default function ProfileScreen({ session, trips, navigation, onRequestSig
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>
-
-        {isGuest ? (
-          <TouchableOpacity style={s.signInBtn} onPress={onRequestSignIn}>
-            <Text style={s.signInText}>{t('profile_sign_in_to_sync')}</Text>
-          </TouchableOpacity>
-        ) : (
-          <>
-            <TouchableOpacity style={s.deleteAccountBtn} onPress={handleDeleteAccount} disabled={isDeletingAccount}>
-              <Text style={s.deleteAccountText}>
-                {isDeletingAccount ? t('profile_deleting_account') : t('profile_delete_account')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-              <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
-            </TouchableOpacity>
-          </>
-        )}
 
         <Text style={s.version}>WanderNote v{APP_VERSION} ({APP_BUILD}) · {t('profile_version_slogan')}</Text>
       </ScrollView>
@@ -628,8 +543,6 @@ const s = StyleSheet.create({
   editSaveBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#D4AF37',alignItems:'center'},
   avatarText:{fontSize:28,color:'#D4AF37'},
   email:{fontSize:15,color:'#888',marginBottom:10},
-  planBadge:{backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A',borderRadius:20,paddingHorizontal:14,paddingVertical:6},
-  planText:{fontSize:13,color:'#555'},
   statsGrid:{flexDirection:'row',gap:10,marginBottom:20},
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:20,color:'#D4AF37',fontWeight:'300'},
@@ -645,13 +558,7 @@ const s = StyleSheet.create({
   settingLabel:{flex:1,fontSize:15,color:'#C8C4BC'},
   settingArrow:{color:'#444',fontSize:14},
   settingValue:{color:'#666',fontSize:14},
-  deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
-  deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
   settingHint:{fontSize:12,color:'#555',lineHeight:18,marginTop:8,marginBottom:4,paddingHorizontal:4},
-  signInBtn:{borderWidth:1,borderColor:'#D4AF3760',borderRadius:14,padding:16,alignItems:'center',marginBottom:20,backgroundColor:'#D4AF3710'},
-  signInText:{color:'#D4AF37',fontSize:15,fontWeight:'600'},
-  logoutBtn:{borderWidth:1,borderColor:'#FF6B6B40',borderRadius:14,padding:16,alignItems:'center',marginBottom:20},
-  logoutText:{color:'#FF6B6B',fontSize:15},
   version:{textAlign:'center',color:'#333',fontSize:11},
   overlay:{flex:1,backgroundColor:'#000000BB',justifyContent:'flex-end'},
 });

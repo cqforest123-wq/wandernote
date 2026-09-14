@@ -4,8 +4,6 @@ import {
   TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
-import { syncMemosUp, syncMemosDown, syncMemosUpWithTripId } from '../lib/sync';
 import { STORAGE_KEYS } from '../lib/storageKeys';
 import { createMemo } from '../lib/models';
 import { useTranslation } from 'react-i18next';
@@ -243,26 +241,6 @@ export default function MemoScreen({ route, navigation, trips = [] }) {
 
     const loadMemos = async () => {
       try {
-        // 先尝试云端
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) {
-          const cloudMemos = await syncMemosDown(user.id);
-          if (Array.isArray(cloudMemos)) {
-            setMemos(cloudMemos);
-            if (tripId) {
-              const has = cloudMemos.some(m => m.category === 'packing' && String(m.tripId) === String(tripId));
-              if (!has) {
-                setCategory('packing');
-                setTitle('');
-                setItems([{ id: Date.now(), text: '', checked: false, remind: false }]);
-                setEditingMemo(null);
-                openTemplateLater();
-              }
-            }
-            return;
-          }
-        }
-        // 云端无数据，用本地
         const v = await AsyncStorage.getItem(STORAGE_KEY);
         const loaded = v ? (() => { try { return JSON.parse(v); } catch(e) { console.warn("MemoScreen: 本地数据损坏，已重置"); return []; } })() : [];
         setMemos(loaded);
@@ -293,11 +271,6 @@ export default function MemoScreen({ route, navigation, trips = [] }) {
   const saveMemos = async (next) => {
     setMemos(next);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 已登录时同步到云端。游客模式下 getUser() 拿不到 user，自然跳过。
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.id) syncMemosUpWithTripId(user.id, next);
-    } catch (e) {}
   };
 
   const openNew = (defaultCat = 'note') => {

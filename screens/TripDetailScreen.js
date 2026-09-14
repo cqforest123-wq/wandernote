@@ -4,8 +4,7 @@ import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityC
 import { fetchCurrentWeather, fetchWeatherForecast, formatTemp, getClothingAdvice } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '../lib/supabase';
-import { deleteTripAndRelated } from '../lib/sync';
+import { deleteTripAndRelated } from '../lib/tripDeletion';
 import { createDay, pluralUnit } from '../lib/models';
 import {
   collectTripExpenses,
@@ -171,9 +170,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         onPress: async () => {
           setIsDeleting(true);
           try {
-            // 游客没有 user：旅程只在本机，本地删掉即可。
-            const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: {} }));
-            await deleteTripAndRelated(user?.id ?? null, trip.id);
+            await deleteTripAndRelated(trip.id);
             setTrips(prev => prev.filter(t => t.id !== trip.id));
             navigation.goBack();
           } catch (e) {

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
-import { deleteTripAndRelated } from '../lib/sync';
+import { deleteTripAndRelated } from '../lib/tripDeletion';
 import { createTrip, pluralUnit } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
@@ -423,9 +422,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
         onPress: async () => {
           setDeletingId(tripId);
           try {
-            // 游客没有 user：旅程只在本机，本地删掉即可。
-            const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: {} }));
-            await deleteTripAndRelated(user?.id ?? null, tripId);
+            await deleteTripAndRelated(tripId);
             setTrips(prev => prev.filter(t => t.id !== tripId));
           } catch (e) {
             console.error('deleteTrip error:', e.message);
