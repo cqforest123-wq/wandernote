@@ -3,6 +3,7 @@ import {
   collectTripExpenses,
   convert,
   formatMoney,
+  homeCurrencyForRegion,
   sumByCategory,
   sumExpenses,
 } from '../lib/currencyMath.js';
@@ -105,6 +106,21 @@ function testCollectsAcrossDays() {
   assert.equal(collectTripExpenses(null).length, 0);
 }
 
+function testHomeCurrencyFollowsTheRegion() {
+  // The default used to be CNY everywhere.
+  assert.equal(homeCurrencyForRegion('USD'), 'USD');
+  assert.equal(homeCurrencyForRegion('EUR'), 'EUR');
+  assert.equal(homeCurrencyForRegion('GBP'), 'GBP');
+  assert.equal(homeCurrencyForRegion('CNY'), 'CNY', 'a region on the list keeps its currency');
+  assert.equal(homeCurrencyForRegion('eur'), 'EUR', 'case from the platform is not trusted');
+}
+
+function testUnknownRegionFallsBackToUsd() {
+  assert.equal(homeCurrencyForRegion('XYZ'), 'USD');
+  assert.equal(homeCurrencyForRegion(null), 'USD');
+  assert.equal(homeCurrencyForRegion(undefined), 'USD');
+}
+
 testConvertsThroughTheBase();
 testRefusesToGuessWhenARateIsMissing();
 testTotalsAdmitWhatTheyCouldNotConvert();
@@ -112,5 +128,7 @@ testNoRatesMeansNoTotal();
 testCategoryTotals();
 testFormatting();
 testCollectsAcrossDays();
+testHomeCurrencyFollowsTheRegion();
+testUnknownRegionFallsBackToUsd();
 
 console.log('currency tests passed');

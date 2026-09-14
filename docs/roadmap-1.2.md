@@ -57,7 +57,7 @@ the proxy fails. No blank screen, no bare error, no endless spinner.
 
 ## 1.2 scope
 
-1. Remove Supabase and accounts (this decision).
+1. Remove Supabase and accounts (this decision). Done.
 2. Show dates and times in the reader's locale. Storage keeps `YYYY.MM.DD`,
    which backups and day matching depend on; only display changes.
 3. Add German, the largest App Store market in Europe. App, watch and store
@@ -66,6 +66,9 @@ the proxy fails. No blank screen, no bare error, no endless spinner.
    note text to Google Gemini via our Cloudflare Worker.
 5. Remove the Watch rule that prefers snapshot parking — the iPhone never sends
    parking, so it can never fire.
+6. Home currency follows the device region (done). It was CNY for everyone.
+   Still missing from the currency list: SEK, NOK, DKK, PLN, CZK, HUF — users in
+   those regions fall back to USD until they are added.
 
 ## Store work that needs no build
 

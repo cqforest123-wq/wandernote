@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { exportBackup, importBackup, estimatePhotoBytes, PHOTO_SIZE_WARN_BYTES } from '../lib/backup';
-import { COMMON_CURRENCIES, DEFAULT_HOME_CURRENCY, UNIT_CHOICES, currencySymbol, getHomeCurrency, getUnitPreference, setHomeCurrency, setUnitPreference } from '../lib/currency';
+import { COMMON_CURRENCIES, UNIT_CHOICES, currencySymbol, getHomeCurrency, getUnitPreference, regionHomeCurrency, setHomeCurrency, setUnitPreference } from '../lib/currency';
 import { disableVisitTracking, enableVisitTracking, getVisitStatus, visitsSupported } from '../lib/visits';
 import { areRemindersEnabled, setRemindersEnabled } from '../lib/notifications';
 import { clearDiagnostics, formatDiagnostics, readDiagnostics } from '../lib/diagnostics';
@@ -52,7 +52,7 @@ export default function ProfileScreen({ trips, navigation, onDataRestored }) {
       : choice === 'imperial' ? 'units_imperial'
       : 'units_auto'
   );
-  const [homeCurrency, setHomeCurrencyState] = useState(DEFAULT_HOME_CURRENCY);
+  const [homeCurrency, setHomeCurrencyState] = useState(regionHomeCurrency);
 
   useEffect(() => {
     getHomeCurrency().then(setHomeCurrencyState);
