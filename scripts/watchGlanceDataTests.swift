@@ -21,6 +21,7 @@ struct WatchGlanceDataTests {
         testProductionShapedTravelSnapshotStillShowsSunAndParking()
         testSnapshotWithoutTripFallsBackToDailyMode()
         testSunSurvivesWhenOnlyTheAuthorizationChanges()
+        testParkingComesFromTheWatchOnly()
         print("watch glance data tests passed")
     }
 
@@ -593,6 +594,28 @@ struct WatchGlanceDataTests {
                 distanceMeters: 240,
                 bearingDegrees: nil
             )
+        )
+    }
+
+    /// Parking is saved on the watch. A snapshot that carries a parking spot
+    /// must not replace it, and must not invent one when the watch has none.
+    private static func testParkingComesFromTheWatchOnly() {
+        let now = Date(timeIntervalSince1970: 1_800)
+        let snapshot = makeSnapshot(
+            generatedAt: now,
+            validUntil: Date(timeIntervalSince1970: 3_600)
+        )
+
+        let withoutWatchParking = GlanceDataMapper.make(
+            snapshot: snapshot,
+            availability: .fresh,
+            dailyData: DailyGlanceData.empty(at: now),
+            at: now
+        )
+        assert(
+            withoutWatchParking.parkingLatitude == nil &&
+                withoutWatchParking.parkingDistanceMeters == nil,
+            "a snapshot's parking must not show up as a saved car"
         )
     }
 }

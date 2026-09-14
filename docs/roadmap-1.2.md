@@ -75,10 +75,11 @@ the proxy fails. No blank screen, no bare error, no endless spinner.
 4. Privacy policy: drop accounts and sync; state that AI sends the user's own
    note text to Google Gemini via our Cloudflare Worker.
 5. Remove the Watch rule that prefers snapshot parking — the iPhone never sends
-   parking, so it can never fire.
-6. Home currency follows the device region (done). It was CNY for everyone.
-   Still missing from the currency list: SEK, NOK, DKK, PLN, CZK, HUF — users in
-   those regions fall back to USD until they are added.
+   parking, so it can never fire. Done: parking comes from the watch only;
+   the snapshot field stays for wire compatibility.
+6. Home currency follows the device region. It was CNY for everyone. Done,
+   with SEK, NOK, DKK, PLN, CZK and HUF added so those regions no longer fall
+   back to USD. The three crowns show their codes rather than a shared "kr".
 
 ## Store work that needs no build
 

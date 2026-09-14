@@ -66,34 +66,26 @@ enum GlanceDataMapper {
         let resolvedSteps = snapshot.activity?.steps ??
             dailyData?.stepsToday
 
-        // The iPhone never computes sun times or parking — both are measured on
-        // the watch. Without these fallbacks every travel-mode glance shows
-        // "unavailable" for sunset/daylight and treats parking as unsaved,
-        // which also permanently disables the "Back to Parking" button.
+        // The iPhone never computes sun times — they are measured on the watch.
+        // Without this fallback every travel-mode glance shows "unavailable"
+        // for sunset and daylight.
         let resolvedSunrise = snapshot.sun?.sunriseAt ?? dailyData?.sunrise
         let resolvedSunset = snapshot.sun?.sunsetAt ?? dailyData?.sunset
-        let resolvedParkingLatitude = snapshot.parking?.latitude ??
-            dailyData?.parkingLatitude
-        let resolvedParkingLongitude = snapshot.parking?.longitude ??
-            dailyData?.parkingLongitude
-        let resolvedParkingDistance = snapshot.parking?.distanceMeters ??
-            dailyData?.parkingDistanceMeters
-        let resolvedParkingSavedAt = snapshot.parking?.savedAt ??
-            dailyData?.parkingSavedAt
+
+        // Parking is saved on the watch and only there. The snapshot keeps a
+        // `parking` field for wire compatibility, but the iPhone has no way to
+        // save a car and always sends nil, so it is not consulted: preferring
+        // it would only let a future sender override the spot the wearer saved.
+        let resolvedParkingLatitude = dailyData?.parkingLatitude
+        let resolvedParkingLongitude = dailyData?.parkingLongitude
+        let resolvedParkingDistance = dailyData?.parkingDistanceMeters
+        let resolvedParkingSavedAt = dailyData?.parkingSavedAt
 
         if snapshot.sun == nil {
             GlanceMapperDiagnostics.log(
                 resolvedSunset == nil
                     ? "travel snapshot missing sun times; watch local sun times also unavailable"
                     : "travel snapshot missing sun times; using watch local sun times"
-            )
-        }
-
-        if snapshot.parking == nil {
-            GlanceMapperDiagnostics.log(
-                resolvedParkingLatitude == nil
-                    ? "travel snapshot missing parking; no parking saved on the watch either"
-                    : "travel snapshot missing parking; using watch local parking"
             )
         }
 

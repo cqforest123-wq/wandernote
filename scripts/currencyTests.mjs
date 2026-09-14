@@ -3,6 +3,7 @@ import {
   collectTripExpenses,
   convert,
   formatMoney,
+  currencySymbol,
   homeCurrencyForRegion,
   sumByCategory,
   sumExpenses,
@@ -113,6 +114,10 @@ function testHomeCurrencyFollowsTheRegion() {
   assert.equal(homeCurrencyForRegion('GBP'), 'GBP');
   assert.equal(homeCurrencyForRegion('CNY'), 'CNY', 'a region on the list keeps its currency');
   assert.equal(homeCurrencyForRegion('eur'), 'EUR', 'case from the platform is not trusted');
+  for (const code of ['SEK', 'NOK', 'DKK', 'PLN', 'CZK', 'HUF']) {
+    assert.equal(homeCurrencyForRegion(code), code, `${code} users are not pushed to USD`);
+  }
+  assert.notEqual(currencySymbol('SEK'), currencySymbol('NOK'), 'Nordic crowns must be told apart');
 }
 
 function testUnknownRegionFallsBackToUsd() {
