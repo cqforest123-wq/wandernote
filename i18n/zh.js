@@ -445,4 +445,9 @@ export default {
   units_auto: '跟随系统',
   units_metric: '公制',
   units_imperial: '英制',
+
+  // Destination search
+  place_searching: '正在搜索地点…',
+  place_use_custom: '使用“%s”作为目的地',
+  place_use_custom_hint: '适合城市、小镇、小岛、景区或自定义地点',
 };

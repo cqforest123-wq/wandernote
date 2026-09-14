@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { deleteTripAndRelated } from '../lib/tripDeletion';
 import { createTrip, pluralUnit } from '../lib/models';
 import { useTranslation } from 'react-i18next';
-import { displayDate, displayDay, displayForecastDay } from '../lib/dateDisplay';
+import { displayDate, displayDay, displayForecastDay, displayLocale } from '../lib/dateDisplay';
 import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
 import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather';
@@ -739,7 +739,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
                 {placeSearchLoading && (
                   <View style={s.placeSearchLoading}>
                     <Text style={s.placeSearchLoadingText}>
-                      {i18n.language?.startsWith('zh') ? '正在搜索真实地点...' : 'Searching places...'}
+                      {t('place_searching')}
                     </Text>
                   </View>
                 )}
@@ -759,12 +759,10 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
                 {!!search.trim() && (
                   <TouchableOpacity style={s.customDestinationItem} onPress={useSearchAsCustomDestination}>
                     <Text style={s.customDestinationTitle}>
-                      {i18n.language?.startsWith('zh') ? `使用“${search.trim()}”创建目的地` : `Use “${search.trim()}” as destination`}
+                      {t('place_use_custom').replace('%s', search.trim())}
                     </Text>
                     <Text style={s.customDestinationHint}>
-                      {i18n.language?.startsWith('zh')
-                        ? '适合城市、小镇、小岛、景区或自定义地点'
-                        : 'For cities, towns, islands, attractions, or custom places'}
+                      {t('place_use_custom_hint')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -885,7 +883,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
                   display="spinner"
                   maximumDate={new Date(2035,11,31)}
                   onChange={(_,date)=>{ if(date) setPlannedDateObj(date); }}
-                  locale={isZh ? 'zh-CN' : 'en-US'}
+                  locale={displayLocale()}
                   style={{height:130}}
                   textColor="#F0EDE8"
                 />

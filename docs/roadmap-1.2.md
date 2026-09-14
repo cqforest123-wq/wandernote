@@ -66,7 +66,12 @@ the proxy fails. No blank screen, no bare error, no endless spinner.
    and its temperatures follow the unit preference — they were Celsius for
    everyone, with a bare "32°" in the new-trip sheet.
 3. Add German, the largest App Store market in Europe. App, watch and store
-   page together.
+   page together. App and watch done: every app string, the permission
+   prompts on iPhone and watch, and the watch glance. The destination search
+   hints no longer fall back to English outside Chinese, and the date pickers
+   were fixed to `zh-CN` for everyone and now follow the reader's locale.
+   Still zh/en only: weather descriptions and clothing advice in
+   `lib/weather.js`, and the packing templates. Store page pending.
 4. Privacy policy: drop accounts and sync; state that AI sends the user's own
    note text to Google Gemini via our Cloudflare Worker.
 5. Remove the Watch rule that prefers snapshot parking — the iPhone never sends

@@ -364,4 +364,9 @@ export default {
   units_auto: 'ตามระบบ',
   units_metric: 'เมตริก',
   units_imperial: 'อิมพีเรียล',
+
+  // Destination search
+  place_searching: 'กำลังค้นหาสถานที่…',
+  place_use_custom: 'ใช้ “%s” เป็นจุดหมาย',
+  place_use_custom_hint: 'สำหรับเมือง หมู่บ้าน เกาะ แหล่งท่องเที่ยว หรือสถานที่ที่กำหนดเอง',
 };

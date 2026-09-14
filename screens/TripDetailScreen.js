@@ -4,7 +4,7 @@ import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityC
 import { fetchCurrentWeather, fetchWeatherForecast, formatTemp, getClothingAdvice } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { displayDate, displayDay, displayForecastDay, displayWeekday } from '../lib/dateDisplay';
+import { displayDate, displayDay, displayForecastDay, displayLocale, displayWeekday } from '../lib/dateDisplay';
 import { deleteTripAndRelated } from '../lib/tripDeletion';
 import { createDay, pluralUnit } from '../lib/models';
 import {
@@ -523,7 +523,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                 maximumDate={new Date()}
                 minimumDate={new Date(1990,0,1)}
                 onChange={(_,date)=>{ if(date) setSelectedDate(date); }}
-                locale="zh-CN"
+                locale={displayLocale()}
                 style={{height:160}}
                 textColor="#F0EDE8"
               />
@@ -602,7 +602,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                 display="spinner"
                 maximumDate={new Date(2035,11,31)}
                 onChange={(_,date)=>{ if(date) setEditDateObj(date); }}
-                locale="zh-CN"
+                locale={displayLocale()}
                 style={{height:160}}
                 textColor="#F0EDE8"
               />

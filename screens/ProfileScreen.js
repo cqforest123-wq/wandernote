@@ -30,6 +30,7 @@ export default function ProfileScreen({ trips, navigation, onDataRestored }) {
     { code: 'fr', label: 'Français' },
     { code: 'es', label: 'Español' },
     { code: 'th', label: 'ภาษาไทย' },
+    { code: 'de', label: 'Deutsch' },
   ];
 
   const [showLangModal, setShowLangModal] = useState(false);

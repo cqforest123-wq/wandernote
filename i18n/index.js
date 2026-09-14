@@ -9,6 +9,7 @@ import ko from './ko';
 import fr from './fr';
 import es from './es';
 import th from './th';
+import de from './de';
 
 const resources = {
   zh: { translation: zh },
@@ -18,6 +19,7 @@ const resources = {
   fr: { translation: fr },
   es: { translation: es },
   th: { translation: th },
+  de: { translation: de },
 };
 
 const getLang = (code) => {
@@ -28,6 +30,7 @@ const getLang = (code) => {
   if (code.startsWith('fr')) return 'fr';
   if (code.startsWith('es')) return 'es';
   if (code.startsWith('th')) return 'th';
+  if (code.startsWith('de')) return 'de';
   return 'en';
 };
 

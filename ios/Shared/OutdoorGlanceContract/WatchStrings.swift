@@ -60,6 +60,7 @@ public enum WatchStrings {
         case "fr": return french
         case "es": return spanish
         case "th": return thai
+        case "de": return german
         default: return nil
         }
     }
@@ -373,5 +374,42 @@ public enum WatchStrings {
         "sunrise": "พระอาทิตย์ขึ้น",
         "pressure": "ความกดอากาศ",
         "trip.dayOnlyFormat": "วันที่ %d"
+    ]
+
+    private static let german: [String: String] = [
+        "app.title": "Reiseübersicht",
+        "mode.daily": "Tagesübersicht",
+        "trip": "Reise",
+        "trip.dayFormat": "%@ · Tag %d",
+        "location": "Ort",
+        "altitude": "Höhe",
+        "weather": "Wetter",
+        "sunset": "Sonnenuntergang",
+        "daylight": "Tageslicht übrig",
+        "steps": "Schritte",
+        "car": "Auto",
+        "updated": "Aktualisiert",
+        "status.stale": "Daten sind evtl. veraltet",
+        "status.waiting": "Warte auf iPhone",
+        "status.waitingDetail": "Öffne WanderNote auf deinem iPhone, um Reisedaten zu synchronisieren.",
+        "value.unavailable": "Nicht verfügbar",
+        "location.permissionNeeded": "Standortzugriff erforderlich",
+        "location.permissionDenied": "Standortzugriff abgelehnt",
+        "location.permissionRestricted": "Standort eingeschränkt",
+        "location.unavailable": "Standort nicht verfügbar",
+        "parking.save": "Parkplatz merken",
+        "parking.directions": "Zurück zum Auto",
+        "parking.saved": "Parkplatz gemerkt",
+        "parking.notSaved": "Kein Parkplatz gemerkt",
+        "duration.hoursMinutes": "%d Std. %d Min.",
+        "mock.location": "San Francisco",
+        "mock.carDistance": "0,8 km",
+        "complication.description": "Sonnenuntergang, verbleibendes Tageslicht und dein geparktes Auto auf dem Zifferblatt.",
+        "parking.elapsed": "Seit %@ geparkt",
+        "spend.today": "Heute ausgegeben",
+        "updated.at": "Aktualisiert %@",
+        "sunrise": "Sonnenaufgang",
+        "pressure": "Luftdruck",
+        "trip.dayOnlyFormat": "Tag %d"
     ]
 }

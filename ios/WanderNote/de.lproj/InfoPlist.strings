@@ -1,0 +1,6 @@
+/* Purpose strings shown in the system permission prompts. */
+
+"NSCameraUsageDescription" = "Nimm unterwegs Fotos auf und speichere sie direkt beim passenden Tag deines Reisetagebuchs.";
+"NSPhotoLibraryUsageDescription" = "Füge deine eigenen Fotos zu einer Reise hinzu. Wenn du eine Reise aus Fotos erstellst, werden Datum und Ort auf deinem Gerät gelesen, um sie nach Tagen zu ordnen und auf der Karte zu platzieren.";
+"NSLocationWhenInUseUsageDescription" = "Zeigt, wie weit du vom Reiseziel entfernt bist, setzt deine Spuren auf die Karte und sendet Höhe und Tageslicht an deine Apple Watch.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Hält die Orte fest, an denen du anhältst, damit sich deine Reisekarte von selbst füllt. Diese Besuche bleiben auf diesem Gerät und werden nie hochgeladen.";

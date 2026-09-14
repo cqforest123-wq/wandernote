@@ -377,4 +377,9 @@ export default {
   units_auto: 'Suivre le système',
   units_metric: 'Métrique',
   units_imperial: 'Impérial',
+
+  // Destination search
+  place_searching: 'Recherche de lieux…',
+  place_use_custom: 'Utiliser « %s » comme destination',
+  place_use_custom_hint: 'Pour les villes, villages, îles, sites ou lieux personnalisés',
 };

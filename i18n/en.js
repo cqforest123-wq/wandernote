@@ -445,4 +445,9 @@ export default {
   units_auto: 'Follow system',
   units_metric: 'Metric',
   units_imperial: 'Imperial',
+
+  // Destination search
+  place_searching: 'Searching places…',
+  place_use_custom: 'Use “%s” as destination',
+  place_use_custom_hint: 'For cities, towns, islands, attractions, or custom places',
 };

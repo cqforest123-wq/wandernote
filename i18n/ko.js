@@ -363,4 +363,9 @@ export default {
   units_auto: '시스템 설정 따름',
   units_metric: '미터법',
   units_imperial: '야드파운드법',
+
+  // Destination search
+  place_searching: '장소 검색 중…',
+  place_use_custom: '“%s”을(를) 목적지로 사용',
+  place_use_custom_hint: '도시, 마을, 섬, 관광지 또는 원하는 장소',
 };

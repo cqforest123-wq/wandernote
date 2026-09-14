@@ -1,0 +1,6 @@
+/* Watch permission prompts. */
+
+"NSHealthShareUsageDescription" = "Liest deine Schritte, damit die Übersicht zeigen kann, wie weit du heute gelaufen bist.";
+"NSLocationWhenInUseUsageDescription" = "Zeigt, wo du bist, deine Höhe und das verbleibende Tageslicht, und merkt sich, wo du geparkt hast.";
+"NSMotionUsageDescription" = "Liest das Barometer, um den Luftdruck und seine Tendenz anzuzeigen – ein frühes Zeichen für Wetterumschwung im Freien.";
+"NSHealthUpdateUsageDescription" = "WanderNote schreibt nie etwas in Health. Die App liest nur deine Schritte, diese Berechtigung wird also nie verwendet.";

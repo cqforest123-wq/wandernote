@@ -100,6 +100,7 @@
 		8BDD000000000000000104 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = WanderNote/fr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8BDD000000000000000105 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = WanderNote/es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		8BDD000000000000000106 /* th */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = th; path = WanderNote/th.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		8BDD000000000000000107 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = WanderNote/de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		9F1B9074F63DCF4A44A9CEEF /* libPods-WanderNote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-WanderNote.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A68EA9182FD666150015944F /* TravelWatchCompanion Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TravelWatchCompanion Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = WanderNote/SplashScreen.storyboard; sourceTree = "<group>"; };
@@ -394,6 +395,7 @@
 				fr,
 				es,
 				th,
+				de,
 				Base,
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
@@ -630,6 +632,7 @@
 				8BDD000000000000000104 /* fr */,
 				8BDD000000000000000105 /* es */,
 				8BDD000000000000000106 /* th */,
+				8BDD000000000000000107 /* de */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";

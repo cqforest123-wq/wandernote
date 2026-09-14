@@ -363,4 +363,9 @@ export default {
   units_auto: 'システムに従う',
   units_metric: 'メートル法',
   units_imperial: 'ヤード・ポンド法',
+
+  // Destination search
+  place_searching: '場所を検索中…',
+  place_use_custom: '「%s」を目的地にする',
+  place_use_custom_hint: '都市、町、島、観光地、または任意の場所に',
 };
