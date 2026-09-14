@@ -73,7 +73,13 @@ the proxy fails. No blank screen, no bare error, no endless spinner.
    Still zh/en only: weather descriptions and clothing advice in
    `lib/weather.js`, and the packing templates. Store page pending.
 4. Privacy policy: drop accounts and sync; state that AI sends the user's own
-   note text to Google Gemini via our Cloudflare Worker.
+   note text to Google Gemini via our Cloudflare Worker. Drafted in
+   `privacy-policy.html` (English, German, Chinese). It also now lists photo
+   place lookups (Apple, Nominatim) and exchange rates, which the old policy
+   left out, and keeps a section for 1.1.0 accounts until they are retired.
+   Not yet on the Pages branch. Open question: whether the Gemini key is on a
+   paid tier — the old policy said the data is not used for training, which
+   only holds for paid usage, so the draft no longer claims it.
 5. Remove the Watch rule that prefers snapshot parking — the iPhone never sends
    parking, so it can never fire. Done: parking comes from the watch only;
    the snapshot field stays for wire compatibility.
