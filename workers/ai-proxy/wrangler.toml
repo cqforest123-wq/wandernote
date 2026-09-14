@@ -11,3 +11,16 @@ compatibility_date = "2026-01-15"
 
 [observability]
 enabled = true
+
+# Keep the Supabase project awake. Free projects pause after 7 days without
+# database activity; every third day (UTC) leaves a comfortable margin, and the
+# longest gap — the 31st to the 1st — is still well inside it.
+[triggers]
+crons = ["0 3 */3 * *"]
+
+# Both values are public by design: the anon key is the same one shipped inside
+# the app and committed in lib/supabase.js. Row-level security is what protects
+# the data, not the secrecy of this key.
+[vars]
+SUPABASE_URL = "https://qwzidwlccilhyawnvszx.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF3emlkd2xjY2lsaHlhd252c3p4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzczNDU5NDAsImV4cCI6MjA5MjkyMTk0MH0.BrfU67jlyArYcq5j_UJfSVclUwIXUYNUXOFBRhLdgtc"

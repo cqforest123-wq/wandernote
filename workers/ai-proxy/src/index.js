@@ -60,6 +60,36 @@ function extractText(data) {
   return { error: 'AI returned an empty response.' };
 }
 
+/**
+ * One small read against Supabase, so the free project never sits idle long
+ * enough to pause.
+ *
+ * AI moved here because a paused Supabase took everything down with it. What
+ * stayed behind — account sign-in, sync, and the delete-account function that
+ * App Review requires — still pauses after a week without database activity,
+ * and it did, unnoticed, for weeks after 1.1.0 shipped. A PostgREST read runs
+ * real SQL; row-level security hands the anon role an empty list, which is
+ * fine, because the query is the point and not the rows.
+ */
+async function keepSupabaseAwake(env) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    console.log(JSON.stringify({ event: 'keepalive_skipped', reason: 'unconfigured' }));
+    return;
+  }
+
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/trips?select=id&limit=1`, {
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        authorization: `Bearer ${env.SUPABASE_ANON_KEY}`,
+      },
+    });
+    console.log(JSON.stringify({ event: 'keepalive', status: res.status }));
+  } catch (e) {
+    console.log(JSON.stringify({ event: 'keepalive_failed', message: String(e?.message || e) }));
+  }
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') {
@@ -191,5 +221,10 @@ export default {
     }
 
     return json({ content: [{ type: 'text', text: result.text }] });
+  },
+
+  // Cron trigger from wrangler.toml.
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(keepSupabaseAwake(env));
   },
 };
