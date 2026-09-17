@@ -9,9 +9,19 @@ enum WatchStrings {
 
     private static var language: Language {
         let locale = Locale.current
-        let languageCode = locale.language.languageCode?.identifier ?? "en"
-        let scriptCode = locale.language.script?.identifier
-        let regionCode = locale.region?.identifier
+        let languageCode: String
+        let scriptCode: String?
+        let regionCode: String?
+
+        if #available(iOS 16.0, watchOS 9.0, macOS 13.0, *) {
+            languageCode = locale.language.languageCode?.identifier ?? "en"
+            scriptCode = locale.language.script?.identifier
+            regionCode = locale.region?.identifier
+        } else {
+            languageCode = locale.languageCode ?? "en"
+            scriptCode = locale.scriptCode
+            regionCode = locale.regionCode
+        }
 
         guard languageCode == "zh" else {
             return .english
