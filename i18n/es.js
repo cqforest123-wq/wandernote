@@ -359,7 +359,5 @@ alert_logout_confirm: '¿Cerrar sesión?',
   ai_create_trip_first: 'Create a trip and add records before using this AI feature.',
   copy: 'Copy',
   ai_copied: 'Copied to clipboard.',
-  ai_result: 'Result',
   ai_generate_action: 'Generate',
-  ai_regenerate: 'Regenerate',
 };
