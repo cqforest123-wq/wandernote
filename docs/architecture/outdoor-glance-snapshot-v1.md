@@ -95,6 +95,8 @@ Publishing is debounced and deduplicated by a stable fingerprint that ignores ge
 ## Validation
 
 - JavaScript/TypeScript check: `npm run check`
+- Watch v1 aggregate check: `npm run check:watch`
+- Release hard-stop audit: `npm run audit:v1-hardstops`
 - Snapshot sync tests: `npm run test:watch-snapshot`
 - Watch display mapping tests: `npm run test:watch-glance`
 - Watch parking tests: `npm run test:watch-parking`
