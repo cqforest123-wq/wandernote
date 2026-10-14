@@ -6,4 +6,7 @@ RCT_EXTERN_METHOD(publishOutdoorGlanceSnapshot:(NSString *)snapshotJson
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 
+RCT_EXTERN_METHOD(startOutdoorCyclingWorkoutOnWatch:(RCTPromiseResolveBlock)resolve
+                  rejecter:(RCTPromiseRejectBlock)reject)
+
 @end

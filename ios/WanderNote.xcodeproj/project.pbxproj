@@ -16,6 +16,7 @@
 		8B57D9A92FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9A82FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift */; };
 		8B57D9AB2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9AA2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift */; };
 		8B57D9AD2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9AC2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.m */; };
+		8B57D9AF2FDA000000B4A0C1 /* CyclingWorkoutWatchLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B57D9AE2FDA000000B4A0C1 /* CyclingWorkoutWatchLauncher.swift */; };
 		A68EA9222FD666170015944F /* TravelWatchCompanion Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A68EA9182FD666150015944F /* TravelWatchCompanion Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		BDF61EED68FEFB57170E9367 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DF0524F3A3A5646AC05EADA6 /* PrivacyInfo.xcprivacy */; };
@@ -58,6 +59,7 @@
 		8B57D9A82FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceWatchRuntime.swift; sourceTree = "<group>"; };
 		8B57D9AA2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OutdoorGlanceWatchBridge.swift; sourceTree = "<group>"; };
 		8B57D9AC2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = OutdoorGlanceWatchBridge.m; sourceTree = "<group>"; };
+		8B57D9AE2FDA000000B4A0C1 /* CyclingWorkoutWatchLauncher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CyclingWorkoutWatchLauncher.swift; sourceTree = "<group>"; };
 		86EE861785B23D5A1D6A27FE /* Pods-WanderNote.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WanderNote.release.xcconfig"; path = "Target Support Files/Pods-WanderNote/Pods-WanderNote.release.xcconfig"; sourceTree = "<group>"; };
 		9F1B9074F63DCF4A44A9CEEF /* libPods-WanderNote.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-WanderNote.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A68EA9182FD666150015944F /* TravelWatchCompanion Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TravelWatchCompanion Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -175,6 +177,7 @@
 				8B57D9A82FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift */,
 				8B57D9AA2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift */,
 				8B57D9AC2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.m */,
+				8B57D9AE2FDA000000B4A0C1 /* CyclingWorkoutWatchLauncher.swift */,
 			);
 			path = WanderNote/Watch;
 			sourceTree = "<group>";
@@ -466,6 +469,7 @@
 				8B57D9A92FD8F0B300B4A0C1 /* OutdoorGlanceWatchRuntime.swift in Sources */,
 				8B57D9AB2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.swift in Sources */,
 				8B57D9AD2FD8F0B300B4A0C1 /* OutdoorGlanceWatchBridge.m in Sources */,
+				8B57D9AF2FDA000000B4A0C1 /* CyclingWorkoutWatchLauncher.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -696,8 +700,10 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WatchCompanion-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = TravelWatchCompanion;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "WanderNote reads Apple Watch step count to show today's steps in Daily Glance.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "WanderNote saves cycling workouts you start from iPhone on Apple Watch.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "WanderNote uses your location on Apple Watch to show altitude and local daylight information.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.litao0729.wandernote;
@@ -750,8 +756,10 @@
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "WatchCompanion-Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = TravelWatchCompanion;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "WanderNote reads Apple Watch step count to show today's steps in Daily Glance.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "WanderNote saves cycling workouts you start from iPhone on Apple Watch.";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "WanderNote uses your location on Apple Watch to show altitude and local daylight information.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.litao0729.wandernote;

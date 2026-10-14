@@ -1,4 +1,8 @@
 export default {
+  watch_cycling_start: 'Apple Watch でサイクリングを開始',
+  watch_cycling_starting: 'Apple Watch に接続中...',
+  watch_cycling_requested: '開始リクエストを送信しました。Apple Watch で状態をご確認ください。',
+  watch_cycling_failed: 'Apple Watch に接続できません。接続と WanderNote のインストールを確認し、再試行してください。タイムアウトした場合は、先に時計の運動状態をご確認ください。',
   cancel: 'キャンセル', save: '保存', delete: '削除', edit: '編集', confirm: '確認',
   back: '戻る', next: '次へ', done: '完了', loading: '読み込み中...',
   home_title: 'WanderNote', home_subtitle: '旅の記憶を残そう',

@@ -11,6 +11,7 @@ import { fetchWeatherForecast, getWeatherInfo, formatTemp } from '../lib/weather
 import { getFallbackCityCoords } from '../lib/cityFallbacks';
 import { geocodeCity } from '../lib/geocoding';
 import { searchPlaces } from '../lib/placeSearch';
+import WatchCyclingButton from '../lib/watch/WatchCyclingButton';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 
 const CONTINENTS = [
@@ -479,6 +480,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
           </TouchableOpacity>
         </View>
 
+        <WatchCyclingButton />
         <CountdownCard trips={trips} />
         <View style={s.statsRow}>
           {[

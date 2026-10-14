@@ -9,6 +9,10 @@ export default {
   next: 'Next',
   done: 'Done',
   loading: 'Loading...',
+  watch_cycling_start: 'Start Cycling on Apple Watch',
+  watch_cycling_starting: 'Contacting Apple Watch...',
+  watch_cycling_requested: 'Start request sent. Check Apple Watch for workout status.',
+  watch_cycling_failed: 'Could not contact Apple Watch. Check that it is connected and WanderNote is installed, then try again. If the request timed out, check the watch before retrying.',
 
   // Home
   home_title: 'WanderNote',

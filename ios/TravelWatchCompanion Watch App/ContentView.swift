@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var store: OutdoorGlanceSnapshotStore
     @EnvironmentObject private var dailyStore: DailyGlanceStore
+    @EnvironmentObject private var cyclingWorkoutCoordinator: CyclingWorkoutCoordinator
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 60)) { context in
@@ -10,6 +11,10 @@ struct ContentView: View {
                 GlanceContentView(
                     glance: glance(at: context.date),
                     canRecordParking: canRecordParking,
+                    workoutStatus: cyclingWorkoutCoordinator.status,
+                    onEndWorkout: {
+                        cyclingWorkoutCoordinator.endWorkout()
+                    },
                     onSaveParking: {
                         dailyStore.recordParkingAtCurrentLocation()
                     }
