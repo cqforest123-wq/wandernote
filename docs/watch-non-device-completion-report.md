@@ -202,20 +202,27 @@ result still holds. Real-device testing remains **not completed** (see §5, §8)
 
 ## 12. Later Local Verification Notes
 
-As of 2026-09-17 on `feature/watch-companion-v1-integration`:
+As of 2026-10-14 on `feature/watch-companion-v1-integration`:
 
 - `npm run check` passed.
 - `npm run check:watch` passed with `BLOCKERS: 0`; the only remaining static-audit warning is
   the intentionally disabled `ENABLE_YEAR_REPORT = false` flag.
+- `npm run test:watch-snapshot`, `npm run test:watch-glance`, `npm run test:watch-parking`,
+  and `npm run test:watch-sun` passed individually.
 - Generic iPhone Release build with signing disabled passed and embedded
   `TravelWatchCompanion Watch App.app`.
+- Real iPhone Debug build to the physical iPhone 14 Pro Max succeeded and embedded
+  `TravelWatchCompanion Watch App.app`.
+- The built iPhone app installed successfully with `devicectl` and launched successfully as
+  `com.litao0729.wandernote`.
+- Direct CLI install to the physical Apple Watch was blocked by a CoreDevice remote pairing
+  tunnel timeout, so Watch-side launch and on-device permissions still require manual
+  verification on the Apple Watch.
 - Duplicate JS bundle key warnings from i18n, `TripDetailScreen`, and `cityCoords` were cleaned
   up.
 - JS-side development logging was removed from the Watch sync bridge/coordinator; native
   Watch-side `[WatchGlance]` logs remain DEBUG-only.
-- A real physical iPhone build was attempted after `devicectl` reported the iPhone 14 Pro Max
-  and paired Apple Watch as available. It did not reach install/run because Xcode reported the
-  iPhone needed to be unlocked.
 
-Real-device testing is therefore still blocked on an unlocked, awake iPhone and must be rerun
+Real-device testing has advanced past iPhone build/install/launch, but the Watch app still
+needs physical Watch launch, permission, connectivity, stale-cache, and parking verification
 before this Watch Companion branch is treated as merge-ready.

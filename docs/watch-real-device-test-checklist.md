@@ -4,15 +4,33 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 ## Latest Attempt
 
-2026-09-17 on `feature/watch-companion-v1-integration`:
+2026-10-14 on `feature/watch-companion-v1-integration`:
+
+- `xcrun devicectl list devices` reported iPhone 14 Pro Max and 李涛的 Apple Watch as
+  `available (paired)`.
+- `xcodebuild -showdestinations` for the `WanderNote` scheme listed the iPhone 14 Pro Max
+  as a compatible physical destination.
+- A real iPhone Debug build for `WanderNote` **succeeded** with the Watch app embedded:
+  `WanderNote.app/Watch/TravelWatchCompanion Watch App.app`.
+- `xcrun devicectl device install app` installed the built iPhone app successfully on the
+  iPhone 14 Pro Max.
+- `xcrun devicectl device process launch` launched `com.litao0729.wandernote`
+  successfully on the iPhone.
+- Direct CLI install to the physical Apple Watch did not complete because CoreDevice could
+  not establish a remote pairing tunnel:
+  `Timed out while attempting to establish tunnel using negotiated network parameters`.
+
+Next real-device pass should open the Watch app on the paired Apple Watch after the iPhone
+install, then verify Location, HealthKit steps, Daily Mode, Travel Mode, parking, reconnect,
+and stale-cache behavior on the physical Watch.
+
+Previous attempt, 2026-09-17 on `feature/watch-companion-v1-integration`:
 
 - `xcrun devicectl list devices` reported iPhone 14 Pro Max and 李涛的 Apple Watch as `available (paired)`.
 - `xcrun xctrace list devices` still reported both physical devices under `Devices Offline`.
 - `xcodebuild -showdestinations` for the `WanderNote` scheme listed the iPhone 14 Pro Max as a compatible physical destination.
 - A real iPhone Debug build attempt stopped before install/run because the iPhone was locked:
   `The device needs to be unlocked to continue`.
-
-Next real-device pass should start by unlocking the iPhone, keeping it awake, and rerunning the physical iPhone build/install path.
 
 ## A. Install And Permissions
 
