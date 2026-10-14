@@ -87,6 +87,31 @@ or a saved workout on physical hardware.
 
 ## Paired Physical Device Acceptance
 
+### Phone Launch Follow-up On 2026-10-14
+
+The initial installation and process-launch results did not prove that the iPhone UI
+was usable. After the user could not find the cycling control, the iPhone's crash report
+showed `EXC_BREAKPOINT` in
+`UIApplicationEvaluateRuntimeIssueForNoSceneLifecycleAdoption` on iOS 27.0.1. This
+matches [Apple's scene lifecycle requirement](https://developer.apple.com/documentation/uikit/transitioning-to-the-uikit-scene-based-life-cycle)
+for apps built with the iOS 27 SDK.
+
+The app now declares a single window scene, creates the existing React Native UI when
+that scene connects, and forwards scene lifecycle and linking callbacks to the existing
+Expo SDK 54 app delegate. The Watch runtime still starts once from the app delegate.
+On a physical Debug installation that contains an embedded JavaScript bundle, that
+bundle takes precedence over Metro; normal Debug builds without a bundle retain the
+existing Metro lookup.
+
+Both the simulator and signed physical iPhone scheme builds passed, as did
+`npm run check`, `npm run check:watch`, and `git diff --check`. The prepared app was
+installed again, stayed running, and a physical-device screenshot confirmed the
+WanderNote login page rendered. The iOS 26.5 simulator also launched and rendered the
+login page with the scene configuration. Completing login and exercising the cycling control
+remain required; the launch fix alone does not verify the workout workflow.
+
+### Acceptance Steps
+
 1. Install the updated iPhone and Watch development apps. Existing installed binaries
    do not contain the new native bridge or workout handler. Ordinary Xcode Debug builds
    use this worktree's Metro server. The prepared temporary development copy described
