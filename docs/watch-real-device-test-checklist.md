@@ -4,6 +4,21 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 ## Latest Attempt
 
+2026-10-14 follow-up after `648e7d9`:
+
+- The Watch connection successfully returned installed-app information.
+- Direct installation of the updated companion app succeeded on the physical Apple
+  Watch Series 11. CoreDevice confirmed `TravelWatchCompanion` version `1.0.2 (10)`.
+- Process launch of `com.litao0729.wandernote.watchkitapp` succeeded on the Watch.
+  The earlier tunnel timeout did not recur during this attempt.
+- The updated iPhone development app had already installed and launched successfully.
+- Workout startup, workout write authorization, elapsed time, duplicate start requests,
+  ending, and the saved cycling workout still need manual confirmation. Installation
+  and process launch do not establish that those behaviors passed. See
+  [cycling acceptance steps](watch-cycling-start-verification.md).
+
+Earlier attempt on the same day:
+
 2026-10-14 on `feature/watch-companion-v1-integration`:
 
 - `xcrun devicectl list devices` reported iPhone 14 Pro Max and 李涛的 Apple Watch as

@@ -66,10 +66,19 @@ or a saved workout on physical hardware.
   signing material were added to Git.
 - Installation and process launch of that updated iPhone app succeeded. This does not
   confirm that the workout button was tapped or that Watch startup succeeded.
-  Direct Watch installation still
-  failed with CoreDevice error 4000 / RemotePairing error 1001: the remote pairing
-  tunnel timed out. The Watch may install through its paired iPhone, but that has not
-  been confirmed.
+  The first direct Watch installation failed with CoreDevice error 4000 / RemotePairing
+  error 1001: the remote pairing tunnel timed out.
+- A later follow-up on the same day successfully queried installed apps through the
+  Watch connection, then directly installed the updated companion app and launched
+  `com.litao0729.wandernote.watchkitapp`. CoreDevice subsequently confirmed the Watch
+  app as `TravelWatchCompanion`, version `1.0.2`, bundle version `10`. The earlier
+  installation blocker did not recur in this attempt; no connectivity settings or
+  source code were changed to obtain this result.
+- Both updated development apps have now been installed and process launch succeeded
+  on each device. No cycling workout was started automatically during this follow-up.
+  The next manual action is to tap the cycling control on iPhone, accept workout
+  authorization on Watch if prompted, then verify active state, elapsed time, ending,
+  and the saved Health/Fitness workout.
 - Pre-existing version metadata differs: `app.json` and Xcode build settings say
   `1.0.2 (10)`, the iPhone's source `Info.plist` hardcodes `1.0.0 (1)`, and the built
   Watch reports `1.0.2 (10)`. CoreDevice confirmed the installed iPhone app as
