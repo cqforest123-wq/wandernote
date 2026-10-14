@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Alert, Modal, Image, TextInput, Linking } from 'react-native';
-import { supabase } from '../lib/supabase';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { deleteCurrentAccount } from '../lib/accountDeletion';
+import { preserveExistingMedia, storeLocalMedia } from '../lib/localMedia';
 
-export default function ProfileScreen({ session, trips, navigation }) {
+export default function ProfileScreen({ trips, navigation }) {
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
@@ -20,7 +19,7 @@ export default function ProfileScreen({ session, trips, navigation }) {
     { code: 'th', label: 'ภาษาไทย' },
   ];
 
-const ENABLE_YEAR_REPORT = false;
+  const ENABLE_YEAR_REPORT = false;
   const [showLangModal, setShowLangModal] = useState(false);
   const currentLangLabel = LANGS.find(l => currentLang.startsWith(l.code))?.label || 'English';
   const selectLanguage = async (code) => {
@@ -36,44 +35,40 @@ const ENABLE_YEAR_REPORT = false;
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
-  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   React.useEffect(() => {
     const loadProfile = async () => {
       try {
-        const cloudNick = session?.user?.user_metadata?.nickname;
-        if (cloudNick) {
-          setNickname(cloudNick);
-          await AsyncStorage.setItem('@wn_nickname', cloudNick);
-        } else {
-          const localNick = await AsyncStorage.getItem('@wn_nickname');
-          if (localNick) setNickname(localNick);
-        }
+        const localNick = await AsyncStorage.getItem('@wn_nickname');
+        if (localNick) setNickname(localNick);
 
         const localAvatar = await AsyncStorage.getItem('@wn_avatar');
-        if (localAvatar) setAvatarUri(localAvatar);
+        if (localAvatar) {
+          const preserved = await preserveExistingMedia(localAvatar);
+          setAvatarUri(preserved);
+          if (preserved !== localAvatar) await AsyncStorage.setItem('@wn_avatar', preserved);
+        }
       } catch (e) {}
     };
 
     loadProfile();
-  }, [session?.user?.id, session?.user?.user_metadata?.nickname]);
+  }, []);
 
   const saveProfile = async (newNick, newAvatar) => {
-    if (newNick !== undefined) {
-      const cleanNick = String(newNick || '').trim();
-      setNickname(cleanNick);
-      await AsyncStorage.setItem('@wn_nickname', cleanNick);
-
-      try {
-        await supabase.auth.updateUser({
-          data: { nickname: cleanNick },
-        });
-      } catch (e) {}
-    }
-
-    if (newAvatar !== undefined) {
-      setAvatarUri(newAvatar);
-      await AsyncStorage.setItem('@wn_avatar', newAvatar);
+    try {
+      if (newNick !== undefined) {
+        const cleanNick = String(newNick || '').trim();
+        await AsyncStorage.setItem('@wn_nickname', cleanNick);
+        setNickname(cleanNick);
+      }
+      if (newAvatar !== undefined) {
+        await AsyncStorage.setItem('@wn_avatar', newAvatar);
+        setAvatarUri(newAvatar);
+      }
+      return true;
+    } catch {
+      Alert.alert(t('local_save_failed'), t('local_save_failed_desc'));
+      return false;
     }
   };
 
@@ -81,60 +76,19 @@ const ENABLE_YEAR_REPORT = false;
     const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if(status !== 'granted') return;
     const result = await ImagePicker.launchImageLibraryAsync({quality:0.8,allowsEditing:true,aspect:[1,1]});
-    if(!result.canceled) saveProfile(undefined, result.assets[0].uri);
+    if (!result.canceled) {
+      try {
+        await saveProfile(undefined, await storeLocalMedia(result.assets[0].uri));
+      } catch {
+        Alert.alert(t('local_save_failed'), t('local_media_failed'));
+      }
+    }
   };
 
-  const email = session?.user?.email || '';
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
   const totalMemos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+d.memos.length,0),0);
   const totalPhotos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.photos||[]).length,0),0);
   const totalVideos = trips.reduce((a,t)=>a+t.days.reduce((b,d)=>b+(d.videos||[]).length,0),0);
-
-  const handleLogout = () => {
-    Alert.alert(t('profile_logout'), t('alert_logout_confirm'),[
-      {text:t('cancel'),style:'cancel'},
-      {text:t('profile_logout_action'),style:'destructive',onPress:async()=>{ await supabase.auth.signOut(); }},
-    ]);
-  };
-
-  const handleDeleteAccount = () => {
-    if (isDeletingAccount) return;
-
-    Alert.alert(
-      t('profile_delete_account_title'),
-      t('profile_delete_account_message'),
-      [
-        { text: t('cancel'), style: 'cancel' },
-        {
-          text: t('profile_delete_account_confirm'),
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              t('profile_delete_account_final_title'),
-              t('profile_delete_account_final_message'),
-              [
-                { text: t('cancel'), style: 'cancel' },
-                {
-                  text: t('profile_delete_account_final_confirm'),
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      setIsDeletingAccount(true);
-                      await deleteCurrentAccount();
-                    } catch (e) {
-                      Alert.alert(t('profile_delete_account_failed'), e?.message || t('profile_try_later'));
-                    } finally {
-                      setIsDeletingAccount(false);
-                    }
-                  },
-                },
-              ]
-            );
-          },
-        },
-      ]
-    );
-  };
 
   return (
     <SafeAreaView style={s.container}>
@@ -147,7 +101,7 @@ const ENABLE_YEAR_REPORT = false;
               <Image source={{uri:avatarUri}} style={s.avatarImg}/>
             ) : (
               <View style={s.avatar}>
-                <Text style={s.avatarText}>{nickname?nickname[0].toUpperCase():email[0]?.toUpperCase()||'W'}</Text>
+                <Text style={s.avatarText}>{nickname?nickname[0].toUpperCase():'W'}</Text>
               </View>
             )}
             <View style={s.avatarEditBadge}><Text style={{fontSize:10}}>✏️</Text></View>
@@ -155,7 +109,6 @@ const ENABLE_YEAR_REPORT = false;
           <TouchableOpacity onPress={()=>setShowEditProfile(true)}>
             <Text style={s.nicknameText}>{nickname || t('profile_set_nickname')}</Text>
           </TouchableOpacity>
-          <Text style={s.email}>{email}</Text>
           <View style={s.planBadge}>
             <Text style={s.planText}>{t('profile_free')}</Text>
           </View>
@@ -163,7 +116,7 @@ const ENABLE_YEAR_REPORT = false;
 
         <View style={s.statsGrid}>
           {[
-            [String(trips.length),t('profile_stat_trips'),'3'],
+            [String(trips.length),t('profile_stat_trips'),''],
             [String(totalDays),t('profile_stat_days'),''],
             [String(totalMemos),t('profile_stat_memos'),''],
             [String(totalPhotos),t('profile_stat_photos'),''],
@@ -195,6 +148,8 @@ const ENABLE_YEAR_REPORT = false;
         )}
 
 
+        <Text style={s.sectionTitle}>{t('local_storage_title')}</Text>
+        <Text style={s.localNotice}>{t('local_storage_notice')}</Text>
         <Text style={s.sectionTitle}>{t('profile_account_settings')}</Text>
         <View style={s.settingList}>
           <TouchableOpacity style={s.settingRow} onPress={()=>setShowLangModal(true)}>
@@ -213,22 +168,12 @@ const ENABLE_YEAR_REPORT = false;
             <Text style={s.settingLabel}>{t('profile_privacy_policy')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/idYOUR_APP_ID?action=write-review')}>
+          <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/id6769281736?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
             <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity style={s.deleteAccountBtn} onPress={handleDeleteAccount} disabled={isDeletingAccount}>
-          <Text style={s.deleteAccountText}>
-            {isDeletingAccount ? t('profile_deleting_account') : t('profile_delete_account')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={s.logoutBtn} onPress={handleLogout}>
-          <Text style={s.logoutText}>{t('profile_logout_action')}</Text>
-        </TouchableOpacity>
 
         <Text style={s.version}>WanderNote v1.0.0 · {t('profile_version_slogan')}</Text>
       </ScrollView>
@@ -252,7 +197,7 @@ const ENABLE_YEAR_REPORT = false;
               <TouchableOpacity style={s.editCancelBtn} onPress={()=>setShowEditProfile(false)}>
                 <Text style={{color:'#555',fontSize:15}}>{t('cancel')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={s.editSaveBtn} onPress={()=>{saveProfile(nickname);setShowEditProfile(false);}}>
+              <TouchableOpacity style={s.editSaveBtn} onPress={async ()=>{if (await saveProfile(nickname)) setShowEditProfile(false);}}>
                 <Text style={{color:'#0D0D0D',fontSize:15,fontWeight:'700'}}>{t('save')}</Text>
               </TouchableOpacity>
             </View>
@@ -299,7 +244,7 @@ const s = StyleSheet.create({
   editCancelBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#1A1A1A',alignItems:'center'},
   editSaveBtn:{flex:1,padding:16,borderRadius:14,backgroundColor:'#D4AF37',alignItems:'center'},
   avatarText:{fontSize:28,color:'#D4AF37'},
-  email:{fontSize:15,color:'#888',marginBottom:10},
+  localNotice:{fontSize:14,color:'#AAA',lineHeight:21,marginBottom:24},
   planBadge:{backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A',borderRadius:20,paddingHorizontal:14,paddingVertical:6},
   planText:{fontSize:13,color:'#555'},
   statsGrid:{flexDirection:'row',gap:10,marginBottom:20},
@@ -317,10 +262,6 @@ const s = StyleSheet.create({
   settingIcon:{fontSize:18,width:28},
   settingLabel:{flex:1,fontSize:15,color:'#C8C4BC'},
   settingArrow:{color:'#444',fontSize:14},
-  deleteAccountBtn:{borderWidth:1,borderColor:'#FF6B6B70',borderRadius:14,padding:16,alignItems:'center',marginBottom:12,backgroundColor:'#FF6B6B10'},
-  deleteAccountText:{color:'#FF6B6B',fontSize:15,fontWeight:'700'},
-  logoutBtn:{borderWidth:1,borderColor:'#FF6B6B40',borderRadius:14,padding:16,alignItems:'center',marginBottom:20},
-  logoutText:{color:'#FF6B6B',fontSize:15},
   version:{textAlign:'center',color:'#333',fontSize:11},
   overlay:{flex:1,backgroundColor:'#000000BB',justifyContent:'flex-end'},
 });

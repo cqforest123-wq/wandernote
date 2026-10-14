@@ -4,8 +4,7 @@ import { getCityCoords, haversineDistanceKm, formatDistance } from '../lib/cityC
 import { fetchCurrentWeather, fetchWeatherForecast, formatTemp, getClothingAdvice } from '../lib/weather';
 import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert, Image, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { supabase } from '../lib/supabase';
-import { deleteTripAndRelated } from '../lib/sync';
+import { removeLocalPackingListsForTrip } from '../lib/localData';
 import { createDay } from '../lib/models';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -116,9 +115,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
         onPress: async () => {
           setIsDeleting(true);
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error(t('auth_not_logged_in'));
-            await deleteTripAndRelated(user.id, trip.id);
+            await removeLocalPackingListsForTrip(trip.id);
             setTrips(prev => prev.filter(t => t.id !== trip.id));
             navigation.goBack();
           } catch (e) {

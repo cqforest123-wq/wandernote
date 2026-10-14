@@ -3,6 +3,7 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, Touch
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
 import { createPhoto, createVideo } from '../lib/models';
+import { storeLocalMedia } from '../lib/localMedia';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 8) / 3;
@@ -111,8 +112,15 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       selectionLimit: 20,
     });
     if (!result.canceled) {
-      const newPhotos = result.assets.map(a => createPhoto({ uri: a.uri }));
-      updateDay(d=>({...d,photos:[...(d.photos||[]),...newPhotos]}));
+      try {
+        const newPhotos = [];
+        for (const asset of result.assets) {
+          newPhotos.push(createPhoto({ uri: await storeLocalMedia(asset.uri) }));
+        }
+        updateDay(d=>({...d,photos:[...(d.photos||[]),...newPhotos]}));
+      } catch {
+        Alert.alert(t('local_save_failed'), t('local_media_failed'));
+      }
     }
   };
 
@@ -121,8 +129,12 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
     if (status!=='granted') { Alert.alert(t('alert_need_permission'), t('alert_permission_camera')); return; }
     const result = await ImagePicker.launchCameraAsync({quality:0.8});
     if (!result.canceled) {
-      const uri = result.assets[0].uri;
-      updateDay(d=>({...d,photos:[...(d.photos||[]),createPhoto({ uri })]}));
+      try {
+        const uri = await storeLocalMedia(result.assets[0].uri);
+        updateDay(d=>({...d,photos:[...(d.photos||[]),createPhoto({ uri })]}));
+      } catch {
+        Alert.alert(t('local_save_failed'), t('local_media_failed'));
+      }
     }
   };
 
@@ -146,8 +158,15 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       selectionLimit: 5,
     });
     if (!result.canceled) {
-      const newVideos = result.assets.map(a => createVideo({ uri: a.uri, duration: a.duration }));
-      updateDay(d=>({...d, videos:[...(d.videos||[]),...newVideos]}));
+      try {
+        const newVideos = [];
+        for (const asset of result.assets) {
+          newVideos.push(createVideo({ uri: await storeLocalMedia(asset.uri), duration: asset.duration }));
+        }
+        updateDay(d=>({...d, videos:[...(d.videos||[]),...newVideos]}));
+      } catch {
+        Alert.alert(t('local_save_failed'), t('local_media_failed'));
+      }
     }
   };
 

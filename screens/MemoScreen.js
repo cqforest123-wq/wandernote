@@ -3,16 +3,11 @@ import {
   SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput,
   TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Alert
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
-import { syncMemosUp, syncMemosDown, syncMemosUpWithTripId } from '../lib/sync';
-import { STORAGE_KEYS } from '../lib/storageKeys';
+import { loadLocalMemos, saveLocalMemos } from '../lib/localData';
 import { createMemo } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { GLOBAL_PACKING_TEMPLATES } from '../lib/globalPackingTemplates';
 import { buildLocalPackingGroups } from '../lib/travelStoryFallback';
-
-const STORAGE_KEY = STORAGE_KEYS.memos;
 
 const CATEGORIES = [
   { key: 'travel',  labelKey: 'memo_cat_travel',  color: '#D4AF37' },
@@ -206,11 +201,16 @@ const pg = StyleSheet.create({
 });
 
 // ─── 主屏幕 ───────────────────────────────────────────────────────
-export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
+export default function MemoScreen({ route, navigation, trips = [] }) {
   const { t, i18n } = useTranslation();
   const tripId   = route?.params?.tripId   || null;
   const tripName = route?.params?.tripName || null;
   const [memos,        setMemos]        = useState([]);
+  const memosRef = useRef([]);
+  const savingMemoRef = useRef(false);
+  const [memosLoaded, setMemosLoaded] = useState(false);
+  const [memosLoadFailed, setMemosLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [tab,          setTab]          = useState('packing'); // 'packing' | 'memo'
   const [showAdd,      setShowAdd]      = useState(false);
   const [editingMemo,  setEditingMemo]  = useState(null);
@@ -242,30 +242,14 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
     };
 
     const loadMemos = async () => {
+      setMemosLoaded(false);
+      setMemosLoadFailed(false);
       try {
-        // 先尝试云端
-        const { data: { user } } = await supabase.auth.getUser();
-        if (isPro && user?.id) {
-          const cloudMemos = await syncMemosDown(user.id);
-          if (Array.isArray(cloudMemos)) {
-            setMemos(cloudMemos);
-            if (tripId) {
-              const has = cloudMemos.some(m => m.category === 'packing' && String(m.tripId) === String(tripId));
-              if (!has) {
-                setCategory('packing');
-                setTitle('');
-                setItems([{ id: Date.now(), text: '', checked: false, remind: false }]);
-                setEditingMemo(null);
-                openTemplateLater();
-              }
-            }
-            return;
-          }
-        }
-        // 云端无数据，用本地
-        const v = await AsyncStorage.getItem(STORAGE_KEY);
-        const loaded = v ? (() => { try { return JSON.parse(v); } catch(e) { console.warn("MemoScreen: 本地数据损坏，已重置"); return []; } })() : [];
+        const loaded = await loadLocalMemos();
+        if (!mounted) return;
+        memosRef.current = loaded;
         setMemos(loaded);
+        setMemosLoaded(true);
         if (tripId) {
           const has = loaded.some(m => m.category === 'packing' && String(m.tripId) === String(tripId));
           if (!has) {
@@ -277,9 +261,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
           }
         }
       } catch (e) {
-        const v = await AsyncStorage.getItem(STORAGE_KEY);
-        const loaded = v ? (() => { try { return JSON.parse(v); } catch(e) { console.warn("MemoScreen: 本地数据损坏，已重置"); return []; } })() : [];
-        setMemos(loaded);
+        if (mounted) setMemosLoadFailed(true);
       }
     };
     loadMemos();
@@ -288,17 +270,27 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
       mounted = false;
       timers.forEach(clearTimeout);
     };
-  }, [tripId, isPro]);
+  }, [tripId, loadAttempt]);
+
+  if (!memosLoaded) return (
+    <SafeAreaView style={s.container}>
+      <Text style={{color:'#AAA',padding:24,lineHeight:22}}>{t(memosLoadFailed ? 'local_load_failed' : 'loading')}</Text>
+      {memosLoadFailed && <TouchableOpacity onPress={()=>setLoadAttempt(value=>value+1)}><Text style={{color:'#4ECDC4',padding:24}}>{t('local_retry')}</Text></TouchableOpacity>}
+    </SafeAreaView>
+  );
 
   const saveMemos = async (next) => {
+    memosRef.current = next;
     setMemos(next);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // 同步到云端
-    if (isPro) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user?.id) syncMemosUpWithTripId(user.id, next);
-      } catch (e) {}
+    try {
+      await saveLocalMemos(next);
+      return true;
+    } catch (e) {
+      Alert.alert(t('local_save_failed'), t('local_save_failed_desc'), [
+        { text: t('local_retry'), onPress: () => saveMemos(memosRef.current) },
+        { text: t('cancel'), style: 'cancel' },
+      ]);
+      return false;
     }
   };
 
@@ -318,43 +310,40 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
     setShowAdd(true);
   };
 
-  const FREE_PACKING_LIMIT = 3;
   const saveMemo = async () => {
+    if (savingMemoRef.current) return;
     if (!title.trim() && items.every(i => !i.text.trim())) return;
-    // 打包清单数量限制
-    if (!isPro && category === 'packing' && !editingMemo) {
-      const packCount = memos.filter(m => m.category === 'packing').length;
-      if (packCount >= FREE_PACKING_LIMIT) {
-        Alert.alert(
-          t('alert_pro_limit'),
-          t('memo_free_packing_limit').replace('%d', FREE_PACKING_LIMIT),
-          [{ text: t('ok'), style: 'cancel' }]
-        );
-        return;
-      }
-    }
-    const validItems = items.filter(i => i.text.trim());
-    const now = new Date();
-    const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+    savingMemoRef.current = true;
+    try {
+      const validItems = items.filter(i => i.text.trim());
+      const now = new Date();
+      const timeStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
 
-    if (editingMemo) {
-      await saveMemos(memos.map(m =>
-        m.id === editingMemo.id
-          ? { ...m, title: title.trim(), items: validItems, category, updatedAt: timeStr }
-          : m
-      ));
-    } else {
-      await saveMemos([
-        createMemo({
+      let saved;
+      if (editingMemo) {
+        saved = await saveMemos(memosRef.current.map(m =>
+          m.id === editingMemo.id
+            ? { ...m, title: title.trim(), items: validItems, category, updatedAt: timeStr }
+            : m
+        ));
+      } else {
+        const newMemo = createMemo({
           title,
           items: validItems,
           category,
           tripId: tripId || null,
-        }),
-        ...memos,
-      ]);
+        });
+        // Keep the same record identity if a failed save is retried in this form.
+        setEditingMemo(newMemo);
+        saved = await saveMemos([
+          newMemo,
+          ...memosRef.current,
+        ]);
+      }
+      if (saved) setShowAdd(false);
+    } finally {
+      savingMemoRef.current = false;
     }
-    setShowAdd(false);
   };
 
   const deleteMemo = (id, titleText) => {
@@ -365,12 +354,12 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
       : t('memo_delete_confirm').replace('%s', titleText);
     Alert.alert(t('delete'), msg, [
       { text: t('cancel'), style: 'cancel' },
-      { text: t('delete'), style: 'destructive', onPress: async () => saveMemos(memos.filter(m => m.id !== id)) },
+      { text: t('delete'), style: 'destructive', onPress: async () => saveMemos(memosRef.current.filter(m => m.id !== id)) },
     ]);
   };
 
   const toggleItem = async (memoId, itemId) => {
-    await saveMemos(memos.map(m =>
+    await saveMemos(memosRef.current.map(m =>
       m.id === memoId
         ? { ...m, items: m.items.map(i => i.id === itemId ? { ...i, checked: !i.checked } : i) }
         : m
@@ -378,7 +367,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
   };
 
   const toggleReminder = async (memoId, itemId) => {
-    await saveMemos(memos.map(m =>
+    await saveMemos(memosRef.current.map(m =>
       m.id === memoId
         ? { ...m, items: m.items.map(i => i.id === itemId ? { ...i, remind: !i.remind } : i) }
         : m
@@ -754,7 +743,7 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
               </TouchableOpacity>
             </View>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {/* AI生成入口 */}
+              {/* Local packing template */}
               {!showAIGen ? (
                 <TouchableOpacity
                   style={{backgroundColor:'#1A0D2B',borderWidth:1,borderColor:'#A78BFA50',borderRadius:16,padding:16,marginBottom:16,flexDirection:'row',alignItems:'center',gap:12}}
@@ -801,51 +790,23 @@ export default function MemoScreen({ route, navigation, isPro, trips = [] }) {
                       aiPackingGeneratingRef.current = true;
                       setAIGenerating(true);
                       try {
-                        const { callClaude } = require('../lib/claude');
-                        const prompt = `You are a travel packing checklist expert. Generate a detailed packing checklist for a ${aiDays}-day trip to ${destination}.
-Requirements:
-1. Return pure JSON only, with no extra text.
-2. Format: {"title":"${destination} ${aiDays}-day packing list","groups":{"Category name":["item 1","item 2"]}}
-3. Use these groups: Documents, Money, Electronics, Clothing, Toiletries, Special items.
-4. Each group should include 5-8 items, each with a suitable emoji.
-5. Adapt the suggestions to the destination.`;
-                        const text = await callClaude(prompt, 1500);
-                        const clean = text.replace(/```json|```/g, '').trim();
-                        const parsed = JSON.parse(clean);
-                        if (!parsed?.groups || typeof parsed.groups !== 'object') {
-                          throw new Error('AI packing response missing groups');
-                        }
+                        const template = buildLocalPackingGroups(destination, aiDays);
                         const newMemo = createMemo({
                           category: 'packing',
-                          title: parsed.title || `${destination} ${t('memo_ai_checklist')}`,
-                          items: Object.entries(parsed.groups).flatMap(([group, items]) =>
+                          title: template.title,
+                          items: Object.entries(template.groups).flatMap(([group, items]) =>
                             items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
                           ),
                           tripId: tripId || null,
                         });
-                        const next = [...memos, newMemo];
-                        await saveMemos(next);
+                        const next = [...memosRef.current, newMemo];
+                        const saved = await saveMemos(next);
                         setShowAIGen(false);
                         setShowTemplate(false);
+                        if (!saved) return;
                         Alert.alert(t('memo_ai_success_title'), t('memo_ai_success_desc').replace('%s', destination));
                       } catch(e) {
-                        const fallback = buildLocalPackingGroups(destination, aiDays);
-                        const newMemo = createMemo({
-                          category: 'packing',
-                          title: fallback.title,
-                          items: Object.entries(fallback.groups).flatMap(([group, items]) =>
-                            items.map(item => ({ id: Date.now()+Math.random(), text: `[${group}] ${item}`, checked: false, remind: false }))
-                          ),
-                          tripId: tripId || null,
-                        });
-                        const next = [...memos, newMemo];
-                        await saveMemos(next);
-                        setShowAIGen(false);
-                        setShowTemplate(false);
-                        Alert.alert(
-                          t('memo_ai_success_title'),
-                          'Generated a local packing list because the online AI service was unavailable.'
-                        );
+                        Alert.alert(t('ai_notice'), t('local_prepare_failed'));
                       } finally {
                         aiPackingGeneratingRef.current = false;
                         setAIGenerating(false);

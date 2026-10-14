@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase } from '../lib/supabase';
-import { deleteTripAndRelated } from '../lib/sync';
+import { removeLocalPackingListsForTrip } from '../lib/localData';
 import { createTrip } from '../lib/models';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
@@ -251,7 +250,7 @@ const cd = StyleSheet.create({
   glow:{position:'absolute',right:-20,top:-20,width:80,height:80,borderRadius:40,backgroundColor:'#4ECDC4',opacity:0.08},
 });
 
-export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTripLimit }) {
+export default function HomeScreen({ navigation, trips, setTrips }) {
   const { t, i18n } = useTranslation();
   const [showAdd, setShowAdd] = useState(false);
   const [step, setStep] = useState(1);
@@ -417,9 +416,7 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
         onPress: async () => {
           setDeletingId(tripId);
           try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user?.id) throw new Error(t('auth_not_logged_in'));
-            await deleteTripAndRelated(user.id, tripId);
+            await removeLocalPackingListsForTrip(tripId);
             setTrips(prev => prev.filter(t => t.id !== tripId));
           } catch (e) {
             console.error('deleteTrip error:', e.message);
@@ -433,14 +430,6 @@ export default function HomeScreen({ navigation, trips, setTrips, isPro, freeTri
   };
 
   const handleNewTrip = () => {
-    if (!isPro && trips.length >= (freeTripLimit||3)) {
-      Alert.alert(
-        t('alert_pro_limit'),
-        t('alert_pro_limit_desc').replace('%d', freeTripLimit || 3),
-        [{ text: t('ok') }]
-      );
-      return;
-    }
     resetForm(); setShowAdd(true);
   };
 

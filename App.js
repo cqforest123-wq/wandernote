@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './i18n';
 import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from '@react-navigation/native';
@@ -7,11 +7,10 @@ import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } fr
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
-import { initSync, syncTripsUp } from './lib/sync';
-import { supabase } from './lib/supabase';
+import { loadLocalTrips, saveLocalTrips } from './lib/localData';
+import { preserveTripMedia } from './lib/localMedia';
 import { geocodeCity } from './lib/geocoding';
 import OutdoorGlanceSync from './lib/watch/OutdoorGlanceSync';
-import AuthScreen from './screens/AuthScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeScreen from './screens/HomeScreen';
 import TripDetailScreen from './screens/TripDetailScreen';
@@ -26,19 +25,15 @@ import PhotoFilterScreen from './screens/PhotoFilterScreen';
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const Stack = createNativeStackNavigator();
-const FREE_TRIP_LIMIT = 3;
-const STORAGE_KEY = STORAGE_KEYS.trips;
-
-const INITIAL_TRIPS = [];
-
-// MainApp：已登录用户的业务逻辑和导航
-function MainApp({ session }) {
+function MainApp() {
   const { t, i18n } = useTranslation();
   const [langKey, setLangKey] = useState(Date.now());
   const [trips, setTripsState] = useState([]);
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
-  const isPro = false;
+  const tripsRef = useRef([]);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [hasRetriedPendingGeocodes, setHasRetriedPendingGeocodes] = useState(false);
 
   useEffect(() => {
@@ -51,46 +46,33 @@ function MainApp({ session }) {
   }, [i18n]);
 
   useEffect(() => {
+    let cancelled = false;
     const loadTrips = async () => {
+      setLoadFailed(false);
       try {
-        const userId = session?.user?.id;
-        if (userId) {
-          const { trips: cloudTrips } = await initSync(userId);
-          if (Array.isArray(cloudTrips)) {
-            setTripsState(cloudTrips);
-            setLoaded(true);
-            return;
-          }
-        }
-        const saved = await AsyncStorage.getItem(STORAGE_KEY);
-        if (saved !== null) {
-          try {
-            setTripsState(JSON.parse(saved));
-          } catch (e) {
-            console.warn('本地旅程数据损坏，已重置:', e.message);
-            setTripsState(INITIAL_TRIPS);
-          }
-        } else {
-          setTripsState(INITIAL_TRIPS);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_TRIPS));
-        }
-      } catch (e) {
-        console.warn('读取数据失败:', e.message);
-        setTripsState(INITIAL_TRIPS);
-      } finally {
+        const existing = await loadLocalTrips();
+        const saved = await preserveTripMedia(existing);
+        if (cancelled) return;
+        tripsRef.current = saved;
+        setTripsState(saved);
         setLoaded(true);
+        if (saved !== existing) persistTrips(saved);
+      } catch (e) {
+        if (!cancelled) setLoadFailed(true);
       }
     };
     loadTrips();
-  }, []);
+    return () => { cancelled = true; };
+  }, [loadAttempt]);
 
   const persistTrips = async (next) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      const userId = session?.user?.id;
-      if (userId) syncTripsUp(userId, next);
+      await saveLocalTrips(next);
     } catch (e) {
-      console.warn('保存数据失败:', e.message);
+      Alert.alert(t('local_save_failed'), t('local_save_failed_desc'), [
+        { text: t('local_retry'), onPress: () => persistTrips(tripsRef.current) },
+        { text: t('cancel'), style: 'cancel' },
+      ]);
     }
   };
 
@@ -136,21 +118,12 @@ function MainApp({ session }) {
   }, [hasRetriedPendingGeocodes, loaded, trips]);
 
   const setTrips = (newTripsOrFn) => {
-    setTripsState(prev => {
-      const next = typeof newTripsOrFn === 'function'
-        ? newTripsOrFn(prev)
-        : newTripsOrFn;
-      if (!isPro && next.length > prev.length && prev.length >= FREE_TRIP_LIMIT) {
-        Alert.alert(
-          t('alert_pro_limit'),
-          t('alert_pro_limit_desc').replace('%d', FREE_TRIP_LIMIT),
-          [{text:t('ok')}]
-        );
-        return prev;
-      }
-      persistTrips(next);
-      return next;
-    });
+    const next = typeof newTripsOrFn === 'function'
+      ? newTripsOrFn(tripsRef.current)
+      : newTripsOrFn;
+    tripsRef.current = next;
+    setTripsState(next);
+    persistTrips(next);
   };
 
   const tabs = [
@@ -163,8 +136,9 @@ function MainApp({ session }) {
 
   if (!loaded) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
-      <ActivityIndicator color="#D4AF37" size="large"/>
-      <Text style={{color:'#555',marginTop:12,fontSize:13}}>{t('loading')}</Text>
+      {!loadFailed && <ActivityIndicator color="#D4AF37" size="large"/>}
+      <Text style={{color:'#888',margin:24,fontSize:14,textAlign:'center'}}>{t(loadFailed ? 'local_load_failed' : 'loading')}</Text>
+      {loadFailed && <TouchableOpacity onPress={()=>setLoadAttempt(value=>value+1)}><Text style={{color:'#4ECDC4',padding:16}}>{t('local_retry')}</Text></TouchableOpacity>}
     </View>
   );
 
@@ -174,13 +148,13 @@ function MainApp({ session }) {
       <NavigationContainer>
         <Stack.Navigator screenOptions={{headerShown:false}}>
           {activeTab==='home' && <>
-            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips} isPro={isPro} freeTripLimit={FREE_TRIP_LIMIT}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           </>}
           {activeTab==='memo' && (
-            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} isPro={isPro} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
             <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
@@ -189,7 +163,7 @@ function MainApp({ session }) {
             <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} session={session} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} trips={trips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'YearReport'} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'PhotoFilter'} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
           </>}
@@ -207,28 +181,11 @@ function MainApp({ session }) {
   );
 }
 
-// App：auth gate + onboarding gate + splash
 export default function App() {
-  const [session, setSession] = useState(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  const { t } = useTranslation();
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [onboardingLoaded, setOnboardingLoaded] = useState(false);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => setAuthLoading(false), 10000);
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      clearTimeout(timeout);
-      setSession(session);
-      setAuthLoading(false);
-    }).catch(() => {
-      clearTimeout(timeout);
-      setAuthLoading(false);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setSession(session);
-    });
-    return () => { subscription.unsubscribe(); clearTimeout(timeout); };
-  }, []);
+  const localNoticeShown = useRef(false);
 
   useEffect(() => {
     AsyncStorage.getItem('@wandernote_onboarding_done')
@@ -245,25 +202,42 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && onboardingLoaded) {
+    if (onboardingLoaded) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [authLoading, onboardingLoaded]);
+  }, [onboardingLoaded]);
+
+  useEffect(() => {
+    if (!onboardingLoaded || !hasSeenOnboarding) return;
+    let cancelled = false;
+    AsyncStorage.getItem(STORAGE_KEYS.localNotice).then(seen => {
+      if (seen === 'true' || cancelled || localNoticeShown.current) return;
+      localNoticeShown.current = true;
+      Alert.alert(t('local_storage_title'), t('local_storage_notice'), [{
+        text: t('ok'),
+        onPress: () => AsyncStorage.setItem(STORAGE_KEYS.localNotice, 'true').catch(() => {}),
+      }], { cancelable: false });
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [onboardingLoaded, hasSeenOnboarding, t]);
 
   const finishOnboarding = async () => {
-    await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
-    setHasSeenOnboarding(true);
+    try {
+      await AsyncStorage.setItem('@wandernote_onboarding_done', 'true');
+      setHasSeenOnboarding(true);
+    } catch {
+      Alert.alert(t('local_save_failed'), t('local_save_failed_desc'));
+    }
   };
 
-  if (authLoading || !onboardingLoaded) return (
+  if (!onboardingLoaded) return (
     <View style={{flex:1,backgroundColor:'#0D0D0D',alignItems:'center',justifyContent:'center'}}>
       <ActivityIndicator color="#D4AF37" size="large"/>
     </View>
   );
 
   if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
-  if (!session) return <AuthScreen/>;
-  return <MainApp session={session}/>;
+  return <MainApp/>;
 }
 
 const st = StyleSheet.create({

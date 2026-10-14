@@ -5,7 +5,6 @@ import * as Clipboard from 'expo-clipboard';
 import {
   buildLocalItinerary,
   buildLocalTravelStory,
-  extractReadableAiText,
 } from '../lib/travelStoryFallback';
 
 const ITINERARY_STYLES = [
@@ -18,36 +17,8 @@ const ITINERARY_STYLES = [
 ];
 
 
-function parseAiJsonObject(text) {
-  const clean = String(text || '').replace(/```json|```/g, '').trim();
-  const start = clean.indexOf('{');
-  const end = clean.lastIndexOf('}');
-
-  if (start < 0 || end <= start) {
-    throw new Error('AI did not return valid JSON.');
-  }
-
-  return JSON.parse(clean.slice(start, end + 1));
-}
-
-function getAiOutputLanguage(lang) {
-  const code = String(lang || 'en').split('-')[0];
-  const map = {
-    zh: 'Chinese',
-    en: 'English',
-    ja: 'Japanese',
-    ko: 'Korean',
-    fr: 'French',
-    es: 'Spanish',
-    th: 'Thai',
-  };
-  return map[code] || 'English';
-}
-
-import { callClaude } from '../lib/claude';
-
 export default function AIScreen({ trips }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
   const [generating, setGenerating] = useState(false);
@@ -55,10 +26,8 @@ export default function AIScreen({ trips }) {
   const [itineraryDest, setItineraryDest] = useState('');
   const [itineraryDays, setItineraryDays] = useState('5');
   const [itineraryStyle, setItineraryStyle] = useState('balanced');
-  const aiOutputLanguage = getAiOutputLanguage(i18n.language);
   const daysUnit = t('unit_days');
   const [mode, setMode] = useState('diary');
-  const localFallbackNotice = 'Generated a local travel story because the online AI service was unavailable.';
 
   const MODES = [
     { key:'diary', label:t('ai_diary'), desc:t('ai_diary_desc') },
@@ -67,149 +36,24 @@ export default function AIScreen({ trips }) {
     { key:'itinerary', label:t('ai_itinerary'), desc:t('ai_itinerary_desc') },
   ];
 
-  const buildPrompt = () => {
-    if (mode === 'summary') {
-      const trip = selectedTrip;
-      const allMemos = trip.days.flatMap(d => d.memos.map(m => `[${d.date} ${m.tag}] ${m.text}`));
-      return `You are a skilled travel writer. Based on the following travel records, write a complete trip summary article.
-Output language: ${aiOutputLanguage}.
-
-Destination: ${trip.city}, ${trip.country}
-Trip date: ${trip.date}
-Duration: ${trip.days.length} days, ${allMemos.length} notes
-
-Travel notes:
-${allMemos.length > 0 ? allMemos.join('\n') : 'No written notes. Infer cautiously from the destination and dates.'}
-
-Requirements:
-- Use first-person voice.
-- Make it authentic, specific, and emotionally grounded.
-- Structure: opening → trip highlights → reflective ending.
-- Include vivid details and a sense of place.
-- Avoid overpromising facts that are not in the record.`;
-    }
-
-    if (mode === 'social') {
-      const day = selectedDay;
-      const memos = day.memos.map(m => m.text).join('；');
-      return `You are a travel social media copywriter. Based on the following travel record, write a short post suitable for Instagram, TikTok, or social sharing.
-Output language: ${aiOutputLanguage}.
-
-Destination: ${selectedTrip.city}, ${selectedTrip.country}
-Date: ${day.date} ${day.weekDay}
-Notes: ${memos || 'No written notes. Infer cautiously from the destination.'}
-Photo count: ${(day.photos||[]).length}
-
-Requirements:
-- 100-150 words.
-- Light, vivid, and shareable.
-- Include 2-3 relevant emoji.
-- End with 3-5 relevant hashtags.
-- Do not invent specific facts unless clearly implied.`;
-    }
-
-    const day = selectedDay;
-    const memos = day.memos.map(m => `[${m.tag}] ${m.text}`).join('\n');
-    return `You are a travel diary writer. Based on the following record, write a diary entry for this day.
-Output language: ${aiOutputLanguage}.
-
-Destination: ${selectedTrip.city}, ${selectedTrip.country}
-Date: ${day.date} ${day.weekDay}
-Photo count: ${(day.photos||[]).length}
-Notes:
-${memos || 'No written notes. Infer cautiously from the destination and date.'}
-
-Requirements:
-- First-person voice.
-- 300-400 words.
-- Include concrete details, feelings, and visual scenes.
-- Avoid starting with a generic phrase like “Today”.
-- End with a reflective tone.`;
-  };
-
-  const generate = async () => {
-    if (mode === 'itinerary') {
-      setGenerating(true);
-      setResult('');
-      const fallback = buildLocalItinerary({
-        destination: itineraryDest,
-        days: itineraryDays,
-        style: t(`ai_style_${itineraryStyle}`),
-      });
-      try {
-        const destination = itineraryDest.trim() || 'your next destination';
-        const prompt = `You are a professional travel planner. Create a detailed ${itineraryDays}-day itinerary for ${destination}.
-Travel style: ${t(`ai_style_${itineraryStyle}`)}.
-Output language for all JSON values: ${aiOutputLanguage}.
-
-Strict requirements:
-1. Return JSON only. No prefix, suffix, explanation, or markdown code block.
-2. Start directly with { and end directly with }.
-3. Format: {"title":"Title","days":[{"day":1,"date":"Day 1","theme":"Theme","morning":"Morning plan","afternoon":"Afternoon plan","evening":"Evening plan","tips":"Practical tips","distance":"Approximate distance between places","hours":"Suggested visit duration","status":"Opening-status reminder"}]}
-4. Keep each day concise: attractions + time + transport.
-5. tips must be practical. distance should be approximate. hours should be suggested visit duration. status should be a cautious operating-hours reminder.
-6. Keep each field short and ensure valid complete JSON.`;
-        const text = await callClaude(prompt, 8000, { responseMimeType: 'application/json' });
-        if (!String(text || '').trim()) {
-          setResult(localFallbackNotice + '\n\n' + fallback);
-          return;
-        }
-
-        let parsed = null;
-        try {
-          parsed = parseAiJsonObject(text);
-        } catch (parseError) {
-          const readable = extractReadableAiText(text);
-          setResult(readable ? `${localFallbackNotice}\n\n${readable}` : `${localFallbackNotice}\n\n${fallback}`);
-          return;
-        }
-
-        if (!Array.isArray(parsed.days) || parsed.days.length === 0) {
-          setResult(localFallbackNotice + '\n\n' + fallback);
-          return;
-        }
-
-        // 格式化展示
-        const disclaimer = t('ai_disclaimer');
-        const formatted = parsed.days.map(d => {
-          let dayText = t('ai_day_number').replace('%d', d.day) + ' · ' + d.theme +
-            '\n🌅 ' + t('ai_morning') + ': ' + d.morning +
-            '\n☀️ ' + t('ai_afternoon') + ': ' + d.afternoon +
-            '\n🌙 ' + t('ai_evening') + ': ' + d.evening;
-          if (d.distance) dayText += '\n📍 ' + t('ai_distance') + ': ' + d.distance;
-          if (d.hours) dayText += '\n⏱ ' + t('ai_duration') + ': ' + d.hours;
-          if (d.status) dayText += '\n🏪 ' + t('ai_opening_status') + ': ' + d.status;
-          dayText += '\n💡 ' + t('ai_tips') + ': ' + d.tips;
-          return dayText;
-        }).join('\n\n');
-        setResult('🗺 ' + (parsed.title || destination) + '\n\n' + disclaimer + '\n\n' + formatted);
-      } catch (e) {
-        setResult(localFallbackNotice + '\n\n' + fallback);
-      } finally {
-        setGenerating(false);
-      }
-      return;
-    }
+  const generate = () => {
     setGenerating(true);
     setResult('');
-    const fallback = buildLocalTravelStory({
-      mode,
-      trip: selectedTrip,
-      day: mode === 'summary' ? null : selectedDay,
-    });
-
-    if (!selectedTrip || (mode !== 'summary' && !selectedDay)) {
-      setResult(localFallbackNotice + '\n\n' + fallback);
-      setGenerating(false);
-      return;
-    }
-
     try {
-      const text = await callClaude(buildPrompt(), 1200);
-      const readable = extractReadableAiText(text) || String(text || '').trim();
-      setResult(readable || `${localFallbackNotice}\n\n${fallback}`);
+      const draft = mode === 'itinerary'
+        ? buildLocalItinerary({
+            destination: itineraryDest,
+            days: itineraryDays,
+            style: t(`ai_style_${itineraryStyle}`),
+          })
+        : buildLocalTravelStory({
+            mode,
+            trip: selectedTrip,
+            day: mode === 'summary' ? null : selectedDay,
+          });
+      setResult(draft);
     } catch (e) {
-      setResult(localFallbackNotice + '\n\n' + fallback);
+      setResult(buildLocalTravelStory());
     } finally {
       setGenerating(false);
     }
