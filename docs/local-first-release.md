@@ -55,7 +55,7 @@ Existing draft bodies use the pre-existing English local templates. Do not adver
 - Manually check onboarding, all tabs, storage notice and draft result visibility on supported device sizes. No login, online-AI, cloud-backup, paid-plan or ad promises in screenshots or metadata.
 - Publish the updated `privacy-policy.html` to the actual hosted policy URL and verify it. Pushing this feature branch does not publish the GitHub Pages policy automatically.
 - Review App Store privacy declarations for this edition and its remaining network/Health/location services. Do not automatically claim no data collection without reviewing provider behavior.
-- Reconcile the release branch with the currently distributed store version. This worktree still has Expo `1.0.2 (10)` and an iPhone plist hardcoded to `1.0.0 (1)`, while the Watch is `1.0.2 (10)`. Confirm the next permitted store version/build and align them in a separately approved release change.
+- Release alignment for the App Store Connect `1.1.1` draft uses Expo/Xcode `1.1.1 (11)` across the iPhone and Watch targets.
 - No version, build number, bundle ID or signing team was changed here. No EAS, TestFlight, App Store archive, upload or submission was performed.
 
 ## Review Notes Draft
