@@ -37,9 +37,11 @@ The watch app starts as a WanderNote companion, but its architecture should rema
 - Watch localization currently supports en, zh-Hans, and zh-Hant.
 - Watch target and iPhone scheme compilation have been verified locally with code signing disabled.
 - Real-device readiness now includes Watch HealthKit entitlement configuration, iPhone/Watch location privacy strings, debug-only diagnostics, and a paired-device checklist.
+- Latest physical-device build attempt reached Xcode destination selection, but stopped because the iPhone was locked.
 
 ## Pending
 
 - Verify end-to-end delivery on a paired physical iPhone and Apple Watch.
 - Verify HealthKit capability/provisioning in Apple Developer/Xcode before physical-device distribution.
+- Unlock and keep the physical iPhone awake before rerunning real-device build/install.
 - Add WidgetKit complication later.

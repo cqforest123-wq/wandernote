@@ -1,6 +1,18 @@
 # Watch Companion Real-Device Test Checklist
 
-Use a paired physical iPhone and Apple Watch before merging or shipping Watch Companion changes. Run the tests on a Debug build first so `[OutdoorGlance]` and `[WatchGlance]` logs are visible in Xcode Console.
+Use a paired physical iPhone and Apple Watch before merging or shipping Watch Companion changes. Run the tests on a Debug build first so `[WatchGlance]` logs are visible in Xcode Console.
+
+## Latest Attempt
+
+2026-09-17 on `feature/watch-companion-v1-integration`:
+
+- `xcrun devicectl list devices` reported iPhone 14 Pro Max and 李涛的 Apple Watch as `available (paired)`.
+- `xcrun xctrace list devices` still reported both physical devices under `Devices Offline`.
+- `xcodebuild -showdestinations` for the `WanderNote` scheme listed the iPhone 14 Pro Max as a compatible physical destination.
+- A real iPhone Debug build attempt stopped before install/run because the iPhone was locked:
+  `The device needs to be unlocked to continue`.
+
+Next real-device pass should start by unlocking the iPhone, keeping it awake, and rerunning the physical iPhone build/install path.
 
 ## A. Install And Permissions
 
@@ -28,11 +40,11 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 1. On iPhone, create or select a current trip with destination coordinates.
    Expected: JS composes an OutdoorGlanceSnapshot v1 payload.
-   If failed: record trip data shape, app screen, and `[OutdoorGlance] snapshot composed` logs.
+   If failed: record trip data shape and app screen.
 
 2. Keep the iPhone app foregrounded until the snapshot sends.
-   Expected: native bridge logs send requested, sender logs updateApplicationContext sent.
-   If failed: capture `[OutdoorGlance] native bridge` and WatchConnectivity sender logs.
+   Expected: native bridge sends the payload with `updateApplicationContext`.
+   If failed: capture WatchConnectivity sender logs and device state.
 
 3. Open the Watch app.
    Expected: Watch receives a fresh snapshot and displays Travel Mode with trip, location, weather if available, and updated time.
@@ -40,11 +52,11 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 4. Put the iPhone app in background, then foreground it again.
    Expected: foreground resync is requested and the Watch updated time refreshes after delivery.
-   If failed: capture AppState logs and sender state logs.
+   If failed: capture sender state logs and Watch updated time.
 
 5. Repeat the same unchanged trip state.
    Expected: duplicate payloads are skipped except forced foreground sync.
-   If failed: capture duplicate-skip logs and note whether the Watch receives repeated identical payloads.
+   If failed: note whether the Watch receives repeated identical payloads.
 
 6. Let the snapshot expire past its TTL.
    Expected: Watch keeps the last data visible and shows stale status.
@@ -102,7 +114,7 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 1. Disable iPhone network while a trip is selected.
    Expected: snapshot still sends with trip/location data; weather may be unavailable.
-   If failed: capture `[OutdoorGlance] destination weather unavailable` and send logs.
+   If failed: capture send state, Watch screen, and whether weather is omitted gracefully.
 
 2. Temporarily separate Watch and iPhone or disable Bluetooth/Wi-Fi.
    Expected: latest pending snapshot is retained and Watch keeps cached data or Daily Glance.

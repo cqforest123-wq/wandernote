@@ -21,8 +21,9 @@ Re-verified as of commit `1806854` (docs: add watch non-device completion report
 - On-Watch parking save/clear and "Back to Parking" Apple Maps deep link.
 - WatchConnectivity sync path: debounce, payload fingerprint de-duplication, and foreground
   resync on the iPhone side.
-- DEBUG-only `[WatchGlance]` / `[OutdoorGlance]` diagnostic logging (no full coordinates
-  logged; gated out of Release via `#if DEBUG`).
+- DEBUG-only `[WatchGlance]` diagnostic logging in native Watch code (no full coordinates
+  logged; gated out of Release via `#if DEBUG`). JS-side `[OutdoorGlance]` debug logs were
+  removed in a later release-audit cleanup.
 
 This pass did not add new product features. It closed non-device completeness gaps only:
 SwiftUI previews and this report.
@@ -198,3 +199,23 @@ regressed:
 
 No code changes were required in this re-verification pass — it confirmed the prior pass's
 result still holds. Real-device testing remains **not completed** (see §5, §8).
+
+## 12. Later Local Verification Notes
+
+As of 2026-09-17 on `feature/watch-companion-v1-integration`:
+
+- `npm run check` passed.
+- `npm run check:watch` passed with `BLOCKERS: 0`; the only remaining static-audit warning is
+  the intentionally disabled `ENABLE_YEAR_REPORT = false` flag.
+- Generic iPhone Release build with signing disabled passed and embedded
+  `TravelWatchCompanion Watch App.app`.
+- Duplicate JS bundle key warnings from i18n, `TripDetailScreen`, and `cityCoords` were cleaned
+  up.
+- JS-side development logging was removed from the Watch sync bridge/coordinator; native
+  Watch-side `[WatchGlance]` logs remain DEBUG-only.
+- A real physical iPhone build was attempted after `devicectl` reported the iPhone 14 Pro Max
+  and paired Apple Watch as available. It did not reach install/run because Xcode reported the
+  iPhone needed to be unlocked.
+
+Real-device testing is therefore still blocked on an unlocked, awake iPhone and must be rerun
+before this Watch Companion branch is treated as merge-ready.
