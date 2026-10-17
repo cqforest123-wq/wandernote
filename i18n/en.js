@@ -482,4 +482,10 @@ export default {
   local_retry: "Try Again",
   local_prepare_failed: "Could not prepare the local template. Please try again.",
   local_media_failed: "Could not store this photo or video on the device. Check available storage and try again.",
+  profile_clear_local_data: "Clear all local data",
+  profile_clear_local_data_title: "Clear all local data?",
+  profile_clear_local_data_message: "This permanently deletes your trips, notes, profile, and locally stored photos and videos from this device.",
+  profile_clear_local_data_confirm: "Clear Data",
+  profile_clear_local_data_done_title: "Local data cleared",
+  profile_clear_local_data_done_message: "Your local travel data has been removed from this device.",
 };

@@ -3,9 +3,10 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { preserveExistingMedia, storeLocalMedia } from '../lib/localMedia';
+import { preserveExistingMedia, storeLocalMedia, clearLocalMedia } from '../lib/localMedia';
+import { clearLocalData } from '../lib/localData';
 
-export default function ProfileScreen({ trips, navigation }) {
+export default function ProfileScreen({ trips, setTrips, navigation }) {
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
@@ -83,6 +84,28 @@ export default function ProfileScreen({ trips, navigation }) {
         Alert.alert(t('local_save_failed'), t('local_media_failed'));
       }
     }
+  };
+
+  const handleClearLocalData = () => {
+    Alert.alert(t('profile_clear_local_data_title'), t('profile_clear_local_data_message'), [
+      { text: t('cancel'), style: 'cancel' },
+      {
+        text: t('profile_clear_local_data_confirm'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await clearLocalData();
+            await clearLocalMedia();
+            setTrips([]);
+            setNickname('');
+            setAvatarUri(null);
+            Alert.alert(t('profile_clear_local_data_done_title'), t('profile_clear_local_data_done_message'));
+          } catch {
+            Alert.alert(t('local_save_failed'), t('local_save_failed_desc'));
+          }
+        },
+      },
+    ]);
   };
 
   const totalDays = trips.reduce((a,t)=>a+t.days.length,0);
@@ -171,6 +194,11 @@ export default function ProfileScreen({ trips, navigation }) {
           <TouchableOpacity style={s.settingRow} onPress={()=>Linking.openURL('https://apps.apple.com/app/id6769281736?action=write-review')}>
             <Text style={s.settingIcon}>⭐</Text>
             <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
+            <Text style={s.settingArrow}>→</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={s.settingRow} onPress={handleClearLocalData}>
+            <Text style={s.settingIcon}>🗑️</Text>
+            <Text style={[s.settingLabel, { color: '#D07A7A' }]}>{t('profile_clear_local_data')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
         </View>

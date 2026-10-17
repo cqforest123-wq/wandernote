@@ -482,4 +482,10 @@ export default {
   local_retry: "重试",
   local_prepare_failed: "本地模板整理失败，请重试。",
   local_media_failed: "无法将照片或视频保存到本机，请检查可用存储空间后重试。",
+  profile_clear_local_data: "清除本机全部数据",
+  profile_clear_local_data_title: "清除本机全部数据？",
+  profile_clear_local_data_message: "这会永久删除本机上的旅程、备忘录、个人资料以及本地照片和视频。",
+  profile_clear_local_data_confirm: "清除数据",
+  profile_clear_local_data_done_title: "本机数据已清除",
+  profile_clear_local_data_done_message: "本机上的旅行数据已删除。",
 };
