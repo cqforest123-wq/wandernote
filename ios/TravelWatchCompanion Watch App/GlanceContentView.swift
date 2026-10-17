@@ -8,83 +8,23 @@ struct GlanceContentView: View {
 
     let glance: GlanceData
     let canRecordParking: Bool
-    let workoutStatus: CyclingWorkoutStatus
-    let onEndWorkout: () -> Void
     let onSaveParking: () -> Void
 
     init(
         glance: GlanceData,
         canRecordParking: Bool,
-        workoutStatus: CyclingWorkoutStatus = .inactive,
-        onEndWorkout: @escaping () -> Void = {},
         onSaveParking: @escaping () -> Void
     ) {
         self.glance = glance
         self.canRecordParking = canRecordParking
-        self.workoutStatus = workoutStatus
-        self.onEndWorkout = onEndWorkout
         self.onSaveParking = onSaveParking
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            workoutStatusView
-
             headerView
 
             glanceBody
-        }
-    }
-
-    @ViewBuilder
-    private var workoutStatusView: some View {
-        switch workoutStatus {
-        case .inactive:
-            EmptyView()
-
-        case .starting:
-            Label(
-                WatchStrings.text("workout.cyclingStarting"),
-                systemImage: "bicycle"
-            )
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-
-        case let .active(startedAt):
-            VStack(alignment: .leading, spacing: 6) {
-                Label(
-                    WatchStrings.text("workout.cyclingActive"),
-                    systemImage: "bicycle"
-                )
-                .font(.caption.weight(.semibold))
-
-                Text(formatWorkoutElapsed(since: startedAt))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-
-                Button(
-                    action: onEndWorkout,
-                    label: {
-                        Label(
-                            WatchStrings.text("workout.end"),
-                            systemImage: "stop.circle"
-                        )
-                    }
-                )
-            }
-
-        case .ending:
-            Label(WatchStrings.text("workout.ending"), systemImage: "stop.circle")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-        case let .failed(message):
-            Label(
-                message,
-                systemImage: "exclamationmark.triangle"
-            )
-            .font(.caption2)
-            .foregroundStyle(.secondary)
         }
     }
 
@@ -382,19 +322,6 @@ struct GlanceContentView: View {
         }
 
         return distanceText
-    }
-
-    private func formatWorkoutElapsed(
-        since startedAt: Date
-    ) -> String {
-        let elapsed = max(0, Date().timeIntervalSince(startedAt))
-        let totalMinutes = Int(elapsed / 60)
-
-        return WatchStrings.format(
-            "workout.elapsed",
-            totalMinutes / 60,
-            totalMinutes % 60
-        )
     }
 
     private func openParkingDirections(
