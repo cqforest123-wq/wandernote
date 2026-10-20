@@ -97,8 +97,8 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
     const highlights = trip.days.flatMap(d=>d.memos).slice(0,3).map(m=>m.text).join(' | ');
     const lines = [
       trip.emoji + ' ' + trip.city + ' · ' + trip.country,
-      '📅 ' + trip.days.length + ' ' + t('unit_days') + ' · ' + trip.date,
-      '📝 ' + totalMemos + ' ' + t('unit_memos') + ' · 📸 ' + totalPhotos + ' ' + t('stat_photos'),
+      '📅 ' + trip.days.length + ' ' + t('unit_days', { count: trip.days.length }) + ' · ' + trip.date,
+      '📝 ' + totalMemos + ' ' + t('unit_memos', { count: totalMemos }) + ' · 📸 ' + totalPhotos + ' ' + t('stat_photos'),
       highlights ? t('trip_share_highlights') + ': ' + highlights : '',
       '— ' + t('trip_share_from'),
     ].filter(Boolean);
@@ -258,7 +258,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           </View>
         ) : (
           <>
-            <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {t('unit_days')}</Text>
+            <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {t('unit_days', { count: trip.days.length })}</Text>
             {[...trip.days].reverse().map((day,i)=>{
               const photos = day.photos||[];
               return (

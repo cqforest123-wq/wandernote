@@ -511,7 +511,9 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             </View>
           </View>
         )}
-        {filteredTrips.map(trip => (
+        {filteredTrips.map(trip => {
+          const tripMemoCount = trip.days.reduce((count, day) => count + day.memos.length, 0);
+          return (
           <TouchableOpacity key={trip.id} style={s.card}
             onPress={() => navigation.navigate('TripDetail', { tripId: trip.id })}
             onLongPress={() => deleteTrip(trip.id, trip.city)}
@@ -519,11 +521,12 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             <View style={s.cardEmoji}><Text style={{fontSize:22}}>{trip.emoji}</Text></View>
             <View style={{flex:1}}>
               <Text style={s.cityName} numberOfLines={1} ellipsizeMode='tail'>{trip.city}</Text>
-              <Text style={s.countryName}>{trip.country} · {trip.days.length} {t('unit_days')} · {trip.days.reduce((a,d)=>a+d.memos.length,0)} {t('unit_memos')}</Text>
+              <Text style={s.countryName}>{trip.country} · {trip.days.length} {t('unit_days', { count: trip.days.length })} · {tripMemoCount} {t('unit_memos', { count: tripMemoCount })}</Text>
             </View>
             <Text style={s.cardDate}>{trip.plannedDate || trip.date}</Text>
           </TouchableOpacity>
-        ))}
+          );
+        })}
         {trips.length > 0 && <Text style={s.longPressHint}>{t('home_long_press_delete')}</Text>}
       </ScrollView>
 

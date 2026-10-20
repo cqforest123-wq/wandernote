@@ -776,7 +776,7 @@ export default function MemoScreen({ route, navigation, trips = [] }) {
                           backgroundColor:aiDays===d?'#A78BFA20':'#1A1A1A',
                           alignItems:'center'}}
                         onPress={()=>setAIDays(d)}>
-                        <Text style={{color:aiDays===d?'#A78BFA':'#555',fontSize:13}}>{d} {t('unit_days')}</Text>
+                        <Text style={{color:aiDays===d?'#A78BFA':'#555',fontSize:13}}>{d} {t('unit_days', { count: Number(d) })}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>

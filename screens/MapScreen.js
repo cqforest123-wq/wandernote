@@ -145,7 +145,7 @@ export default function MapScreen({ trips }) {
                 <Text style={[s.tripChipCity, selectedTrip?.id === trip.id && {color:'#D4AF37'}]}>
                   {trip.city}
                 </Text>
-                <Text style={s.tripChipMeta}>{trip.days?.length || 0} {t('unit_days')}</Text>
+                <Text style={s.tripChipMeta}>{trip.days?.length || 0} {t('unit_days', { count: trip.days?.length || 0 })}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -170,7 +170,7 @@ export default function MapScreen({ trips }) {
               </View>
               <View style={s.modalStats}>
                 {[
-                  [String(selectedTrip.days?.length || 0), t('unit_days')],
+                  [String(selectedTrip.days?.length || 0), t('unit_days', { count: selectedTrip.days?.length || 0 })],
                   [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.memos||[]).length,0)), t('stat_memos')],
                   [String((selectedTrip.days||[]).reduce((a,d)=>a+(d.photos||[]).length,0)), t('stat_photos')],
                 ].map(([n,l]) => (

@@ -26,7 +26,6 @@ export default function AIScreen({ trips }) {
   const [itineraryDest, setItineraryDest] = useState('');
   const [itineraryDays, setItineraryDays] = useState('5');
   const [itineraryStyle, setItineraryStyle] = useState('balanced');
-  const daysUnit = t('unit_days');
   const [mode, setMode] = useState('diary');
 
   const MODES = [
@@ -125,7 +124,7 @@ export default function AIScreen({ trips }) {
                     backgroundColor:itineraryDays===d?'#D4AF3720':'#161616',
                     alignItems:'center'}}
                   onPress={()=>setItineraryDays(d)}>
-                  <Text style={{color:itineraryDays===d?'#D4AF37':'#555',fontSize:14}}>{d} {daysUnit}</Text>
+                  <Text style={{color:itineraryDays===d?'#D4AF37':'#555',fontSize:14}}>{d} {t('unit_days', { count: Number(d) })}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -155,7 +154,7 @@ export default function AIScreen({ trips }) {
                   onPress={()=>{setSelectedTrip(t);setSelectedDay(null);setResult('');}}>
                   <Text style={{fontSize:20,marginBottom:4}}>{t.emoji}</Text>
                   <Text style={[s.tripChipCity, selectedTrip?.id===t.id&&{color:'#D4AF37'}]}>{t.city}</Text>
-                  <Text style={s.tripChipMeta}>{t.days.length} {daysUnit}</Text>
+                  <Text style={s.tripChipMeta}>{t.days.length} {t('unit_days', { count: t.days.length })}</Text>
                 </TouchableOpacity>
               ))}
             </View>
