@@ -12,6 +12,7 @@ func assert(
 @main
 struct WatchGlanceDataTests {
     static func main() {
+        testAltitudeValueDoesNotRepeatItsRowLabel()
         testFreshSnapshotMapsToTravelGlance()
         testStaleSnapshotMapsToStaleGlance()
         testMissingSnapshotMapsToUnavailableGlance()
@@ -19,6 +20,17 @@ struct WatchGlanceDataTests {
         testTravelSnapshotMergesWatchLocalDataWhenFieldsMissing()
         testTravelSnapshotKeepsLocalDeniedAuthorizationWhenBothMissing()
         print("watch glance data tests passed")
+    }
+
+    private static func testAltitudeValueDoesNotRepeatItsRowLabel() {
+        let altitude = WatchStrings.format("altitude.format", 288)
+
+        assert(altitude.contains("288"), "altitude value should include the measurement")
+        assert(
+            !altitude.localizedCaseInsensitiveContains("altitude") &&
+                !altitude.contains("海拔"),
+            "altitude value should not repeat the row label"
+        )
     }
 
     private static func testFreshSnapshotMapsToTravelGlance() {
