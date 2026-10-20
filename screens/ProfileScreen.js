@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { preserveExistingMedia, storeLocalMedia, clearLocalMedia } from '../lib/localMedia';
 import { clearLocalData } from '../lib/localData';
+import appConfig from '../app.json';
 
 export default function ProfileScreen({ trips, setTrips, navigation }) {
   const { t, i18n } = useTranslation();
@@ -203,7 +204,7 @@ export default function ProfileScreen({ trips, setTrips, navigation }) {
           </TouchableOpacity>
         </View>
 
-        <Text style={s.version}>WanderNote v1.0.0 · {t('profile_version_slogan')}</Text>
+        <Text style={s.version}>WanderNote v{appConfig.expo.version} · {t('profile_version_slogan')}</Text>
       </ScrollView>
 
       <Modal visible={showEditProfile} animationType="slide" transparent>

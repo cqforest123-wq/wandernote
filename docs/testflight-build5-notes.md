@@ -1,5 +1,7 @@
 # WanderNote Build 5 Test Notes
 
+> Historical Build 5 notes only. Superseded by [the current release verification checklist](testflight-checklist.md); do not use these instructions for the local-first product.
+
 ## 中文
 
 感谢参与 WanderNote Build 5 测试。

@@ -55,7 +55,7 @@ Existing draft bodies use the pre-existing English local templates. Do not adver
 - Manually check onboarding, all tabs, storage notice and draft result visibility on supported device sizes. No login, online-AI, cloud-backup, paid-plan or ad promises in screenshots or metadata.
 - Publish the updated `privacy-policy.html` to the actual hosted policy URL and verify it. Pushing this feature branch does not publish the GitHub Pages policy automatically.
 - Review App Store privacy declarations for this edition and its remaining network/Health/location services. Do not automatically claim no data collection without reviewing provider behavior.
-- Release alignment for the App Store Connect `1.1.1` draft uses Expo/Xcode `1.1.1 (11)` across the iPhone and Watch targets.
+- Current App Store release materials target Expo/Xcode `1.1.2 (12)` across the iPhone and Watch targets. See `app-store-1.1.2-release-pack.md`; a fresh archive is still required after the latest source changes.
 - No version, build number, bundle ID or signing team was changed here. No EAS, TestFlight, App Store archive, upload or submission was performed.
 
 ## Review Notes Draft
