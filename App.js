@@ -243,8 +243,8 @@ export default function App() {
 const st = StyleSheet.create({
   navbar:{flexDirection:'row',backgroundColor:'#0D0D0D',borderTopWidth:1,borderTopColor:'#1E1E1E',paddingBottom:28,paddingTop:10},
   navItem:{flex:1,alignItems:'center',gap:4},
-  navIcon:{fontSize:20,color:'#444'},
+  navIcon:{fontSize:20,color:'#929292'},
   navIconActive:{color:'#D4AF37'},
-  navLabel:{fontSize:11,color:'#444'},
+  navLabel:{fontSize:11,color:'#A0A0A0'},
   navLabelActive:{color:'#D4AF37'},
 });

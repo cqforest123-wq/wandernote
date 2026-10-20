@@ -489,7 +489,7 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
           <TextInput
             style={{flex:1,backgroundColor:'#161616',borderRadius:12,padding:10,color:'#F0EDE8',fontSize:14,borderWidth:1,borderColor:'#242424'}}
             placeholder={t("home_search_trip")}
-            placeholderTextColor="#444"
+            placeholderTextColor="#929292"
             value={tripSearch}
             onChangeText={setTripSearch}
           />
@@ -744,28 +744,28 @@ const s = StyleSheet.create({
   scroll:{padding:24,paddingBottom:100},
   header:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24,marginTop:12},
   title:{fontSize:32,color:'#F0EDE8',fontWeight:'300',letterSpacing:-1},
-  subtitle:{fontSize:14,color:'#555',marginTop:4},
+  subtitle:{fontSize:14,color:'#A0A0A0',marginTop:4},
   addBtn:{backgroundColor:'#D4AF3720',borderWidth:1,borderColor:'#D4AF3750',borderRadius:20,paddingHorizontal:16,paddingVertical:8},
   addBtnText:{color:'#D4AF37',fontSize:13},
   statsRow:{flexDirection:'row',gap:12,marginBottom:28},
   statBox:{flex:1,backgroundColor:'#161616',borderRadius:12,padding:14,alignItems:'center',borderWidth:1,borderColor:'#242424'},
   statNum:{fontSize:22,color:'#D4AF37',fontWeight:'300'},
-  statLabel:{fontSize:10,color:'#555',marginTop:4},
-  sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:14},
+  statLabel:{fontSize:11,color:'#A0A0A0',marginTop:4},
+  sectionTitle:{fontSize:11,color:'#A0A0A0',letterSpacing:3,textTransform:'uppercase',marginBottom:14},
   emptyBox:{alignItems:'center',paddingVertical:24,paddingHorizontal:8},
   emptyCard:{borderWidth:1,borderColor:'#2A2A2A',borderStyle:'dashed',borderRadius:20,padding:32,alignItems:'center',width:'100%'},
   emptyEmoji:{fontSize:52,marginBottom:16},
   emptyTitle:{fontSize:18,color:'#F0EDE8',fontWeight:'300',marginBottom:8},
-  emptyText:{fontSize:14,color:'#444',textAlign:'center',lineHeight:20,marginBottom:20},
-  emptyHint:{fontSize:13,color:'#333',marginTop:6},
+  emptyText:{fontSize:14,color:'#A0A0A0',textAlign:'center',lineHeight:20,marginBottom:20},
+  emptyHint:{fontSize:13,color:'#929292',marginTop:6},
   emptyBtn:{backgroundColor:'#D4AF3720',borderWidth:1,borderColor:'#D4AF3750',borderRadius:20,paddingHorizontal:20,paddingVertical:10},
   emptyBtnText:{color:'#D4AF37',fontSize:14},
   card:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:'#242424'},
   cardEmoji:{width:44,height:44,borderRadius:12,backgroundColor:'#D4AF3720',alignItems:'center',justifyContent:'center'},
   cityName:{fontSize:16,color:'#F0EDE8'},
-  countryName:{fontSize:12,color:'#555',marginTop:3},
-  cardDate:{fontSize:11,color:'#444'},
-  longPressHint:{textAlign:'center',color:'#333',fontSize:11,marginTop:8},
+  countryName:{fontSize:12,color:'#A0A0A0',marginTop:3},
+  cardDate:{fontSize:12,color:'#929292'},
+  longPressHint:{textAlign:'center',color:'#929292',fontSize:12,marginTop:8},
   overlay:{flex:1,justifyContent:'flex-end',backgroundColor:'#000000BB'},
   sheet:{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:24,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A',maxHeight:'92%'},
   sheetHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:20},
