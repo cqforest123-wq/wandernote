@@ -4,6 +4,21 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 ## Latest Attempt
 
+2026-10-21 final-pass attempt after `3d497b7`:
+
+- Watch and iPhone Debug builds were prepared; the Watch target builds for both
+  simulator and physical Watch SDKs.
+- Two attempts to install the updated Watch app failed before transfer because
+  CoreDevice timed out establishing the Watch network tunnel
+  (`RemotePairingError 1001`). The previous installed build therefore remains
+  on the Watch; the UI and one-shot location changes in `3d497b7` are not yet
+  verified on hardware.
+- `npm run check:watch`, `npm run check`, and `git diff --check` passed.
+- The iPhone host scheme build was attempted from the CocoaPods workspace but
+  could not complete because the checkout lacks the React Native prebuilt
+  `React.xcframework` expected by its Pods build phase. No dependency or version
+  files were changed to work around this environment issue.
+
 2026-10-21 follow-up after `2077def`:
 
 - The physical iPhone 14 Pro Max and Apple Watch Series 11 were visible to
