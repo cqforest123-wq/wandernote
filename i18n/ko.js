@@ -2,7 +2,7 @@ export default {
   cancel: '취소', save: '저장', delete: '삭제', edit: '편집', confirm: '확인',
   back: '뒤로', next: '다음', done: '완료', loading: '로딩 중...',
   home_title: 'WanderNote', home_subtitle: '모든 여행을 기록하세요',
-  home_new_trip: '+ 새 여행', home_recent: '최근 여행', home_empty: '여행 기록이 없습니다',
+  home_new_trip: '새 여행', home_recent: '최근 여행', home_empty: '여행 기록이 없습니다',
   home_empty_hint: '「+ 새 여행」을 눌러 기록을 시작하세요', home_long_press: '길게 눌러 삭제',
   home_search: '여행 검색...', home_sort_date: '날짜순', home_sort_name: '이름순',
   stat_trips: '여행', stat_memos: '감상', stat_photos: '사진', stat_videos: '동영상', stat_days: '일수',

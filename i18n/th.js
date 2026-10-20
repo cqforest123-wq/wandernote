@@ -2,7 +2,7 @@ export default {
   cancel: 'ยกเลิก', save: 'บันทึก', delete: 'ลบ', edit: 'แก้ไข', confirm: 'ยืนยัน',
   back: 'กลับ', next: 'ถัดไป', done: 'เสร็จ', loading: 'กำลังโหลด...',
   home_title: 'WanderNote', home_subtitle: 'บันทึกทุกการเดินทาง',
-  home_new_trip: '+ ทริปใหม่', home_recent: 'ทริปล่าสุด', home_empty: 'ยังไม่มีบันทึกการเดินทาง',
+  home_new_trip: 'ทริปใหม่', home_recent: 'ทริปล่าสุด', home_empty: 'ยังไม่มีบันทึกการเดินทาง',
   home_empty_hint: 'แตะ « + ทริปใหม่ » เพื่อเริ่มบันทึก', home_long_press: 'กดค้างเพื่อลบ',
   home_search: 'ค้นหาทริป...', home_sort_date: 'ตามวันที่', home_sort_name: 'ตามชื่อ',
   stat_trips: 'ทริป', stat_memos: 'บันทึก', stat_photos: 'รูปภาพ', stat_videos: 'วิดีโอ', stat_days: 'วัน',

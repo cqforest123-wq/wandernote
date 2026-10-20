@@ -2,7 +2,7 @@ export default {
   cancel: 'Annuler', save: 'Enregistrer', delete: 'Supprimer', edit: 'Modifier', confirm: 'Confirmer',
   back: 'Retour', next: 'Suivant', done: 'Terminé', loading: 'Chargement...',
   home_title: 'WanderNote', home_subtitle: 'Enregistrez chaque voyage',
-  home_new_trip: '+ Nouveau voyage', home_recent: 'Voyages récents', home_empty: 'Aucun voyage enregistré',
+  home_new_trip: 'Nouveau voyage', home_recent: 'Voyages récents', home_empty: 'Aucun voyage enregistré',
   home_empty_hint: 'Appuyez sur « + Nouveau voyage » pour commencer', home_long_press: 'Appui long pour supprimer',
   home_search: 'Rechercher un voyage...', home_sort_date: 'Par date', home_sort_name: 'Par nom',
   stat_trips: 'Voyages', stat_memos: 'Notes', stat_photos: 'Photos', stat_videos: 'Vidéos', stat_days: 'Jours',

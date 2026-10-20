@@ -2,7 +2,7 @@ export default {
   cancel: 'キャンセル', save: '保存', delete: '削除', edit: '編集', confirm: '確認',
   back: '戻る', next: '次へ', done: '完了', loading: '読み込み中...',
   home_title: 'WanderNote', home_subtitle: '旅の記憶を残そう',
-  home_new_trip: '+ 新しい旅', home_recent: '最近の旅', home_empty: '旅の記録がありません',
+  home_new_trip: '新しい旅', home_recent: '最近の旅', home_empty: '旅の記録がありません',
   home_empty_hint: '「+ 新しい旅」をタップして記録を始めよう', home_long_press: '長押しで削除',
   home_search: '旅を検索...', home_sort_date: '日付順', home_sort_name: '名前順',
   stat_trips: '旅', stat_memos: '感想', stat_photos: '写真', stat_videos: '動画', stat_days: '日数',

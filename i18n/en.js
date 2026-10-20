@@ -13,7 +13,7 @@ export default {
   // Home
   home_title: 'WanderNote',
   home_subtitle: 'Record Every Journey',
-  home_new_trip: '+ New Trip',
+  home_new_trip: 'New Trip',
   home_recent: 'Recent Trips',
   home_empty: 'No trips yet',
   home_empty_hint: 'Tap「+ New Trip」to start',

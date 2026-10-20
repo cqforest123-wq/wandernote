@@ -13,7 +13,7 @@ export default {
   // 首页
   home_title: 'WanderNote',
   home_subtitle: '记录每一次远行',
-  home_new_trip: '+ 新旅程',
+  home_new_trip: '新旅程',
   home_recent: '最近旅程',
   home_empty: '还没有旅程记录',
   home_empty_hint: '点击「+ 新旅程」开始记录',
