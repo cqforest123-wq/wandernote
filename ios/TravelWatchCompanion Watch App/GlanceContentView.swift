@@ -35,15 +35,12 @@ struct GlanceContentView: View {
             unavailableView
 
         case .travel, .daily, .stale:
-            metricRow(
-                title: WatchStrings.text("trip"),
-                value: glance.title
-            )
-
-            metricRow(
-                title: WatchStrings.text("location"),
-                value: formatLocation(glance)
-            )
+            if formatLocation(glance) != glance.title {
+                metricRow(
+                    title: WatchStrings.text("location"),
+                    value: formatLocation(glance)
+                )
+            }
 
             metricRow(
                 title: WatchStrings.text("altitude"),
@@ -75,7 +72,7 @@ struct GlanceContentView: View {
             )
 
             metricRow(
-                title: WatchStrings.text("car"),
+                title: WatchStrings.text("parking.label"),
                 value: formatParking(glance)
             )
 

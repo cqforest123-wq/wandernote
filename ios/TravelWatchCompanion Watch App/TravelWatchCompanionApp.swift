@@ -14,7 +14,7 @@ struct TravelWatchCompanionApp: App {
                 .task {
                     runtime.start()
                 }
-                .onChange(of: scenePhase) { newPhase in
+                .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         runtime.refreshActiveData()
                     }

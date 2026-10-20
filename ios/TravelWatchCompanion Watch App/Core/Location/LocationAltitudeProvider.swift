@@ -21,7 +21,6 @@ final class LocationAltitudeProvider: NSObject {
     var onUpdate: ((LocationAltitudeUpdate) -> Void)?
 
     private let manager: CLLocationManager
-    private var isUpdatingLocation = false
 
     init(
         manager: CLLocationManager = CLLocationManager()
@@ -78,51 +77,26 @@ final class LocationAltitudeProvider: NSObject {
             LocationAltitudeDiagnostics.log(
                 "location authorization denied"
             )
-            stopUpdatingLocation()
             publish(authorization: .denied)
 
         case .restricted:
             LocationAltitudeDiagnostics.log(
                 "location authorization restricted"
             )
-            stopUpdatingLocation()
             publish(authorization: .restricted)
 
         @unknown default:
             LocationAltitudeDiagnostics.log(
                 "location authorization unavailable"
             )
-            stopUpdatingLocation()
             publish(authorization: .unavailable)
         }
     }
 
     private func requestCurrentLocation() {
-        startUpdatingLocationIfNeeded()
         manager.requestLocation()
-    }
-
-    private func startUpdatingLocationIfNeeded() {
-        guard !isUpdatingLocation else {
-            return
-        }
-
-        isUpdatingLocation = true
-        manager.startUpdatingLocation()
         LocationAltitudeDiagnostics.log(
-            "continuous location updates started"
-        )
-    }
-
-    private func stopUpdatingLocation() {
-        guard isUpdatingLocation else {
-            return
-        }
-
-        isUpdatingLocation = false
-        manager.stopUpdatingLocation()
-        LocationAltitudeDiagnostics.log(
-            "continuous location updates stopped"
+            "one-shot location request started"
         )
     }
 
