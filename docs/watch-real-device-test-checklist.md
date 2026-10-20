@@ -4,6 +4,21 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 
 ## Latest Attempt
 
+2026-10-21 follow-up after `2077def`:
+
+- The physical iPhone 14 Pro Max and Apple Watch Series 11 were visible to
+  `devicectl`; `xctrace` continued to list the Watch as offline.
+- A first direct Watch install attempt timed out while establishing the CoreDevice
+  network tunnel. A retry succeeded and installed bundle
+  `com.litao0729.wandernote.watchkitapp` on the physical Watch.
+- `devicectl` launched the Watch app successfully.
+- A physical Watch screenshot confirmed the altitude row renders a value such as
+  `290 m` without repeating the row label. The screen also showed the expected
+  stale-data notice.
+- This pass only verifies installation, launch, and the altitude-label UI fix.
+  Location refresh, HealthKit steps, fresh Travel Mode sync, parking, reconnect,
+  and stale-cache transitions still need their own checks below.
+
 2026-10-14 follow-up after `648e7d9`:
 
 - The Watch connection successfully returned installed-app information.
