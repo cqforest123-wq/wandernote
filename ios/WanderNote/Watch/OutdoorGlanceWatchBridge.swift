@@ -49,19 +49,4 @@ final class OutdoorGlanceWatchBridge: NSObject {
     }
   }
 
-  @objc(startOutdoorCyclingWorkoutOnWatch:rejecter:)
-  func startOutdoorCyclingWorkoutOnWatch(
-    resolver resolve: @escaping RCTPromiseResolveBlock,
-    rejecter reject: @escaping RCTPromiseRejectBlock
-  ) {
-    OutdoorGlanceWatchRuntime.shared.startOutdoorCyclingWorkoutOnWatch { result in
-      switch result {
-      case .success:
-        resolve(nil)
-
-      case let .failure(error):
-        reject(error.bridgeCode, error.localizedDescription, error as NSError)
-      }
-    }
-  }
 }

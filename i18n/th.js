@@ -1,8 +1,4 @@
 export default {
-  watch_cycling_start: 'เริ่มปั่นจักรยานบน Apple Watch',
-  watch_cycling_starting: 'กำลังเชื่อมต่อ Apple Watch...',
-  watch_cycling_requested: 'ส่งคำขอเริ่มแล้ว ตรวจสอบสถานะการออกกำลังกายบน Apple Watch',
-  watch_cycling_failed: 'ติดต่อ Apple Watch ไม่ได้ โปรดตรวจสอบการเชื่อมต่อและการติดตั้ง WanderNote แล้วลองอีกครั้ง หากหมดเวลารอ โปรดตรวจสอบสถานะบน Watch ก่อนลองใหม่',
   cancel: 'ยกเลิก', save: 'บันทึก', delete: 'ลบ', edit: 'แก้ไข', confirm: 'ยืนยัน',
   back: 'กลับ', next: 'ถัดไป', done: 'เสร็จ', loading: 'กำลังโหลด...',
   home_title: 'WanderNote', home_subtitle: 'บันทึกทุกการเดินทาง',

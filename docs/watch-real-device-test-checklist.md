@@ -12,10 +12,9 @@ Use a paired physical iPhone and Apple Watch before merging or shipping Watch Co
 - Process launch of `com.litao0729.wandernote.watchkitapp` succeeded on the Watch.
   The earlier tunnel timeout did not recur during this attempt.
 - The updated iPhone development app had already installed and launched successfully.
-- Workout startup, workout write authorization, elapsed time, duplicate start requests,
-  ending, and the saved cycling workout still need manual confirmation. Installation
-  and process launch do not establish that those behaviors passed. See
-  [cycling acceptance steps](watch-cycling-start-verification.md).
+- Travel snapshot delivery, Watch location, step count, daylight, parking, reconnect,
+  and stale-cache behavior still require physical-device confirmation. Installation
+  and process launch do not establish that those behaviors passed.
 
 Earlier attempt on the same day:
 

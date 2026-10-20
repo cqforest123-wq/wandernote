@@ -1,8 +1,4 @@
 export default {
-  watch_cycling_start: '在 Apple Watch 上开始骑行',
-  watch_cycling_starting: '正在连接 Apple Watch...',
-  watch_cycling_requested: '已发送启动请求，请在 Apple Watch 查看运动状态。',
-  watch_cycling_failed: '未能连接 Apple Watch。请确认手表已连接并安装 WanderNote，然后重试。如请求超时，请先查看手表是否已开始骑行。',
   // 通用
   cancel: '取消',
   save: '保存',

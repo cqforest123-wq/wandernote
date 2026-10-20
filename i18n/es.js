@@ -1,8 +1,4 @@
 export default {
-  watch_cycling_start: 'Iniciar ciclismo en Apple Watch',
-  watch_cycling_starting: 'Conectando con Apple Watch...',
-  watch_cycling_requested: 'Solicitud enviada. Comprueba el entrenamiento en Apple Watch.',
-  watch_cycling_failed: 'No se pudo contactar con Apple Watch. Comprueba la conexión y que WanderNote esté instalado, e inténtalo de nuevo. Si se agotó el tiempo, comprueba primero el entrenamiento en el reloj.',
   cancel: 'Cancelar', save: 'Guardar', delete: 'Eliminar', edit: 'Editar', confirm: 'Confirmar',
   back: 'Volver', next: 'Siguiente', done: 'Listo', loading: 'Cargando...',
   home_title: 'WanderNote', home_subtitle: 'Registra cada viaje',

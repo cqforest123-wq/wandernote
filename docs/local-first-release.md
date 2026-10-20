@@ -12,7 +12,7 @@ Branch: `feature/watch-companion-v1-integration`
 - No ads, ad SDKs, subscriptions, purchases or paywalls.
 - Existing local draft, planning and packing templates remain. Online AI is not called and the interface no longer promises AI output.
 - Weather, city search, geocoding and maps still use their existing network providers. Local-only records do not mean all network features work offline.
-- Existing Watch Companion and cycling behavior is unchanged. WatchConnectivity remains device-to-device, not backend sync.
+- Watch Companion supports travel snapshots and daily outdoor information only. WatchConnectivity remains device-to-device, not backend sync.
 - Backup and a possible advertising-supported edition are deferred, not implemented or promised.
 
 ## Data Preservation
@@ -41,12 +41,12 @@ Existing draft bodies use the pre-existing English local templates. Do not adver
 
 - `npm run test:local`: 13 tests passed. Includes legacy data, empty offline install, 100 trips/lists, ordered writes, disk-full retry, corrupt data, linked packing deletion, media copying/rebasing, local draft modes, runtime import audit and localization keys.
 - `npm run check`: passed.
-- `npm run check:watch`: snapshot, glance, parking, sun and cycling tests passed; audit reports zero blockers and the existing hidden yearly report warning.
+- `npm run check:watch`: snapshot, glance, parking and sun tests passed; audit reports zero blockers and the existing hidden yearly report warning.
 - `npx expo export --platform ios --output-dir /tmp/wandernote-local-export`: passed.
 - Debug iPhone simulator scheme, physical iPhone destination scheme and standalone Watch simulator target: compiled successfully.
 - iPhone 17 Pro simulator, iOS 26.5: replacing the development app without deleting its data opens the local home screen, not login. Existing 3 trips / 7 photos remain. Local-data warning is visible. Evidence: `/tmp/wandernote-local-qa/first-launch-ready.png`.
 - Initial workspace build with a globally forced `-sdk iphonesimulator` failed because it forced the Watch dependency to the iPhone SDK. Selecting the iPhone simulator destination without the global SDK override builds both targets successfully. No source change was needed.
-- Physical-device installation of this local edition and interactive end-to-end cycling are NOT claimed by these compile/unit/startup checks.
+- Physical-device verification of this local edition and Watch sensor data are NOT claimed by these compile/unit/startup checks.
 
 ## Before Any Store Submission
 
