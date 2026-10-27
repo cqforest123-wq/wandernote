@@ -198,6 +198,159 @@ test('all local draft modes, including empty trips, produce usable offline text'
   assert.equal(Object.keys(drafts.buildLocalPackingGroups('Kyoto', '3').groups).length, 6);
 });
 
+test('AI trip picker keeps the translation function unshadowed in trip rows', () => {
+  const ast = parse(read('screens/AIScreen.js'), { sourceType: 'module', plugins: ['jsx'] });
+  let tripPicker;
+  visit(ast, node => {
+    if (node.type === 'CallExpression'
+      && node.callee.type === 'MemberExpression'
+      && node.callee.object.name === 'trips'
+      && node.callee.property.name === 'map') {
+      tripPicker = node;
+    }
+  });
+  assert.ok(tripPicker, 'trips.map should render the available trip rows');
+  assert.notEqual(tripPicker.arguments[0].params[0].name, 't', 'trip row must not shadow useTranslation().t');
+  assert.match(read('screens/AIScreen.js'), /trip\.days\.length\}\s*\{t\('unit_days'/);
+});
+
+test('local search finds trips and dated journal notes without a backend', async () => {
+  const { searchLocalTravelData } = await loadModule('lib/localSearch.js');
+  const trips = [
+    { id: 1, city: 'Kyoto', country: 'Japan', date: '2026.04', days: [
+      { date: '2026.04.10', memos: [{ id: 2, text: 'Quiet walk through the bamboo grove', tag: '景色' }] },
+    ] },
+    { id: 3, city: 'Taipei', country: 'Taiwan', days: [] },
+  ];
+  const noteResults = searchLocalTravelData(trips, 'BAMBOO');
+  assert.deepEqual(plain(noteResults.trips.map(trip => trip.id)), [1]);
+  assert.equal(noteResults.notes[0].day.date, '2026.04.10');
+  assert.equal(noteResults.notes[0].memo.id, 2);
+  assert.deepEqual(plain(searchLocalTravelData(trips, 'japan').trips.map(trip => trip.id)), [1]);
+  assert.deepEqual(plain(searchLocalTravelData(trips, '2026.04.10').trips.map(trip => trip.id)), [1]);
+  assert.deepEqual(plain(searchLocalTravelData(trips, '').trips.map(trip => trip.id)), [1, 3]);
+});
+
+test('day memo filters include all tags and normalize legacy Chinese tags', async () => {
+  const { filterDayMemos, sortDayMemos } = await loadModule('lib/dayMemoFilters.js');
+  const memos = [
+    { id: 1, text: 'noodles', tag: 'food' },
+    { id: 2, text: 'old record', tag: '美食' },
+    { id: 3, text: 'mountain', tag: 'scenery' },
+    { id: 4, text: 'untagged legacy' },
+  ];
+  assert.deepEqual(plain(filterDayMemos(memos, 'food').map(memo => memo.id)), [1, 2]);
+  assert.deepEqual(plain(filterDayMemos(memos, 'feeling').map(memo => memo.id)), [4]);
+  assert.deepEqual(plain(filterDayMemos(memos, 'all').map(memo => memo.id)), [1, 2, 3, 4]);
+  const favorites = [{ id: 5, isFavorite: true }, { id: 6, isFavorite: false }];
+  assert.deepEqual(plain(filterDayMemos(favorites, 'favorites').map(memo => memo.id)), [5]);
+  assert.deepEqual(plain(sortDayMemos([{ id: 1, time: '08:15' }, { id: 2, time: '19:40' }]).map(memo => memo.id)), [2, 1]);
+  assert.deepEqual(plain(sortDayMemos([{ id: 1, time: '08:15' }, { id: 2, time: '19:40' }], 'oldest').map(memo => memo.id)), [1, 2]);
+});
+
+test('trip journal search and content filters combine and keep requested date order', async () => {
+  const { filterTripDays } = await loadModule('lib/tripTimeline.js');
+  const days = [
+    { date: '2026.05.03', memos: [{ text: 'Museum visit' }], photos: [] },
+    { date: '2026.05.01', memos: [], photos: [{ uri: 'local' }] },
+    { date: '2026.05.02', memos: [{ text: 'Museum cafe' }], photos: [{ uri: 'local' }] },
+  ];
+  assert.deepEqual(plain(filterTripDays(days, { query: 'MUSEUM', content: 'notes', order: 'oldest' }).map(day => day.date)), ['2026.05.02', '2026.05.03']);
+  assert.deepEqual(plain(filterTripDays(days, { content: 'photos', order: 'newest' }).map(day => day.date)), ['2026.05.02', '2026.05.01']);
+  assert.deepEqual(days.map(day => day.date), ['2026.05.03', '2026.05.01', '2026.05.02']);
+});
+
+test('year report summary counts destinations and shares totals without exposing media paths', async () => {
+  const { summarizeYearTrips, buildYearReportShareText } = await loadModule('lib/yearReportSummary.js');
+  const stats = summarizeYearTrips([
+    { country: 'Japan', days: [{ memos: [{ text: 'Noodles' }], photos: [{ uri: 'file:///private/photo.jpg' }] }] },
+    { country: 'Japan', days: [{ memos: [], photos: [] }] },
+    { country: 'Taiwan', days: [{ memos: [{ text: 'Night market' }], photos: [] }] },
+  ]);
+  assert.deepEqual(plain(stats), {
+    tripCount: 3, dayCount: 3, memoCount: 2, photoCount: 1,
+    countries: [['Japan', 2], ['Taiwan', 1]],
+  });
+  const message = buildYearReportShareText('2026', stats, {
+    title: year => `${year} Travel Report`,
+    tripCount: count => `Trips: ${count}`,
+    countryCount: count => `Destinations: ${count}`,
+    dayCount: count => `Days: ${count}`,
+    memoCount: count => `Notes: ${count}`,
+    photoCount: count => `Photos: ${count}`,
+    countriesHeading: 'Visited destinations', source: 'WanderNote',
+  });
+  assert.match(message, /Japan: 2/);
+  assert.match(message, /Taiwan: 1/);
+  assert.doesNotMatch(message, /file:|private\/photo/);
+});
+
+test('day share summary contains localized notes and counts but never local media paths', async () => {
+  const { buildDayShareText } = await loadModule('lib/dayShareText.js');
+  const message = buildDayShareText({
+    trip: { emoji: '🌸', city: 'Kyoto', country: 'Japan' },
+    day: {
+      date: '2026.04.10',
+      memos: [
+        { id: 1, text: 'Tried a small noodle shop', tag: '美食' },
+        { id: 2, text: 'Walked under cherry blossoms', tag: 'scenery' },
+      ],
+      photos: [{ uri: 'file:///private/app/path/photo.jpg' }],
+    },
+    dayNumber: 2,
+    labels: {
+      dayHeading: (number, date) => `Day ${number} · ${date}`,
+      photoCount: count => `${count} photos`,
+      source: 'Shared from WanderNote',
+      note: 'Note',
+      tags: { food: 'Food', scenery: 'Scenery' },
+    },
+  });
+  assert.match(message, /Kyoto Japan/);
+  assert.match(message, /Day 2 · 2026\.04\.10/);
+  assert.match(message, /Food: Tried a small noodle shop/);
+  assert.match(message, /Scenery: Walked under cherry blossoms/);
+  assert.match(message, /1 photos/);
+  assert.doesNotMatch(message, /file:|private\/app\/path/);
+});
+
+test('day navigation sorts dates and returns adjacent records without mutating input', async () => {
+  const { getDayNavigation } = await loadModule('lib/dayNavigation.js');
+  const days = [{ date: '2026.04.12' }, { date: '2026.04.10' }, { date: '2026.04.11' }];
+  const middle = getDayNavigation(days, '2026.04.11');
+  assert.equal(middle.index, 1);
+  assert.equal(middle.total, 3);
+  assert.equal(middle.previous.date, '2026.04.10');
+  assert.equal(middle.next.date, '2026.04.12');
+  assert.equal(getDayNavigation(days, '2026.04.10').previous, null);
+  assert.equal(getDayNavigation(days, '2026.04.12').next, null);
+  assert.deepEqual(days.map(day => day.date), ['2026.04.12', '2026.04.10', '2026.04.11']);
+});
+
+test('trip share includes every day and note in date order without leaking local media paths', async () => {
+  const { buildTripShareText } = await loadModule('lib/tripShareText.js');
+  const message = buildTripShareText({
+    trip: {
+      emoji: '🌸', city: 'Kyoto', country: 'Japan', date: '2026.04.10',
+      days: [
+        { date: '2026.04.11', memos: [{ text: 'Temple at dusk', tag: 'scenery' }], photos: [] },
+        { date: '2026.04.10', memos: [{ text: 'Noodle shop', tag: '美食' }], photos: [{ uri: 'file:///private/photo.jpg' }] },
+      ],
+    },
+    labels: {
+      tripDate: date => `Trip date: ${date}`,
+      dayHeading: (number, date) => `Day ${number} · ${date}`,
+      photoCount: count => `${count} photos`,
+      source: 'From WanderNote', note: 'Note', tags: { food: 'Food', scenery: 'Scenery' },
+    },
+  });
+  assert.ok(message.indexOf('Day 1 · 2026.04.10') < message.indexOf('Day 2 · 2026.04.11'));
+  assert.match(message, /Food: Noodle shop/);
+  assert.match(message, /Scenery: Temple at dusk/);
+  assert.match(message, /1 photos/);
+  assert.doesNotMatch(message, /file:|private\/photo/);
+});
+
 function visit(node, callback) {
   if (!node || typeof node !== 'object') return;
   if (typeof node.type === 'string') callback(node);

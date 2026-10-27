@@ -3,6 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { removeLocalPackingListsForTrip } from '../lib/localData';
 import { createTrip } from '../lib/models';
+import { searchLocalTravelData } from '../lib/localSearch';
 import { useTranslation } from 'react-i18next';
 import { getCityCoords } from '../lib/cityCoords';
 import { getDestinationEnglishName } from '../lib/destinationEnMap';
@@ -449,15 +450,15 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
     return matchedCities.map(city => ({ type: 'city', country: c, city }));
   }) : null;
 
-  const filteredTrips = trips
-    .filter(t => tripSearch ? t.city.includes(tripSearch) || t.country.includes(tripSearch) : true)
+  const localSearchResults = searchLocalTravelData(trips, tripSearch);
+  const filteredTrips = localSearchResults.trips
     .sort((a,b) => sortBy === 'name' ? a.city.localeCompare(b.city) : b.date.localeCompare(a.date));
   const hasSelection = selectedCities.length > 0 || customCity.trim().length > 0;
 
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
-      <ScrollView contentContainerStyle={s.scroll}>
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={s.header}>
           <View>
             <Text style={s.title}>WanderNote</Text>
@@ -499,6 +500,27 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
             <Text style={{color:'#D4AF37',fontSize:12}}>{sortBy==='date'?t('home_sort_date'):t('home_sort_name')}</Text>
           </TouchableOpacity>
         </View>
+        {tripSearch.trim().length > 0 && localSearchResults.notes.length > 0 && (
+          <View style={{marginBottom:14}}>
+            <Text style={s.sectionTitle}>{t('home_search_notes_title')}</Text>
+            {localSearchResults.notes.map(({trip, day, memo}, index) => (
+              <TouchableOpacity
+                key={`${trip.id}-${day.date}-${memo.id ?? index}`}
+                style={s.searchResultRow}
+                onPress={() => navigation.navigate('DayDetail', {tripId: trip.id, dayDate: day.date})}
+              >
+                <View style={{flex:1}}>
+                  <Text style={s.searchResultTitle} numberOfLines={1}>{trip.city} · {day.date}</Text>
+                  <Text style={s.searchResultText} numberOfLines={2}>{memo.text}</Text>
+                </View>
+                <Text style={s.searchResultArrow}>›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+        {tripSearch.trim().length > 0 && localSearchResults.trips.length === 0 && (
+          <Text style={s.searchEmpty}>{t('home_search_no_results')}</Text>
+        )}
         {trips.length === 0 && (
           <View style={s.emptyBox}>
             <View style={s.emptyCard}>
@@ -768,6 +790,11 @@ const s = StyleSheet.create({
   cityName:{fontSize:16,color:'#F0EDE8'},
   countryName:{fontSize:12,color:'#A0A0A0',marginTop:3},
   cardDate:{fontSize:12,color:'#929292'},
+  searchResultRow:{backgroundColor:'#161616',borderRadius:8,padding:12,marginBottom:8,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1,borderColor:'#242424'},
+  searchResultTitle:{fontSize:13,color:'#F0EDE8',marginBottom:4},
+  searchResultText:{fontSize:13,color:'#A0A0A0',lineHeight:18},
+  searchResultArrow:{fontSize:22,color:'#4ECDC4'},
+  searchEmpty:{fontSize:13,color:'#929292',paddingVertical:8,marginBottom:8},
   longPressHint:{textAlign:'center',color:'#929292',fontSize:12,marginTop:8},
   overlay:{flex:1,justifyContent:'flex-end',backgroundColor:'#000000BB'},
   sheet:{backgroundColor:'#111',borderTopLeftRadius:24,borderTopRightRadius:24,padding:24,paddingBottom:48,borderTopWidth:1,borderColor:'#2A2A2A',maxHeight:'92%'},

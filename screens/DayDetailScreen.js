@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, Modal, KeyboardAvoidingView, Platform, Image, Alert, Dimensions, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import { createPhoto, createVideo } from '../lib/models';
 import { storeLocalMedia } from '../lib/localMedia';
+import { filterDayMemos, normalizeDayMemoTag, sortDayMemos } from '../lib/dayMemoFilters';
+import { buildDayShareText } from '../lib/dayShareText';
+import { getDayNavigation } from '../lib/dayNavigation';
 
 const { width } = Dimensions.get('window');
 const PHOTO_SIZE = (width - 48 - 8) / 3;
@@ -19,16 +23,6 @@ const TAG_LABEL_KEYS = {
   shopping: 'day_tag_shopping',
   feeling: 'day_tag_feeling',
 };
-const LEGACY_TAG_MAP = {
-  '美食': 'food',
-  '风景': 'scenery',
-  '邂逅': 'encounter',
-  '探险': 'adventure',
-  '住宿': 'stay',
-  '交通': 'transport',
-  '购物': 'shopping',
-  '感受': 'feeling',
-};
 const TAG_COLORS = {
   food: '#FF8C69',
   scenery: '#6BCB77',
@@ -40,10 +34,6 @@ const TAG_COLORS = {
   feeling: '#A8D8EA',
 };
 
-function normalizeTag(tag) {
-  return LEGACY_TAG_MAP[tag] || tag || 'feeling';
-}
-
 export default function DayDetailScreen({ route, navigation, trips, setTrips }) {
   const { tripId, dayDate } = route.params;
   const trip = trips.find(t=>t.id===tripId);
@@ -54,12 +44,21 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const [editingMemo, setEditingMemo] = useState(null); // null=new, object=edit
   const [memoText, setMemoText] = useState('');
   const [selectedTag, setSelectedTag] = useState('feeling');
+  const [selectedMemoFilter, setSelectedMemoFilter] = useState('all');
+  const [memoOrder, setMemoOrder] = useState('newest');
   const [previewPhoto, setPreviewPhoto] = useState(null);
+
+  useEffect(() => {
+    setSelectedMemoFilter('all');
+    setPreviewPhoto(null);
+  }, [dayDate]);
 
   if (!trip||!day) return null;
 
-  const sortedDays = [...trip.days].sort((a,b)=>a.date.localeCompare(b.date));
-  const dayIndex = sortedDays.findIndex(d=>d.date===dayDate)+1;
+  const dayNavigation = getDayNavigation(trip.days, dayDate);
+  const dayIndex = dayNavigation.index + 1;
+  const availableMemoTags = TAGS.filter(tag => day.memos.some(memo => normalizeDayMemoTag(memo.tag) === tag));
+  const filteredMemos = sortDayMemos(filterDayMemos(day.memos, selectedMemoFilter), memoOrder);
 
   const updateDay = (updater) => setTrips(prev=>prev.map(t=>t.id===tripId?{...t,days:t.days.map(d=>d.date===dayDate?updater(d):d)}:t));
 
@@ -73,7 +72,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
   const openEditMemo = (memo) => {
     setEditingMemo(memo);
     setMemoText(memo.text);
-    setSelectedTag(normalizeTag(memo.tag));
+    setSelectedTag(normalizeDayMemoTag(memo.tag));
     setShowMemoModal(true);
   };
 
@@ -88,6 +87,7 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       // 新增模式
       updateDay(d=>({...d,memos:[...d.memos,{id:Date.now(),text:memoText.trim(),tag:selectedTag,time:`${pad(now.getHours())}:${pad(now.getMinutes())}`}]}));
     }
+    setSelectedMemoFilter('all');
     setShowMemoModal(false);
   };
 
@@ -96,9 +96,37 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
       {text:t('cancel'),style:'cancel'},
       {text:t('delete'),style:'destructive',onPress:()=>{
         updateDay(d=>({...d,memos:d.memos.filter(m=>m.id!==memoId)}));
+        setSelectedMemoFilter('all');
         setShowMemoModal(false);
       }},
     ]);
+  };
+
+  const copyMemo = async text => {
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert(t('day_copy_note'), t('day_copy_done'));
+    } catch {
+      Alert.alert(t('day_copy_note'), t('day_copy_failed'));
+    }
+  };
+
+  const copyAllDayMemos = async () => {
+    await copyMemo(day.memos.map(memo => memo.text).filter(Boolean).join('\n\n'));
+  };
+
+  const toggleMemoFavorite = memoId => updateDay(current => ({
+    ...current,
+    memos: current.memos.map(memo => memo.id === memoId ? { ...memo, isFavorite: !memo.isFavorite } : memo),
+  }));
+
+  const duplicateMemo = memo => {
+    const now = new Date();
+    const time = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    updateDay(current => ({
+      ...current,
+      memos: [...current.memos, { ...memo, id: Date.now() + Math.random(), time, isFavorite: false }],
+    }));
   };
 
 
@@ -187,6 +215,25 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
   const photos = day.photos||[];
   const hasContent = day.memos.length>0||photos.length>0;
+  const shareDay = async () => {
+    const message = buildDayShareText({
+      trip,
+      day,
+      dayNumber: dayIndex,
+      labels: {
+        dayHeading: (number, date) => t('day_share_heading', { day: number, date }),
+        photoCount: number => t('day_share_photo_count', { number }),
+        source: t('day_share_source'),
+        note: t('day_share_note'),
+        tags: Object.fromEntries(TAGS.map(tag => [tag, t(TAG_LABEL_KEYS[tag])])),
+      },
+    });
+    try {
+      await Share.share({ title: t('day_share_title'), message });
+    } catch {
+      Alert.alert(t('day_share_title'), t('day_share_failed'));
+    }
+  };
 
   return (
     <SafeAreaView style={s.container}>
@@ -206,11 +253,42 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
             <TouchableOpacity style={s.actionBtn} onPress={openNewMemo}>
               <Text style={s.actionBtnText}>{`📝 ${t('day_memo')}`}</Text>
             </TouchableOpacity>
+            {hasContent && (
+              <TouchableOpacity style={s.actionBtn} onPress={shareDay}>
+                <Text style={s.actionBtnText}>{`↗ ${t('day_share')}`}</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={[s.actionBtn,{borderColor:'#4ECDC450',backgroundColor:'#4ECDC415'}]} onPress={showPhotoOptions}>
               <Text style={[s.actionBtnText,{color:'#4ECDC4'}]}>{`📸 ${t('stat_photos')}`}</Text>
             </TouchableOpacity>
           </View>
         </View>
+
+        {dayNavigation.total > 1 && (
+          <View style={s.dayNavigation}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('day_previous')}
+              disabled={!dayNavigation.previous}
+              onPress={() => navigation.setParams({ dayDate: dayNavigation.previous.date })}
+              style={[s.dayNavigationButton, !dayNavigation.previous && s.dayNavigationDisabled]}
+            >
+              <Text style={s.dayNavigationArrow}>‹</Text>
+              <Text style={s.dayNavigationLabel}>{t('day_previous')}</Text>
+            </TouchableOpacity>
+            <Text style={s.dayNavigationPosition}>{t('day_navigation_position', { current: dayIndex, total: dayNavigation.total })}</Text>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={t('day_next')}
+              disabled={!dayNavigation.next}
+              onPress={() => navigation.setParams({ dayDate: dayNavigation.next.date })}
+              style={[s.dayNavigationButton, s.dayNavigationNext, !dayNavigation.next && s.dayNavigationDisabled]}
+            >
+              <Text style={s.dayNavigationLabel}>{t('day_next')}</Text>
+              <Text style={s.dayNavigationArrow}>›</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {!hasContent ? (
           <View style={s.emptyBox}>
@@ -246,20 +324,66 @@ export default function DayDetailScreen({ route, navigation, trips, setTrips }) 
 
             {day.memos.length>0 && (
               <>
-                <Text style={s.sectionTitle}>{t('day_travel_memos')} ({day.memos.length})</Text>
-                {day.memos.map(memo=>(
-                  <TouchableOpacity key={String(memo.id)} style={s.memoCard} onPress={()=>openEditMemo(memo)} activeOpacity={0.8}>
+                <View style={s.memoSectionHeading}>
+                  <Text style={[s.sectionTitle,{marginBottom:0}]}>{t('day_travel_memos')} ({selectedMemoFilter === 'all' ? day.memos.length : `${filteredMemos.length}/${day.memos.length}`})</Text>
+                  <TouchableOpacity accessibilityRole="button" onPress={copyAllDayMemos} style={s.memoUtilityButton}>
+                    <Text style={s.memoUtilityText}>{t('day_copy_all')}</Text>
+                  </TouchableOpacity>
+                </View>
+                <View style={s.memoToolbar}>
+                  {(availableMemoTags.length > 1 || day.memos.some(memo => memo.isFavorite)) && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.memoFilterScroll}>
+                    <View style={s.memoFilterRow}>
+                      {['all', ...(day.memos.some(memo => memo.isFavorite) ? ['favorites'] : []), ...availableMemoTags].map(tag => {
+                        const active = selectedMemoFilter === tag;
+                        const color = tag === 'all' ? '#4ECDC4' : TAG_COLORS[tag];
+                        return (
+                          <TouchableOpacity
+                            key={tag}
+                            accessibilityRole="button"
+                            accessibilityState={{selected: active}}
+                            onPress={() => setSelectedMemoFilter(tag)}
+                            style={[s.memoFilterChip, active && {borderColor: `${color}90`, backgroundColor: `${color}18`}]}
+                          >
+                            <Text style={[s.memoFilterText, active && {color}]}>
+                            {tag === 'all' ? t('day_filter_all') : tag === 'favorites' ? t('day_filter_favorites') : t(TAG_LABEL_KEYS[tag])}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </ScrollView>
+                  )}
+                  <TouchableOpacity accessibilityRole="button" onPress={() => setMemoOrder(order => order === 'newest' ? 'oldest' : 'newest')} style={s.memoSortButton}>
+                    <Text style={s.memoSortText}>{memoOrder === 'newest' ? '↓' : '↑'} {t(`day_sort_${memoOrder}`)}</Text>
+                  </TouchableOpacity>
+                </View>
+                {filteredMemos.length === 0 ? (
+                  <Text style={s.memoFilterEmpty}>{t('day_filter_no_results')}</Text>
+                ) : filteredMemos.map(memo=>(
+                  <View key={String(memo.id)} style={s.memoCard}>
                     <View style={s.memoTop}>
-                      <View style={[s.tagBadge,{backgroundColor:`${TAG_COLORS[normalizeTag(memo.tag)]||'#888'}20`,borderColor:`${TAG_COLORS[normalizeTag(memo.tag)]||'#888'}50`}]}>
-                        <Text style={[s.tagText,{color:TAG_COLORS[normalizeTag(memo.tag)]||'#888'}]}>{t(TAG_LABEL_KEYS[normalizeTag(memo.tag)] || 'day_tag_feeling')}</Text>
+                      <View style={[s.tagBadge,{backgroundColor:`${TAG_COLORS[normalizeDayMemoTag(memo.tag)]||'#888'}20`,borderColor:`${TAG_COLORS[normalizeDayMemoTag(memo.tag)]||'#888'}50`}]}>
+                        <Text style={[s.tagText,{color:TAG_COLORS[normalizeDayMemoTag(memo.tag)]||'#888'}]}>{t(TAG_LABEL_KEYS[normalizeDayMemoTag(memo.tag)] || 'day_tag_feeling')}</Text>
                       </View>
-                      <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
+                      <View style={s.memoActions}>
+                        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('day_toggle_favorite')} onPress={()=>toggleMemoFavorite(memo.id)}>
+                          <Text style={[s.memoActionText, memo.isFavorite && s.memoFavoriteActive]}>{memo.isFavorite ? '★' : '☆'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('day_copy_note')} onPress={()=>copyMemo(memo.text)}>
+                          <Text style={s.memoActionText}>⧉</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('day_duplicate_note')} onPress={()=>duplicateMemo(memo)}>
+                          <Text style={s.memoActionText}>＋</Text>
+                        </TouchableOpacity>
                         <Text style={s.memoTime}>{memo.time}</Text>
                         <Text style={s.editHint}>{t('tap_to_edit')}</Text>
                       </View>
                     </View>
-                    <Text style={s.memoText}>{memo.text}</Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('day_edit_memo')} onPress={()=>openEditMemo(memo)} activeOpacity={0.8}>
+                      <Text style={s.memoText}>{memo.text}</Text>
+                    </TouchableOpacity>
+                  </View>
                 ))}
               </>
             )}
@@ -324,6 +448,13 @@ const s = StyleSheet.create({
   backRow:{marginBottom:20},
   backText:{color:'#D4AF37',fontSize:15},
   dayHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',marginBottom:24},
+  dayNavigation:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:-10,marginBottom:20,paddingVertical:10,borderTopWidth:1,borderBottomWidth:1,borderColor:'#262626'},
+  dayNavigationButton:{minWidth:94,flexDirection:'row',alignItems:'center',gap:6,paddingVertical:8},
+  dayNavigationNext:{justifyContent:'flex-end'},
+  dayNavigationDisabled:{opacity:0.3},
+  dayNavigationArrow:{fontSize:24,color:'#4ECDC4',lineHeight:26},
+  dayNavigationLabel:{fontSize:12,color:'#B8B8B8'},
+  dayNavigationPosition:{fontSize:12,color:'#D4AF37'},
   dayNum:{fontSize:11,color:'#D4AF37',letterSpacing:3},
   dayDate:{fontSize:24,color:'#F0EDE8',fontWeight:'300',marginTop:4},
   dayWeek:{fontSize:14,color:'#555',marginTop:4},
@@ -339,11 +470,25 @@ const s = StyleSheet.create({
   emptyBtn:{borderWidth:1,borderColor:'#D4AF3750',backgroundColor:'#D4AF3715',borderRadius:20,paddingHorizontal:16,paddingVertical:10},
   emptyBtnText:{color:'#D4AF37',fontSize:14},
   sectionTitle:{fontSize:11,color:'#555',letterSpacing:3,textTransform:'uppercase',marginBottom:12},
+  memoSectionHeading:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:12},
+  memoUtilityButton:{borderWidth:1,borderColor:'#4ECDC455',borderRadius:12,paddingHorizontal:10,paddingVertical:6},
+  memoUtilityText:{fontSize:11,color:'#4ECDC4'},
+  memoToolbar:{flexDirection:'row',alignItems:'center',marginBottom:12},
   photoGrid:{flexDirection:'row',flexWrap:'wrap',gap:4,marginBottom:24},
   photoThumb:{width:PHOTO_SIZE,height:PHOTO_SIZE,borderRadius:8,backgroundColor:'#1A1A1A'},
   addPhotoBtn:{width:PHOTO_SIZE,height:PHOTO_SIZE,borderRadius:8,backgroundColor:'#1A1A1A',borderWidth:1,borderColor:'#2A2A2A',alignItems:'center',justifyContent:'center'},
   addPhotoBtnText:{fontSize:28,color:'#444'},
   memoCard:{backgroundColor:'#161616',borderRadius:14,padding:16,marginBottom:10,borderWidth:1,borderColor:'#2A2A2A'},
+  memoFilterScroll:{marginBottom:12},
+  memoFilterRow:{flexDirection:'row',gap:8},
+  memoFilterChip:{paddingHorizontal:12,paddingVertical:7,borderRadius:18,backgroundColor:'#161616',borderWidth:1,borderColor:'#2A2A2A'},
+  memoFilterText:{fontSize:12,color:'#777'},
+  memoFilterEmpty:{fontSize:13,color:'#777',paddingVertical:10},
+  memoSortButton:{paddingVertical:8,paddingLeft:8},
+  memoSortText:{fontSize:11,color:'#D4AF37'},
+  memoActions:{flexDirection:'row',gap:9,alignItems:'center'},
+  memoActionText:{fontSize:17,color:'#777',paddingHorizontal:1},
+  memoFavoriteActive:{color:'#D4AF37'},
   memoTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10},
   tagBadge:{paddingHorizontal:10,paddingVertical:4,borderRadius:8,borderWidth:1},
   tagText:{fontSize:11,letterSpacing:0.5},

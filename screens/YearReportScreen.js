@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Dimensions } from 'react-native';
+import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Dimensions, Share } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { buildYearReportShareText, summarizeYearTrips } from '../lib/yearReportSummary';
 
 const { width } = Dimensions.get('window');
 
 export default function YearReportScreen({ trips, navigation }) {
+  const { t } = useTranslation();
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(String(now.getFullYear()));
 
@@ -11,13 +14,14 @@ export default function YearReportScreen({ trips, navigation }) {
   if (!years.includes(String(now.getFullYear()))) years.unshift(String(now.getFullYear()));
 
   const yearTrips = trips.filter(t => t.date?.startsWith(selectedYear));
-  const allDays = yearTrips.flatMap(t => t.days);
+  const allDays = yearTrips.flatMap(t => t.days || []);
   const allMemos = allDays.flatMap(d => d.memos);
   const allPhotos = allDays.flatMap(d => d.photos || []);
   const allVideos = allDays.flatMap(d => d.videos || []);
 
   // 国家统计
-  const countries = [...new Set(yearTrips.map(t => t.country).filter(Boolean))];
+  const reportStats = summarizeYearTrips(yearTrips);
+  const countries = reportStats.countries.map(([country]) => country);
 
   // 标签统计
   const tagCount = {};
@@ -38,6 +42,20 @@ export default function YearReportScreen({ trips, navigation }) {
 
   const MONTH_NAMES = ['','1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 
+  const shareReport = async () => {
+    const message = buildYearReportShareText(selectedYear, reportStats, {
+      title: year => t('report_share_title', { year }),
+      tripCount: count => t('report_share_trips', { count }),
+      countryCount: count => t('report_share_countries', { count }),
+      dayCount: count => t('report_share_days', { count }),
+      memoCount: count => t('report_share_notes', { count }),
+      photoCount: count => t('report_share_photos', { count }),
+      countriesHeading: t('report_share_destinations'),
+      source: 'WanderNote',
+    });
+    try { await Share.share({ title: t('report_share_title', { year: selectedYear }), message }); } catch {}
+  };
+
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D"/>
@@ -49,7 +67,9 @@ export default function YearReportScreen({ trips, navigation }) {
             <Text style={s.back}>← 返回</Text>
           </TouchableOpacity>
           <Text style={s.headerTitle}>年度旅行报告</Text>
-          <View style={{width:40}}/>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('report_share')} onPress={shareReport} style={s.shareButton}>
+            <Text style={s.shareButtonText}>{t('report_share')}</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 年份切换 */}
@@ -100,9 +120,9 @@ export default function YearReportScreen({ trips, navigation }) {
           <View style={s.section}>
             <Text style={s.sectionTitle}>🌍 去过的国家/地区</Text>
             <View style={s.tagWrap}>
-              {countries.map(c=>(
+              {reportStats.countries.map(([c,count])=>(
                 <View key={c} style={s.countryTag}>
-                  <Text style={s.countryTagText}>{c}</Text>
+                  <Text style={s.countryTagText}>{c} · {count}</Text>
                 </View>
               ))}
             </View>
@@ -114,14 +134,14 @@ export default function YearReportScreen({ trips, navigation }) {
           <View style={s.section}>
             <Text style={s.sectionTitle}>✈️ 本年旅程</Text>
             {yearTrips.map(t=>(
-              <View key={t.id} style={s.tripRow}>
+              <TouchableOpacity key={t.id} style={s.tripRow} onPress={()=>navigation.navigate('TripDetail',{tripId:t.id})} accessibilityRole="button">
                 <Text style={s.tripRowEmoji}>{t.emoji}</Text>
                 <View style={{flex:1}}>
                   <Text style={s.tripRowCity}>{t.city}</Text>
-                  <Text style={s.tripRowMeta}>{t.country} · {t.days.length}天 · {t.days.reduce((a,d)=>a+d.memos.length,0)}条感言</Text>
+                  <Text style={s.tripRowMeta}>{t.country} · {(t.days||[]).length}天 · {(t.days||[]).reduce((a,d)=>a+(d.memos||[]).length,0)}条感言</Text>
                 </View>
                 <Text style={s.tripRowDate}>{t.date}</Text>
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         )}
@@ -199,6 +219,8 @@ const s = StyleSheet.create({
   header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:24,paddingBottom:16},
   back:{color:'#D4AF37',fontSize:15},
   headerTitle:{fontSize:17,color:'#F0EDE8',fontWeight:'300'},
+  shareButton:{borderWidth:1,borderColor:'#4ECDC455',borderRadius:12,paddingHorizontal:12,paddingVertical:7},
+  shareButtonText:{color:'#4ECDC4',fontSize:12},
   yearBtn:{paddingHorizontal:20,paddingVertical:10,borderRadius:20,backgroundColor:'#161616',borderWidth:1,borderColor:'#242424'},
   yearBtnActive:{backgroundColor:'#D4AF3720',borderColor:'#D4AF37'},
   yearBtnText:{fontSize:15,color:'#555'},

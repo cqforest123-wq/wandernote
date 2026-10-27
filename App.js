@@ -157,7 +157,7 @@ function MainApp() {
             <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='map' && (
-            <Stack.Screen key={langKey+'Map'} name="Map">{()=><MapScreen trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Map'} name="Map">{props=><MapScreen {...props} trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='ai' && (
             <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>

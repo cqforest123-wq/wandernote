@@ -149,12 +149,12 @@ export default function AIScreen({ trips }) {
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginBottom:20}}>
             <View style={{flexDirection:'row',gap:10}}>
-              {trips.map(t=>(
-                <TouchableOpacity key={t.id} style={[s.tripChip, selectedTrip?.id===t.id&&s.tripChipActive]}
-                  onPress={()=>{setSelectedTrip(t);setSelectedDay(null);setResult('');}}>
-                  <Text style={{fontSize:20,marginBottom:4}}>{t.emoji}</Text>
-                  <Text style={[s.tripChipCity, selectedTrip?.id===t.id&&{color:'#D4AF37'}]}>{t.city}</Text>
-                  <Text style={s.tripChipMeta}>{t.days.length} {t('unit_days', { count: t.days.length })}</Text>
+              {trips.map(trip=>(
+                <TouchableOpacity key={trip.id} style={[s.tripChip, selectedTrip?.id===trip.id&&s.tripChipActive]}
+                  onPress={()=>{setSelectedTrip(trip);setSelectedDay(null);setResult('');}}>
+                  <Text style={{fontSize:20,marginBottom:4}}>{trip.emoji}</Text>
+                  <Text style={[s.tripChipCity, selectedTrip?.id===trip.id&&{color:'#D4AF37'}]}>{trip.city}</Text>
+                  <Text style={s.tripChipMeta}>{trip.days.length} {t('unit_days', { count: trip.days.length })}</Text>
                 </TouchableOpacity>
               ))}
             </View>

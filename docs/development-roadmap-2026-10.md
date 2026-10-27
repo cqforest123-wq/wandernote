@@ -15,7 +15,7 @@ WanderNote 不应试图做成另一个全能行程平台。更有辨识度、也
 
 ### 已有产品能力
 
-- iPhone：旅程创建与管理、按天记录、笔记和照片、打包清单与模板、地图、天气、旅行草稿、语言设置和本地数据清除。
+- iPhone：旅程创建与管理、按天记录、笔记和照片、本机旅程/笔记搜索、打包清单与模板、地图、天气、旅行草稿、语言设置和本地数据清除。
 - 数据：旅程和备忘录保存在本机；媒体会复制到 App Documents。当前版本没有应用内备份、导入导出、账号或云同步。
 - 草稿：旅行日记、摘要、社交文案和基础行程轮廓由本地模板生成，不调用在线 AI。界面文案仍需全面核对，避免称为 AI 生成或目的地推荐。
 - Watch：iPhone 通过 WatchConnectivity 发送旅程快照；Watch 有 Daily/Travel/Stale 状态、位置/海拔、步数、日照和停车信息。部分行依赖权限、服务或可用数据。
@@ -23,10 +23,17 @@ WanderNote 不应试图做成另一个全能行程平台。更有辨识度、也
 
 ### 已验证与未验证
 
-- 2026-10-27：`npm run test:local` 13/13 通过；`npm run check` 通过；`npm run check:watch` 的 snapshot、glance、parking、sun 测试通过，静态审计 0 blocker、1 条关闭的 YearReport flag warning。
+- 2026-10-28：`npm run test:local` 17/17 通过；`npm run check` 通过；`npm run check:watch` 的 snapshot、glance、parking、sun 测试通过，静态审计 0 blocker、1 条关闭的 YearReport flag warning。iPhone 17 Pro / iOS 26.5 模拟器构建、安装和启动通过。
 - Watch target 可单独编译；最新的 Watch 改动仍未装到实机。2026-10-21 最终安装尝试因 CoreDevice Watch 网络隧道超时失败；需要重新安装后完成定位、HealthKit、实时同步、离线/过期、停车和权限流程验证。
-- iPhone 宿主 scheme 在当前 checkout 构建失败：Pods 构建阶段找不到 React Native 预编译 `React.xcframework`。这是发布前构建阻断，不可用 Watch 单 target 编译替代。
-- 当前测试没有覆盖 `AIScreen` 的实际 React Native 渲染路径。源代码审查发现明确崩溃点：`screens/AIScreen.js` 的 `trips.map(t => ...)` 将外层翻译函数 `t` 遮蔽成旅程对象，随后第 157 行调用 `t('unit_days', ...)`。有旅程时打开默认 AI/旅行草稿页会在渲染旅程卡片时调用非函数对象。这是 **P0 发布阻断**，必须修复并添加回归覆盖。
+- 已恢复锁定版本 React Native 0.81.5 的 CocoaPods 预编译产物；`WanderNote` iOS Simulator scheme 在 iPhone 17 Pro / iOS 26.5 上完整构建通过，并已安装、启动成功。此次没有升级依赖或保留 Xcode 项目生成噪声。
+- 已修复 `AIScreen` 旅程选择行遮蔽翻译函数 `t` 的崩溃，并增加静态回归检查；当前本地测试 15/15 通过。该测试覆盖源码作用域回归，不等价于完整 UI 自动化或所有语言的人工验收。
+- 首页现在支持在本机搜索旅程、地点、日期和每日笔记；命中笔记可直接打开对应日期记录。覆盖大小写、目的地和空查询的本地测试已通过。
+- 日详情页的笔记支持按标签筛选，并兼容旧中文标签值；照片区域保持原样。分类过滤与旧数据映射测试已通过。
+- 日详情页可将当天日期、标签化笔记和照片数量整理为分享摘要，并通过系统分享面板由用户选择去向；不附本地媒体路径。摘要内容有本地回归测试。
+- 日详情页新增前后日导航、按标签筛选、复制当天内容、分享当天摘要和整趟旅程摘要；分享内容不包含媒体文件路径。
+- 本批十项交互：旅程时间线搜索、筛选有笔记的日期、筛选有照片的日期、切换新旧日期顺序、跳转今天、复制单条笔记、复制当天全部笔记、收藏/取消收藏笔记、仅看收藏、按笔记时间排序。收藏是可选字段，旧记录默认未收藏。
+- 地图增加国家筛选、重置并显示所有有坐标的旅程、无坐标旅程列表和地图直达旅程详情；年度报告增加系统分享、目的地旅程次数和旅程详情入口。
+- 2026-10-28 后续验证：`npm run test:local` 21/21、`npm run check`、`git diff --check`、所有 7 种语言的新增键检查、iOS Expo bundle 导出通过；此次 Xcode 原生模拟器构建未通过，失败出现在 Pods/Expo Swift 编译阶段，不能视作完整原生模拟器验证。
 - 图片源已统一：Expo `assets/icon.png` 与 iOS/Watch AppIcon 使用同一张 1024×1024、无透明通道图；iOS 与 watchOS asset catalog 已由 `actool` 编译验证。线上 1.1.1 不会因源码变化自动更新图标，需随新版本构建提交。
 
 ## 同类产品观察
@@ -50,8 +57,8 @@ WanderNote 不应试图做成另一个全能行程平台。更有辨识度、也
 
 ### P0：发布前硬化
 
-1. 修复 `AIScreen` 旅程列表回调遮蔽翻译函数的问题；覆盖“0 个旅程 / 有旅程 / 生成草稿 / 切换语言”，确保 AI/草稿入口不会因旅程数据崩溃。同步检查所有 locale 中仍遗留的 AI 生成、在线服务或推荐暗示。
-2. 修复 iOS scheme 构建环境：按仓库现有 Expo/CocoaPods 配置恢复所需 React Native 预编译产物，不升级或新增第三方依赖；从 workspace 构建完整 iPhone + Watch app，并确认 `React.xcframework` 进入产物。
+1. **已修复** `AIScreen` 旅程列表回调遮蔽翻译函数的问题，并添加回归检查。仍需补“0 个旅程 / 有旅程 / 生成草稿 / 切换语言”的 UI 级验证；继续核对活跃界面中遗留的 AI、在线服务或推荐承诺。
+2. **已恢复预编译产物并通过 iPhone 17 Pro 模拟器构建与启动。** 后续仍需从同一提交构建 Release/Archive，确认正式分发产物及图标、Watch 嵌入内容。
 3. 对现有安装执行升级验证，不卸载 App：确认既有旅程、笔记和照片不丢；飞行模式下验证本地增删改、重启和保存失败提示。记录网络依赖功能的降级行为。
 4. 重新安装最新 Watch build，完成 checklist 中关键链路：iPhone 快照到达、Watch 冷启动缓存、fresh/stale、Location/Altitude、HealthKit Steps、停车保存与导航、断连重连。没有验证通过的传感器能力不要放进商店截图/宣传文案。
 5. 以同一代码提交重新生成 archive 和商店素材：iPhone 当前目标截图、Watch 实机截图、图标、审核备注、隐私政策 URL 与 App Privacy 答案。核对 ASC 当前 live version、待审记录和下一个未使用 build number；不复用旧 archive。

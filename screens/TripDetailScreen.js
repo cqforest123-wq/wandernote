@@ -6,6 +6,8 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, Touch
 import { useTranslation } from 'react-i18next';
 import { removeLocalPackingListsForTrip } from '../lib/localData';
 import { createDay } from '../lib/models';
+import { buildTripShareText } from '../lib/tripShareText';
+import { filterTripDays } from '../lib/tripTimeline';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const WEEKDAY_KEYS = ['weekday_sun','weekday_mon','weekday_tue','weekday_wed','weekday_thu','weekday_fri','weekday_sat'];
@@ -18,6 +20,9 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const [showAddDay, setShowAddDay] = useState(false);
   const [dayNote, setDayNote] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [timelineQuery, setTimelineQuery] = useState('');
+  const [timelineFilter, setTimelineFilter] = useState('all');
+  const [timelineOrder, setTimelineOrder] = useState('newest');
 
   // 编辑旅程名
   const [showEditTrip, setShowEditTrip] = useState(false);
@@ -65,9 +70,22 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   const dateStr = `${selectedDate.getFullYear()}.${String(selectedDate.getMonth()+1).padStart(2,'0')}.${String(selectedDate.getDate()).padStart(2,'0')}`;
   const weekDay = t(WEEKDAY_KEYS[selectedDate.getDay()]);
   const existsAlready = trip.days.find(d => d.date === dateStr);
+  const timelineDays = filterTripDays(trip.days, { query: timelineQuery, content: timelineFilter, order: timelineOrder });
 
   const openAddDay = () => {
     setSelectedDate(new Date());
+    setDayNote('');
+    setShowAddDay(true);
+  };
+
+  const openToday = () => {
+    const now = new Date();
+    const todayDate = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+    if (trip.days.some(day => day.date === todayDate)) {
+      navigation.navigate('DayDetail', { tripId, dayDate: todayDate });
+      return;
+    }
+    setSelectedDate(now);
     setDayNote('');
     setShowAddDay(true);
   };
@@ -92,17 +110,26 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
   };
 
   const shareTrip = async () => {
-    const totalMemos = trip.days.reduce((a,d)=>a+d.memos.length,0);
-    const totalPhotos = trip.days.reduce((a,d)=>a+(d.photos||[]).length,0);
-    const highlights = trip.days.flatMap(d=>d.memos).slice(0,3).map(m=>m.text).join(' | ');
-    const lines = [
-      trip.emoji + ' ' + trip.city + ' · ' + trip.country,
-      '📅 ' + trip.days.length + ' ' + t('unit_days', { count: trip.days.length }) + ' · ' + trip.date,
-      '📝 ' + totalMemos + ' ' + t('unit_memos', { count: totalMemos }) + ' · 📸 ' + totalPhotos + ' ' + t('stat_photos'),
-      highlights ? t('trip_share_highlights') + ': ' + highlights : '',
-      '— ' + t('trip_share_from'),
-    ].filter(Boolean);
-    await Share.share({ message: lines.join('\n') });
+    const message = buildTripShareText({
+      trip,
+      labels: {
+        tripDate: date => t('trip_share_date', { date }),
+        dayHeading: (number, date) => t('day_share_heading', { day: number, date }),
+        photoCount: count => t('day_share_photo_count', { number: count }),
+        source: t('trip_share_from'),
+        note: t('day_share_note'),
+        tags: {
+          food: t('day_tag_food'), scenery: t('day_tag_scenery'), encounter: t('day_tag_encounter'),
+          adventure: t('day_tag_adventure'), stay: t('day_tag_stay'), transport: t('day_tag_transport'),
+          shopping: t('day_tag_shopping'), feeling: t('day_tag_feeling'),
+        },
+      },
+    });
+    try {
+      await Share.share({ title: t('trip_share_title'), message });
+    } catch {
+      Alert.alert(t('trip_share_title'), t('day_share_failed'));
+    }
   };
 
   const deleteTrip = () => {
@@ -258,8 +285,40 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           </View>
         ) : (
           <>
-            <Text style={s.sectionTitle}>{t('trip_log')} · {trip.days.length} {t('unit_days', { count: trip.days.length })}</Text>
-            {[...trip.days].reverse().map((day,i)=>{
+            <View style={s.timelineHeading}>
+              <Text style={[s.sectionTitle,{marginBottom:0}]}>{t('trip_log')} · {trip.days.length} {t('unit_days', { count: trip.days.length })}</Text>
+              <TouchableOpacity accessibilityRole="button" onPress={openToday} style={s.todayJumpButton}>
+                <Text style={s.todayJumpText}>{t('trip_jump_today')}</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              accessibilityLabel={t('trip_timeline_search')}
+              style={s.timelineSearch}
+              value={timelineQuery}
+              onChangeText={setTimelineQuery}
+              placeholder={t('trip_timeline_search')}
+              placeholderTextColor="#666"
+              returnKeyType="search"
+              clearButtonMode="while-editing"
+            />
+            <View style={s.timelineControls}>
+              {['all','notes','photos'].map(filter => {
+                const active = timelineFilter === filter;
+                return (
+                  <TouchableOpacity key={filter} accessibilityRole="button" accessibilityState={{selected:active}}
+                    onPress={() => setTimelineFilter(filter)} style={[s.timelineChip, active && s.timelineChipActive]}>
+                    <Text style={[s.timelineChipText, active && s.timelineChipTextActive]}>{t(`trip_timeline_${filter}`)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity accessibilityRole="button" onPress={() => setTimelineOrder(order => order === 'newest' ? 'oldest' : 'newest')} style={s.timelineSort}>
+                <Text style={s.timelineSortText}>{timelineOrder === 'newest' ? '↓' : '↑'} {t(`trip_timeline_${timelineOrder}`)}</Text>
+              </TouchableOpacity>
+            </View>
+            {timelineDays.length === 0
+              ? <Text style={s.timelineEmpty}>{t('trip_timeline_empty')}</Text>
+              : timelineDays.map(day=>{
+              const chronologicalIndex = [...trip.days].sort((a,b)=>a.date.localeCompare(b.date)).findIndex(item=>item.date===day.date);
               const photos = day.photos||[];
               return (
                 <TouchableOpacity key={day.date} style={s.dayCard}
@@ -267,7 +326,7 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
                   onLongPress={()=>deleteDay(day.date)}>
                   <View style={s.dayLeft}>
                     <Text style={s.dayNumLabel}>DAY</Text>
-                    <Text style={s.dayNumBig}>{trip.days.length-i}</Text>
+                    <Text style={s.dayNumBig}>{chronologicalIndex+1}</Text>
                     <Text style={s.dayWeekText}>{day.weekDay}</Text>
                   </View>
                   <View style={s.dayRight}>
@@ -437,6 +496,18 @@ const s = StyleSheet.create({
   emptyText: { fontSize:14, color:'#444', textAlign:'center', lineHeight:20 },
   emptyHint: { fontSize:13, color:"#333", marginTop:6 },
   sectionTitle: { fontSize:13, color:"#555", letterSpacing:2, marginBottom:12, marginTop:8 },
+  timelineHeading:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:8,marginBottom:12},
+  todayJumpButton:{borderWidth:1,borderColor:'#4ECDC455',borderRadius:14,paddingHorizontal:12,paddingVertical:7},
+  todayJumpText:{fontSize:12,color:'#4ECDC4'},
+  timelineSearch:{backgroundColor:'#161616',borderRadius:10,paddingHorizontal:12,paddingVertical:10,color:'#F0EDE8',fontSize:14,borderWidth:1,borderColor:'#2A2A2A',marginBottom:10},
+  timelineControls:{flexDirection:'row',alignItems:'center',gap:7,marginBottom:14},
+  timelineChip:{borderWidth:1,borderColor:'#2A2A2A',borderRadius:14,paddingHorizontal:10,paddingVertical:6},
+  timelineChipActive:{borderColor:'#4ECDC477',backgroundColor:'#4ECDC418'},
+  timelineChipText:{fontSize:11,color:'#888'},
+  timelineChipTextActive:{color:'#4ECDC4'},
+  timelineSort:{marginLeft:'auto',paddingVertical:6,paddingHorizontal:3},
+  timelineSortText:{fontSize:11,color:'#D4AF37'},
+  timelineEmpty:{fontSize:13,color:'#777',textAlign:'center',paddingVertical:18},
   packingBtn: { flexDirection:'row', alignItems:'center', backgroundColor:'#4ECDC410', borderWidth:1, borderColor:'#4ECDC430', borderRadius:16, padding:16, marginBottom:12 },
   packingBtnTitle: { fontSize:15, color:'#4ECDC4', fontWeight:'400', marginBottom:3 },
   packingBtnSub: { fontSize:12, color:'#4ECDC460' },

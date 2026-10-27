@@ -33,11 +33,12 @@ function getCoords(cityName) {
   return key ? normalizeCoords(CITY_COORDS[key]) : null;
 }
 
-export default function MapScreen({ trips }) {
+export default function MapScreen({ trips, navigation }) {
   const { t } = useTranslation();
   const [selectedTrip, setSelectedTrip] = useState(null);
   const mapRef = useRef(null);
   const [mapType, setMapType] = useState('standard');
+  const [selectedCountry, setSelectedCountry] = useState('all');
 
   // 获取所有有坐标的旅程
   const safeTrips = Array.isArray(trips) ? trips : [];
@@ -47,15 +48,20 @@ export default function MapScreen({ trips }) {
       return coords ? { ...t, coords } : null;
     })
     .filter(Boolean);
-  const unmappedTrips = safeTrips.filter(t => !getCoords(t.city));
+  const mappedIds = new Set(mappedTrips.map(trip => trip.id));
+  const unmappedTrips = safeTrips.filter(trip => !mappedIds.has(trip.id));
+  const countries = [...new Set(mappedTrips.map(trip => trip.country).filter(Boolean))].sort();
+  const visibleTrips = selectedCountry === 'all'
+    ? mappedTrips
+    : mappedTrips.filter(trip => trip.country === selectedCountry);
 
   // 计算地图中心
   const getInitialRegion = () => {
-    if (mappedTrips.length === 0) {
+    if (visibleTrips.length === 0) {
       return { latitude: 25, longitude: 15, latitudeDelta: 80, longitudeDelta: 160 };
     }
-    const lats = mappedTrips.map(t => t.coords.lat);
-    const lngs = mappedTrips.map(t => t.coords.lng);
+    const lats = visibleTrips.map(t => t.coords.lat);
+    const lngs = visibleTrips.map(t => t.coords.lng);
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
     const minLng = Math.min(...lngs);
@@ -72,6 +78,31 @@ export default function MapScreen({ trips }) {
     };
   };
 
+  const fitAllTrips = () => {
+    setSelectedCountry('all');
+    setSelectedTrip(null);
+    if (mappedTrips.length === 1) {
+      const trip = mappedTrips[0];
+      mapRef.current?.animateToRegion({ latitude: trip.coords.lat, longitude: trip.coords.lng, latitudeDelta: 8, longitudeDelta: 8 }, 700);
+    } else if (mappedTrips.length > 1) {
+      mapRef.current?.fitToCoordinates(mappedTrips.map(trip => ({ latitude: trip.coords.lat, longitude: trip.coords.lng })), {
+        edgePadding: { top: 48, right: 48, bottom: 48, left: 48 }, animated: true,
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (visibleTrips.length > 1) {
+      mapRef.current?.fitToCoordinates(visibleTrips.map(trip => ({ latitude: trip.coords.lat, longitude: trip.coords.lng })), {
+        edgePadding: { top: 40, right: 40, bottom: 40, left: 40 }, animated: true,
+      });
+    } else if (visibleTrips.length === 1) {
+      const trip = visibleTrips[0];
+      mapRef.current?.animateToRegion({ latitude: trip.coords.lat, longitude: trip.coords.lng, latitudeDelta: 8, longitudeDelta: 8 }, 700);
+    }
+    setSelectedTrip(null);
+  }, [selectedCountry, trips]);
+
   return (
     <SafeAreaView style={s.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0D0D0D" />
@@ -80,18 +111,34 @@ export default function MapScreen({ trips }) {
       <View style={s.header}>
         <View>
           <Text style={s.title}>🗺 {t('map_title')}</Text>
-          <Text style={s.subtitle}>{t('map_subtitle').replace('%d', mappedTrips.length)}</Text>
+          <Text style={s.subtitle}>{t('map_subtitle').replace('%d', visibleTrips.length)}{unmappedTrips.length ? ` · ${t('map_unmapped_count', { count: unmappedTrips.length })}` : ''}</Text>
         </View>
-        <TouchableOpacity
-          style={s.mapTypeBtn}
-          onPress={() => setMapType(mapType === 'standard' ? 'satellite' : 'standard')}>
-          <Text style={s.mapTypeBtnText}>{mapType === 'standard' ? `🛰 ${t('map_satellite')}` : `🗺 ${t('map_standard')}`}</Text>
-        </TouchableOpacity>
+        <View style={s.headerActions}>
+          <TouchableOpacity accessibilityRole="button" style={s.mapTypeBtn} onPress={fitAllTrips}>
+            <Text style={s.mapTypeBtnText}>{`◎ ${t('map_show_all')}`}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity accessibilityRole="button" style={s.mapTypeBtn} onPress={() => setMapType(mapType === 'standard' ? 'satellite' : 'standard')}>
+            <Text style={s.mapTypeBtnText}>{mapType === 'standard' ? `🛰 ${t('map_satellite')}` : `🗺 ${t('map_standard')}`}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {countries.length > 1 && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.countryFilters}>
+          <TouchableOpacity onPress={()=>setSelectedCountry('all')} style={[s.countryFilter,selectedCountry==='all'&&s.countryFilterActive]}>
+            <Text style={[s.countryFilterText,selectedCountry==='all'&&s.countryFilterTextActive]}>{t('map_filter_all')}</Text>
+          </TouchableOpacity>
+          {countries.map(country=>(
+            <TouchableOpacity key={country} onPress={()=>setSelectedCountry(country)} style={[s.countryFilter,selectedCountry===country&&s.countryFilterActive]}>
+              <Text style={[s.countryFilterText,selectedCountry===country&&s.countryFilterTextActive]}>{country}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      )}
 
       {/* 地图 */}
       <View style={s.mapContainer}>
-        {mappedTrips.length === 0 ? (
+        {visibleTrips.length === 0 ? (
           <View style={s.emptyMap}>
             <Text style={s.emptyEmoji}>🌍</Text>
             <Text style={s.emptyText}>{t('map_empty_title')}</Text>
@@ -105,7 +152,7 @@ export default function MapScreen({ trips }) {
             initialRegion={getInitialRegion()}
             showsUserLocation={false}
             showsCompass={false}>
-            {mappedTrips.map(trip => (
+            {visibleTrips.map(trip => (
               <Marker
                 key={trip.id}
                 coordinate={{ latitude: trip.coords.lat, longitude: trip.coords.lng }}
@@ -126,7 +173,7 @@ export default function MapScreen({ trips }) {
       <View style={s.tripList}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={{flexDirection:'row', gap:10, paddingHorizontal:16}}>
-            {mappedTrips.map(trip => (
+            {visibleTrips.map(trip => (
               <TouchableOpacity
                 key={trip.id}
                 style={[s.tripChip, selectedTrip?.id === trip.id && s.tripChipActive]}
@@ -150,6 +197,21 @@ export default function MapScreen({ trips }) {
             ))}
           </View>
         </ScrollView>
+        {unmappedTrips.length > 0 && (
+          <View style={s.unmappedSection}>
+            <Text style={s.unmappedTitle}>{t('map_unmapped_title')}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              <View style={{flexDirection:'row',gap:8,paddingHorizontal:16}}>
+                {unmappedTrips.map(trip=>(
+                  <TouchableOpacity key={trip.id} style={s.unmappedChip} onPress={()=>setSelectedTrip(trip)}>
+                    <Text style={s.unmappedEmoji}>{trip.emoji}</Text>
+                    <Text style={s.unmappedCity}>{trip.city}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
+        )}
       </View>
 
       {/* 选中旅程详情弹窗 */}
@@ -185,6 +247,13 @@ export default function MapScreen({ trips }) {
                   ✈️ {t('map_departure_date')}: {selectedTrip.plannedDate}
                 </Text>
               )}
+              <TouchableOpacity accessibilityRole="button" style={s.openTripButton} onPress={()=>{
+                const tripId = selectedTrip.id;
+                setSelectedTrip(null);
+                navigation?.navigate('TripDetail',{tripId});
+              }}>
+                <Text style={s.openTripText}>{t('map_open_trip')} →</Text>
+              </TouchableOpacity>
             </View>
           )}
         </View>
@@ -196,10 +265,16 @@ export default function MapScreen({ trips }) {
 const s = StyleSheet.create({
   container: {flex:1, backgroundColor:'#0D0D0D'},
   header: {flexDirection:'row', justifyContent:'space-between', alignItems:'center', padding:20, paddingBottom:12},
+  headerActions:{alignItems:'flex-end',gap:7},
   title: {fontSize:22, color:'#F0EDE8', fontWeight:'300'},
   subtitle: {fontSize:13, color:'#555', marginTop:3},
   mapTypeBtn: {backgroundColor:'#1A1A1A', borderRadius:20, paddingHorizontal:14, paddingVertical:8, borderWidth:1, borderColor:'#2A2A2A'},
   mapTypeBtnText: {color:'#888', fontSize:13},
+  countryFilters:{maxHeight:42,marginBottom:8},
+  countryFilter:{marginHorizontal:5,paddingHorizontal:12,paddingVertical:7,borderRadius:16,borderWidth:1,borderColor:'#2A2A2A',backgroundColor:'#161616'},
+  countryFilterActive:{borderColor:'#D4AF3780',backgroundColor:'#D4AF3718'},
+  countryFilterText:{fontSize:12,color:'#888'},
+  countryFilterTextActive:{color:'#D4AF37'},
   mapContainer: {flex:1},
   map: {flex:1},
   emptyMap: {flex:1, alignItems:'center', justifyContent:'center'},
@@ -212,6 +287,11 @@ const s = StyleSheet.create({
   markerEmoji: {fontSize:22},
   markerTail: {width:2, height:8, backgroundColor:'#D4AF37', opacity:0.6},
   tripList: {paddingVertical:14, backgroundColor:'#0D0D0D', borderTopWidth:1, borderTopColor:'#1A1A1A'},
+  unmappedSection:{paddingTop:8},
+  unmappedTitle:{fontSize:11,color:'#777',paddingHorizontal:16,marginBottom:8},
+  unmappedChip:{flexDirection:'row',alignItems:'center',gap:6,backgroundColor:'#171717',borderWidth:1,borderColor:'#333',borderRadius:12,paddingHorizontal:10,paddingVertical:8},
+  unmappedEmoji:{fontSize:16},
+  unmappedCity:{fontSize:12,color:'#AAA'},
   tripChip: {backgroundColor:'#161616', borderRadius:14, padding:12, alignItems:'center', width:80, borderWidth:1, borderColor:'#242424'},
   tripChipActive: {borderColor:'#D4AF37', backgroundColor:'#D4AF3710'},
   tripChipEmoji: {fontSize:22, marginBottom:4},
@@ -224,6 +304,8 @@ const s = StyleSheet.create({
   modalCity: {fontSize:22, color:'#F0EDE8', fontWeight:'300'},
   modalMeta: {fontSize:13, color:'#555', marginTop:4},
   modalStats: {flexDirection:'row', gap:12},
+  openTripButton:{marginTop:18,alignItems:'center',padding:13,borderRadius:12,backgroundColor:'#D4AF3715',borderWidth:1,borderColor:'#D4AF3750'},
+  openTripText:{color:'#D4AF37',fontSize:14},
   modalStat: {flex:1, backgroundColor:'#1A1A1A', borderRadius:12, padding:14, alignItems:'center'},
   modalStatNum: {fontSize:24, color:'#D4AF37', fontWeight:'300'},
   modalStatLabel: {fontSize:11, color:'#555', marginTop:4},
