@@ -285,6 +285,26 @@ test('year report summary counts destinations and shares totals without exposing
   assert.doesNotMatch(message, /file:|private\/photo/);
 });
 
+test('trip expenses validate, normalize localized amounts, filter, sort, and total by currency', async () => {
+  const { createTripExpense, filterTripExpenses, parseExpenseAmount, summarizeTripExpenses } = await loadModule('lib/tripExpenses.js');
+  assert.equal(parseExpenseAmount('1,234.56'), 1234.56);
+  assert.equal(parseExpenseAmount('1.234,56'), 1234.56);
+  assert.equal(parseExpenseAmount('18,50'), 18.5);
+  const expenses = [
+    createTripExpense({ amount: '12,50', currency: 'EUR', category: 'food', date: '2026.08.03', note: 'Dinner' }),
+    createTripExpense({ amount: '2000', currency: 'JPY', category: 'transport', date: '2026.08.01', note: 'Train' }),
+    createTripExpense({ amount: '22.5', currency: 'EUR', category: 'food', date: '2026.08.02', note: 'Lunch' }),
+  ];
+  assert.deepEqual(plain(filterTripExpenses(expenses, { query: 'DIN', category: 'food' }).map(expense => expense.note)), ['Dinner']);
+  assert.deepEqual(plain(filterTripExpenses(expenses, { sort: 'oldest' }).map(expense => expense.date)), ['2026.08.01', '2026.08.02', '2026.08.03']);
+  assert.deepEqual(plain(filterTripExpenses(expenses, { sort: 'amount' }).map(expense => expense.amount)), [2000, 22.5, 12.5]);
+  assert.deepEqual(plain(summarizeTripExpenses(expenses)), {
+    totals: { EUR: 35, JPY: 2000 },
+    categories: { EUR: { food: 35 }, JPY: { transport: 2000 } },
+  });
+  assert.throws(() => createTripExpense({ amount: '0', currency: 'USD', category: 'food', date: '2026.08.03' }), /greater than zero/);
+});
+
 test('day share summary contains localized notes and counts but never local media paths', async () => {
   const { buildDayShareText } = await loadModule('lib/dayShareText.js');
   const message = buildDayShareText({

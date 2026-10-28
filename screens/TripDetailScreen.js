@@ -267,6 +267,15 @@ export default function TripDetailScreen({ route, navigation, trips, setTrips })
           <Text style={{color:'#4ECDC4',fontSize:18}}>→</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={s.packingBtn}
+          onPress={()=>navigation.navigate('TripBudget',{tripId:trip.id})}>
+          <View style={{flex:1}}>
+            <Text style={s.packingBtnTitle}>💰 {t('trip_expenses')}</Text>
+            <Text style={s.packingBtnSub}>{t('expense_manage_desc')}</Text>
+          </View>
+          <Text style={{color:'#4ECDC4',fontSize:18}}>→</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={s.addDayBtn} onPress={openAddDay}>
           <Text style={s.addDayIcon}>+</Text>
           <View>

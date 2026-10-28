@@ -20,6 +20,7 @@ import AIScreen from './screens/AIScreen';
 import MapScreen from './screens/MapScreen';
 import MemoScreen from './screens/MemoScreen';
 import YearReportScreen from './screens/YearReportScreen';
+import TripBudgetScreen from './screens/TripBudgetScreen';
 import PhotoFilterScreen from './screens/PhotoFilterScreen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -152,6 +153,7 @@ function MainApp() {
             <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'TripBudget'} name="TripBudget">{props=><TripBudgetScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
           </>}
           {activeTab==='memo' && (
             <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
