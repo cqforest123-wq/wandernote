@@ -44,15 +44,17 @@ export default function AIScreen({ trips }) {
             destination: itineraryDest,
             days: itineraryDays,
             style: t(`ai_style_${itineraryStyle}`),
+            translate: t,
           })
         : buildLocalTravelStory({
             mode,
             trip: selectedTrip,
             day: mode === 'summary' ? null : selectedDay,
+            translate: t,
           });
       setResult(draft);
     } catch (e) {
-      setResult(buildLocalTravelStory());
+      setResult(buildLocalTravelStory({ translate: t }));
     } finally {
       setGenerating(false);
     }

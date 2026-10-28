@@ -3,11 +3,10 @@ import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { preserveExistingMedia, storeLocalMedia, clearLocalMedia } from '../lib/localMedia';
-import { clearLocalData } from '../lib/localData';
+import { preserveExistingMedia, storeLocalMedia, listLocalMedia, deleteLocalMedia } from '../lib/localMedia';
 import appConfig from '../app.json';
 
-export default function ProfileScreen({ trips, setTrips, navigation }) {
+export default function ProfileScreen({ trips, clearLocalRecords, navigation }) {
   const { t, i18n } = useTranslation();
   const [currentLang, setCurrentLang] = useState(i18n.language);
 
@@ -37,6 +36,7 @@ export default function ProfileScreen({ trips, setTrips, navigation }) {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [nickname, setNickname] = useState('');
   const [avatarUri, setAvatarUri] = useState(null);
+  const [isClearing, setIsClearing] = useState(false);
 
   React.useEffect(() => {
     const loadProfile = async () => {
@@ -88,21 +88,36 @@ export default function ProfileScreen({ trips, setTrips, navigation }) {
   };
 
   const handleClearLocalData = () => {
+    if (isClearing) return;
     Alert.alert(t('profile_clear_local_data_title'), t('profile_clear_local_data_message'), [
       { text: t('cancel'), style: 'cancel' },
       {
         text: t('profile_clear_local_data_confirm'),
         style: 'destructive',
         onPress: async () => {
+          setIsClearing(true);
           try {
-            await clearLocalData();
-            await clearLocalMedia();
-            setTrips([]);
+            const mediaToDelete = await listLocalMedia();
+            await clearLocalRecords();
             setNickname('');
             setAvatarUri(null);
-            Alert.alert(t('profile_clear_local_data_done_title'), t('profile_clear_local_data_done_message'));
+            const finishMediaCleanup = async () => {
+              try {
+                // Retry only this reset's files, never media created after it.
+                await deleteLocalMedia(mediaToDelete);
+                Alert.alert(t('profile_clear_local_data_done_title'), t('profile_clear_local_data_done_message'));
+              } catch {
+                Alert.alert(t('profile_clear_local_data_done_title'), t('local_media_cleanup_failed'), [
+                  { text: t('local_retry'), onPress: finishMediaCleanup },
+                  { text: t('cancel'), style: 'cancel' },
+                ]);
+              }
+            };
+            await finishMediaCleanup();
           } catch {
             Alert.alert(t('local_save_failed'), t('local_save_failed_desc'));
+          } finally {
+            setIsClearing(false);
           }
         },
       },
@@ -153,14 +168,6 @@ export default function ProfileScreen({ trips, setTrips, navigation }) {
           ))}
         </View>
 
-        <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('PhotoFilter')} >
-          <View>
-            <Text style={s.reportTitle}>🎨 {t('profile_photo_filter')}</Text>
-            <Text style={s.reportDesc}>{t('profile_photo_filter_desc')}</Text>
-          </View>
-          <Text style={s.reportArrow}>→</Text>
-        </TouchableOpacity>
-
         {ENABLE_YEAR_REPORT && (
           <TouchableOpacity style={s.reportCard} onPress={()=>navigation.navigate('YearReport')}>
           <View>
@@ -197,7 +204,7 @@ export default function ProfileScreen({ trips, setTrips, navigation }) {
             <Text style={s.settingLabel}>{t('profile_rate_app')}</Text>
             <Text style={s.settingArrow}>→</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={s.settingRow} onPress={handleClearLocalData}>
+          <TouchableOpacity style={s.settingRow} disabled={isClearing} onPress={handleClearLocalData}>
             <Text style={s.settingIcon}>🗑️</Text>
             <Text style={[s.settingLabel, { color: '#D07A7A' }]}>{t('profile_clear_local_data')}</Text>
             <Text style={s.settingArrow}>→</Text>

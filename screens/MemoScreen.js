@@ -790,7 +790,7 @@ export default function MemoScreen({ route, navigation, trips = [] }) {
                       aiPackingGeneratingRef.current = true;
                       setAIGenerating(true);
                       try {
-                        const template = buildLocalPackingGroups(destination, aiDays);
+                        const template = buildLocalPackingGroups(destination, aiDays, t);
                         const newMemo = createMemo({
                           category: 'packing',
                           title: template.title,

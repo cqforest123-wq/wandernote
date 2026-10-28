@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Alert } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { STORAGE_KEYS } from './lib/storageKeys';
 import * as SplashScreen from 'expo-splash-screen';
-import { loadLocalTrips, saveLocalTrips } from './lib/localData';
-import { preserveTripMedia } from './lib/localMedia';
+import { clearLocalData, loadLocalTrips, saveLocalTrips } from './lib/localData';
+import { preserveTripMedia, removeUnusedTripMedia } from './lib/localMedia';
 import { geocodeCity } from './lib/geocoding';
 import OutdoorGlanceSync from './lib/watch/OutdoorGlanceSync';
 import OnboardingScreen from './screens/OnboardingScreen';
@@ -21,7 +22,6 @@ import MapScreen from './screens/MapScreen';
 import MemoScreen from './screens/MemoScreen';
 import YearReportScreen from './screens/YearReportScreen';
 import TripBudgetScreen from './screens/TripBudgetScreen';
-import PhotoFilterScreen from './screens/PhotoFilterScreen';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -33,6 +33,9 @@ function MainApp() {
   const [loaded, setLoaded] = useState(false);
   const [activeTab, setActiveTab] = useState('home');
   const tripsRef = useRef([]);
+  const savedTripsRef = useRef([]);
+  const resettingRef = useRef(false);
+  const [resetting, setResetting] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [hasRetriedPendingGeocodes, setHasRetriedPendingGeocodes] = useState(false);
@@ -54,6 +57,7 @@ function MainApp() {
         const existing = await loadLocalTrips();
         const saved = await preserveTripMedia(existing);
         if (cancelled) return;
+        savedTripsRef.current = existing;
         tripsRef.current = saved;
         setTripsState(saved);
         setLoaded(true);
@@ -74,7 +78,18 @@ function MainApp() {
         { text: t('local_retry'), onPress: () => persistTrips(tripsRef.current) },
         { text: t('cancel'), style: 'cancel' },
       ]);
+      return false;
     }
+    const previous = savedTripsRef.current;
+    savedTripsRef.current = next;
+    try {
+      const avatarUri = await AsyncStorage.getItem('@wn_avatar');
+      // Only reclaim files after the new records are durable; queued edits retain their media.
+      await removeUnusedTripMedia(previous, [...next, ...tripsRef.current], avatarUri);
+    } catch {
+      // A failed cleanup must not turn a successful record save into a failed save.
+    }
+    return true;
   };
 
   useEffect(() => {
@@ -91,12 +106,12 @@ function MainApp() {
     let cancelled = false;
 
     const retryPendingGeocodes = async () => {
-      const updates = await Promise.all(
-        pendingTrips.map(async trip => {
-          const coords = await geocodeCity(trip.city, trip.country).catch(() => null);
-          return coords ? { id: trip.id, coords } : null;
-        })
-      );
+      const updates = [];
+      for (const trip of pendingTrips) {
+        if (cancelled) return;
+        const coords = await geocodeCity(trip.city, trip.country).catch(() => null);
+        if (coords) updates.push({ id: trip.id, coords });
+      }
 
       if (cancelled) return;
 
@@ -119,12 +134,27 @@ function MainApp() {
   }, [hasRetriedPendingGeocodes, loaded, trips]);
 
   const setTrips = (newTripsOrFn) => {
+    if (resettingRef.current) return Promise.resolve(false);
     const next = typeof newTripsOrFn === 'function'
       ? newTripsOrFn(tripsRef.current)
       : newTripsOrFn;
     tripsRef.current = next;
     setTripsState(next);
-    persistTrips(next);
+    return persistTrips(next);
+  };
+
+  const clearLocalRecords = async () => {
+    resettingRef.current = true;
+    setResetting(true);
+    try {
+      await clearLocalData();
+      tripsRef.current = [];
+      savedTripsRef.current = [];
+      setTripsState([]);
+    } finally {
+      resettingRef.current = false;
+      setResetting(false);
+    }
   };
 
   const tabs = [
@@ -144,17 +174,13 @@ function MainApp() {
   );
 
   return (
-    <View key={langKey} style={{flex:1,backgroundColor:'#0D0D0D'}}>
+    <View key={langKey} pointerEvents={resetting ? 'none' : 'auto'} style={{flex:1,backgroundColor:'#0D0D0D'}}>
       <OutdoorGlanceSync trips={trips} loaded={loaded} language={i18n.language}/>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{headerShown:false}}>
-          {activeTab==='home' && <>
+        <Stack.Navigator key={activeTab} screenOptions={{headerShown:false}}>
+          {activeTab==='home' && (
             <Stack.Screen key={langKey+'Home'} name="Home">{props=><HomeScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripDetail'} name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'DayDetail'} name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripMemo'} name="TripMemo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'TripBudget'} name="TripBudget">{props=><TripBudgetScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
-          </>}
+          )}
           {activeTab==='memo' && (
             <Stack.Screen key={langKey+'Memo'} name="Memo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
           )}
@@ -165,10 +191,13 @@ function MainApp() {
             <Stack.Screen key={langKey+'AI'} name="AI">{()=><AIScreen trips={trips}/>}</Stack.Screen>
           )}
           {activeTab==='profile' && <>
-            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+            <Stack.Screen key={langKey+'Profile'} name="Profile">{props=><ProfileScreen {...props} trips={trips} clearLocalRecords={clearLocalRecords}/>}</Stack.Screen>
             <Stack.Screen key={langKey+'YearReport'} name="YearReport">{props=><YearReportScreen {...props} trips={trips}/>}</Stack.Screen>
-            <Stack.Screen key={langKey+'PhotoFilter'} name="PhotoFilter">{props=><PhotoFilterScreen {...props}/>}</Stack.Screen>
           </>}
+          <Stack.Screen name="TripDetail">{props=><TripDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+          <Stack.Screen name="DayDetail">{props=><DayDetailScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
+          <Stack.Screen name="TripMemo">{props=><MemoScreen {...props} trips={trips}/>}</Stack.Screen>
+          <Stack.Screen name="TripBudget">{props=><TripBudgetScreen {...props} trips={trips} setTrips={setTrips}/>}</Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>
       <View style={st.navbar}>
@@ -239,7 +268,7 @@ export default function App() {
   );
 
   if (!hasSeenOnboarding) return <OnboardingScreen onDone={finishOnboarding}/>;
-  return <MainApp/>;
+  return <SafeAreaProvider><MainApp/></SafeAreaProvider>;
 }
 
 const st = StyleSheet.create({

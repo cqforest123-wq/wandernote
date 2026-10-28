@@ -50,7 +50,7 @@ Description:
 ```text
 WanderNote keeps your travel plans and memories together on your device.
 
-Create trips, record daily notes and photos, organize packing checklists, check destination weather, and view your travel records on a map. Local writing templates help turn your notes into a diary draft, trip summary, social caption, or a simple itinerary outline.
+Create trips, record daily notes and photos, organize packing checklists, track travel expenses separately by currency, check destination weather, and view your travel records on a map. Local writing templates help turn your notes into a diary draft, trip summary, social caption, or a simple itinerary outline.
 
 With the optional Apple Watch companion, you can view a travel snapshot and daily outdoor details such as steps, daylight, altitude, and a saved parking location when the relevant data and permissions are available.
 
@@ -62,7 +62,7 @@ Weather, city search, geocoding, maps, and navigation use their respective netwo
 What's New:
 
 ```text
-This update focuses WanderNote on private, on-device travel journaling. It adds local data controls, clarifies that records are not backed up or synced, refreshes the app icons, and keeps the Apple Watch companion focused on travel and daily outdoor information.
+This update focuses WanderNote on private, on-device travel journaling. It adds a local expense ledger, improves journal search and sharing, fixes opening trips from the map, and makes local drafts follow your selected language. Incomplete photo filters have been removed. Your records are not backed up or synced by the app.
 ```
 
 ## 简体中文
@@ -96,7 +96,7 @@ WanderNote
 ```text
 WanderNote 帮你在本机整理旅行计划与旅途回忆。
 
-创建旅程，记录每日笔记和照片，管理打包清单，查看目的地天气，并在地图上浏览旅行记录。本地写作模板可以把已有笔记整理成日记草稿、旅程总结、社交文案或简单行程提纲。
+创建旅程，记录每日笔记和照片，管理打包清单，按币种分别记录旅行花费，查看目的地天气，并在地图上浏览旅行记录。本地写作模板可以把已有笔记整理成日记草稿、旅程总结、社交文案或简单行程提纲。
 
 可选的 Apple Watch Companion 可查看旅行速览和每日户外信息；步数、日照、海拔与停车位置等内容取决于数据是否可用以及相关权限设置。
 
@@ -108,7 +108,7 @@ WanderNote 帮你在本机整理旅行计划与旅途回忆。
 本次更新：
 
 ```text
-本次更新聚焦于本机旅行记录：新增本地数据清除入口，明确说明记录不会由应用同步或备份，更新应用图标，并将 Apple Watch Companion 聚焦于旅行速览和日常户外信息。
+本次更新聚焦于本机旅行记录：新增旅行花费账本，改善日记搜索与分享，修复地图打开旅程的入口，并让本地草稿跟随界面语言。未完整实现的照片滤镜已移除。旅行记录不会由应用同步或备份。
 ```
 
 ## App Review Notes

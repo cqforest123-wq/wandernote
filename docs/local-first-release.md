@@ -11,7 +11,7 @@ Branch: `feature/watch-companion-v1-integration`
 - No in-app backup, archive export, import or restore in this release.
 - No ads, ad SDKs, subscriptions, purchases or paywalls.
 - Existing local draft, planning and packing templates remain. Online AI is not called and the interface no longer promises AI output.
-- Weather, city search, geocoding and maps still use their existing network providers. Local-only records do not mean all network features work offline.
+- Weather and maps still use network services. Place lookup/geocoding use the device's system service (Apple on iOS), not the public Nominatim endpoint. Typed input filters the local destination list; a system lookup only starts when the user submits a place query. Custom destinations remain available when lookup fails. Local-only records do not mean all network features work offline.
 - Watch Companion supports travel snapshots and daily outdoor information only. WatchConnectivity remains device-to-device, not backend sync.
 - Backup and a possible advertising-supported edition are deferred, not implemented or promised.
 
@@ -35,7 +35,22 @@ First entry after onboarding displays a one-time notice, also permanently visibl
 
 The seven supported locales include the notice, storage error states, local template labels and corrected onboarding copy. Unused historical auth/paywall translations remain; no reachable UI references the paywall keys.
 
-Existing draft bodies use the pre-existing English local templates. Do not advertise multilingual AI composition or destination-specific itinerary recommendations.
+Local diary, summary, social, itinerary-outline and generated packing templates follow the selected UI language in all seven locales. The older preset packing catalog still uses its existing Chinese/English datasets. These are templates, not AI composition or destination-specific recommendations.
+
+## Hardening Verification, 2026-10-28
+
+- Removed Photo Filters completely: profile entry, navigation route, screen, obsolete translations, old `App.js.bak`, and the app's add-to-photo-library usage description. Existing travel photos are not removed by this feature deletion.
+- Trip detail/day/checklist/expense routes are now shared across tab roots. Changing tabs resets the detail stack to the selected root.
+- Native geocoder requests are serialized, shared for duplicate queries, cached in memory, and bounded to a five-second UI wait. No public Nominatim endpoint remains in runtime source. Search failure still permits a custom destination.
+- Expense validation rejects values that round to zero, non-decimal input, unsafe amounts, invalid categories and invalid calendar dates. The editor scrolls with the keyboard/date picker, stays open on save failure, and retries the same record ID rather than duplicating it.
+- Trip media is only reclaimed after records are successfully saved, with shared references, pending edits and the profile avatar retained. Data reset clears in-memory records before retryable media cleanup; retries only target the original file list, not new media.
+- `npm run test:local`: 33/33 passed, including direct tests of the production persistence, expense-save and clear-data handlers, plus late background writes during a reset. These handler tests do not render native UI or substitute for tap-through verification.
+- `npm run check` and `git diff --check`: passed. `npm run check:watch`: all four test suites passed, static audit 0 blockers and the intentionally disabled YearReport warning.
+- `npx expo export --platform ios --output-dir /tmp/wandernote-hardening-export`: passed.
+- Full `WanderNote` Debug iOS Simulator workspace build succeeded with its embedded Watch app at `/tmp/wandernote-hardening-build`. No dependency upgrades, signing changes or version/build-number changes were made.
+- Installed over the existing iPhone 17 Pro simulator app without uninstalling; process launched successfully and the actual onboarding screen rendered. Evidence: `/tmp/wandernote-hardening-launch.png`. No temporary preview bypass or injected save callback was used.
+- The local Xcode installation has no Simulator GUI app, and the computer-use inventory exposes no simulator UI surface. Thus normal tap-through navigation, keyboard layout and system-dialog verification were not completed in this pass. The screenshot is development evidence, not an App Store screenshot.
+- Paired physical iPhone/Watch testing, a Release/archive built from the final revision, hosted privacy-page publication and App Store Connect checks remain release gates. This pass does not claim the app has been uploaded or submitted.
 
 ## Verification, 2026-10-14
 

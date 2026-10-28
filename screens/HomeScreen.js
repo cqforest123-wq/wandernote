@@ -263,6 +263,8 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
   const [placeResults, setPlaceResults] = useState([]);
   const [placeSearchLoading, setPlaceSearchLoading] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const placeSearchRequest = React.useRef(0);
+  const [placeSearchFinished, setPlaceSearchFinished] = useState(false);
   const [plannedDate, setPlannedDate] = useState('');
   const [plannedDateObj, setPlannedDateObj] = useState(new Date(Date.now() + 7*24*60*60*1000));
   const [enableCountdown, setEnableCountdown] = useState(false);
@@ -294,35 +296,31 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
   );
 
   React.useEffect(() => {
-    const query = search.trim();
-
-    if (!showAdd || step !== 1 || query.length < 2) {
-      setPlaceResults([]);
-      setPlaceSearchLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setPlaceSearchLoading(true);
-
-    const timer = setTimeout(() => {
-      searchPlaces(query, i18n.language)
-        .then(results => {
-          if (!cancelled) setPlaceResults(results);
-        })
-        .catch(() => {
-          if (!cancelled) setPlaceResults([]);
-        })
-        .finally(() => {
-          if (!cancelled) setPlaceSearchLoading(false);
-        });
-    }, 450);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
+    placeSearchRequest.current += 1;
+    setPlaceResults([]);
+    setPlaceSearchLoading(false);
+    setPlaceSearchFinished(false);
+    return () => { placeSearchRequest.current += 1; };
   }, [search, showAdd, step, i18n.language]);
+
+  const findDestination = async () => {
+    const query = search.trim();
+    if (query.length < 2 || placeSearchLoading) return;
+    const request = ++placeSearchRequest.current;
+    setPlaceSearchLoading(true);
+    setPlaceSearchFinished(false);
+    try {
+      const results = await searchPlaces(query);
+      if (request === placeSearchRequest.current) setPlaceResults(results);
+    } catch {
+      if (request === placeSearchRequest.current) setPlaceResults([]);
+    } finally {
+      if (request === placeSearchRequest.current) {
+        setPlaceSearchLoading(false);
+        setPlaceSearchFinished(true);
+      }
+    }
+  };
 
   // 监听城市名变化自动获取天气，不依赖步骤
   React.useEffect(() => {
@@ -562,7 +560,12 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
                 <Text style={s.sheetTitle}>{t('new_trip_select_destination')}</Text>
                 <TouchableOpacity onPress={()=>{resetForm();setShowAdd(false);}}><Text style={s.closeBtn}>✕</Text></TouchableOpacity>
               </View>
-              <TextInput style={s.searchBox} placeholder={t("new_trip_search_destination")} placeholderTextColor="#444" value={search} onChangeText={t=>{setSearch(t);setSelectedContinent(null);}} />
+              <TextInput style={s.searchBox} placeholder={t("new_trip_search_destination")} placeholderTextColor="#444" value={search} onChangeText={value=>{setSearch(value);setSelectedContinent(null);}} returnKeyType="search" onSubmitEditing={findDestination} />
+              {search.trim().length >= 2 && (
+                <TouchableOpacity accessibilityRole="button" disabled={placeSearchLoading} onPress={findDestination} style={s.listItem}>
+                  <Text style={s.customDestinationTitle}>{t(placeSearchLoading ? 'destination_searching' : 'destination_search_action')}</Text>
+                </TouchableOpacity>
+              )}
               <ScrollView style={{maxHeight:420}} nestedScrollEnabled>
                 {searchResults && searchResults.map((item, idx)=>(
                   <TouchableOpacity key={idx} style={s.listItem} onPress={()=>{
@@ -580,10 +583,10 @@ export default function HomeScreen({ navigation, trips, setTrips }) {
                     </Text>
                   </TouchableOpacity>
                 ))}
-                {placeSearchLoading && (
+                {placeSearchFinished && placeResults.length === 0 && (
                   <View style={s.placeSearchLoading}>
                     <Text style={s.placeSearchLoadingText}>
-                      {i18n.language?.startsWith('zh') ? '正在搜索真实地点...' : 'Searching places...'}
+                      {t('destination_search_empty')}
                     </Text>
                   </View>
                 )}

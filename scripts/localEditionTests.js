@@ -9,8 +9,19 @@ const root = path.resolve(__dirname, '..');
 const read = file => fs.readFileSync(path.join(root, file), 'utf8');
 const plain = value => JSON.parse(JSON.stringify(value));
 
+function handlerFrom(file, name, bindings) {
+  const source = read(file);
+  const ast = parse(source, { sourceType: 'module', plugins: ['jsx'] });
+  let handler;
+  visit(ast, node => {
+    if (node.type === 'VariableDeclarator' && node.id.name === name) handler = node.init;
+  });
+  assert.ok(handler, `${file}: ${name}`);
+  return vm.runInNewContext(`(${source.slice(handler.start, handler.end)})`, bindings);
+}
+
 async function loadModule(file, mocks = {}) {
-  const context = vm.createContext({});
+  const context = vm.createContext({ setTimeout, clearTimeout });
   const modules = new Map();
   async function getModule(name) {
     if (modules.has(name)) return modules.get(name);
@@ -43,6 +54,10 @@ async function localStore(initial = {}, options = {}) {
       if (options.beforeWrite) await options.beforeWrite(key, value);
       writes.push([key, value]);
       disk.set(key, value);
+    },
+    async multiRemove(keys) {
+      if (options.beforeRemove) await options.beforeRemove(keys);
+      for (const key of keys) disk.delete(key);
     },
   };
   const data = await loadModule('lib/localData.js', {
@@ -129,12 +144,13 @@ test('trip deletion removes only its linked packing lists, not other notes', asy
   await assert.rejects(data.removeLocalPackingListsForTrip(null), /Missing trip/);
 });
 
-async function mediaStore(files = [], failCopy = false) {
+async function mediaStore(files = [], failCopy = false, options = {}) {
   const existing = new Set(files);
   const copies = [];
+  const deletions = [];
   const api = {
     documentDirectory: 'file:///new/Documents/', cacheDirectory: 'file:///new/Library/Caches/',
-    async makeDirectoryAsync() {},
+    async makeDirectoryAsync(uri) { existing.add(uri); },
     async getInfoAsync(uri) { return { exists: existing.has(uri) }; },
     async copyAsync(copy) {
       if (failCopy) throw new Error('Disk full');
@@ -142,10 +158,17 @@ async function mediaStore(files = [], failCopy = false) {
       copies.push(copy);
       existing.add(copy.to);
     },
-    async deleteAsync(uri) { existing.delete(uri); },
+    async readDirectoryAsync(uri) {
+      return [...existing].filter(file => file.startsWith(uri) && file !== uri).map(file => file.slice(uri.length));
+    },
+    async deleteAsync(uri) {
+      if (options.beforeDelete) await options.beforeDelete(uri);
+      deletions.push(uri);
+      existing.delete(uri);
+    },
   };
   const data = await loadModule('lib/localMedia.js', { 'expo-file-system/legacy': api });
-  return { data, existing, copies };
+  return { data, existing, copies, deletions };
 }
 
 test('new media is copied out of cache into documents with unique filenames', async () => {
@@ -196,6 +219,235 @@ test('all local draft modes, including empty trips, produce usable offline text'
   assert.match(drafts.buildLocalItinerary({ destination: 'Kyoto', days: '3' }), /Day 3/);
   assert.ok(drafts.buildLocalItinerary().length > 50);
   assert.equal(Object.keys(drafts.buildLocalPackingGroups('Kyoto', '3').groups).length, 6);
+  assert.match(drafts.buildLocalTravelStory({ trip: { city: 'Kyoto', days: [{ memos: [{ text: 'Legacy note', tag: 'custom-tag' }] }] } }), /custom-tag: Legacy note/);
+});
+
+test('local drafts and generated packing lists use every selected UI language', async () => {
+  const i18next = require('i18next');
+  const drafts = await loadModule('lib/travelStoryFallback.js');
+  const english = (await loadModule('i18n/en.js')).default;
+  const required = Object.keys(english).filter(key => /^(draft_|destination_search|local_media_cleanup_failed)/.test(key));
+  for (const locale of ['en', 'zh', 'es', 'fr', 'ja', 'ko', 'th']) {
+    const dictionary = (await loadModule(`i18n/${locale}.js`)).default;
+    for (const key of required) assert.ok(dictionary[key], `${locale}: ${key}`);
+    const instance = i18next.createInstance();
+    await instance.init({ lng: locale, resources: { [locale]: { translation: dictionary } }, interpolation: { escapeValue: false } });
+    const translate = instance.t.bind(instance);
+    for (const mode of ['diary', 'summary', 'social']) {
+      const result = drafts.buildLocalTravelStory({ mode, translate, trip: { city: 'Kyoto', days: [{ memos: [{ text: 'My real note', tag: 'food' }], photos: [] }] } });
+      assert.match(result, /Kyoto/);
+      assert.match(result, /My real note/);
+      assert.doesNotMatch(result, /{{|draft_|undefined/);
+      if (locale !== 'en') assert.doesNotMatch(result, /A Travel Story|Trip Summary|Saved photos/);
+    }
+    const plan = drafts.buildLocalItinerary({ destination: 'Kyoto', days: 3, translate });
+    assert.match(plan, /Kyoto/);
+    assert.doesNotMatch(plan, /{{|undefined/);
+    if (locale !== 'en') assert.doesNotMatch(plan, /Morning:|Afternoon:|Evening:/);
+    const packing = drafts.buildLocalPackingGroups('Kyoto', 3, translate);
+    assert.equal(Object.keys(packing.groups).length, 6);
+    assert.ok(Object.values(packing.groups).every(items => items.length === 5));
+    assert.doesNotMatch(JSON.stringify(packing), /{{|undefined/);
+  }
+});
+
+test('only unreferenced, app-owned media is removed after records have been saved', async () => {
+  const directory = 'file:///new/Documents/wandernote-media/';
+  const removed = `${directory}removed.jpg`;
+  const retained = `${directory}shared.jpg`;
+  const avatar = `${directory}avatar.jpg`;
+  const external = 'file:///other/photo.jpg';
+  const { data, existing, deletions } = await mediaStore([removed, retained, avatar, external]);
+  const previous = [{ days: [{ photos: [removed, retained, avatar, external, `${directory}../outside.jpg`].map(uri => ({ uri })) }] }];
+  await data.removeUnusedTripMedia(previous, [{ days: [{ photos: [{ uri: retained }] }] }], avatar);
+  assert.deepEqual(deletions, [removed]);
+  assert.ok(existing.has(retained));
+  assert.ok(existing.has(avatar));
+  assert.ok(existing.has(external));
+});
+
+test('reset cleanup retries its original file list without deleting new media', async () => {
+  const directory = 'file:///new/Documents/wandernote-media/';
+  const oldPhoto = `${directory}old.jpg`;
+  const source = 'file:///new/Library/Caches/new.jpg';
+  let blocked = true;
+  const { data, existing } = await mediaStore([directory, oldPhoto, source], false, {
+    beforeDelete: () => { if (blocked) throw new Error('File locked'); },
+  });
+  const snapshot = await data.listLocalMedia();
+  assert.deepEqual(plain(snapshot), [oldPhoto]);
+  await assert.rejects(data.deleteLocalMedia(snapshot), /File locked/);
+  const newPhoto = await data.storeLocalMedia(source);
+  blocked = false;
+  await data.deleteLocalMedia(snapshot);
+  assert.ok(!existing.has(oldPhoto));
+  assert.ok(existing.has(newPhoto));
+});
+
+test('local reset drains pending writes and does not resurrect records if media cleanup fails', async () => {
+  const { data, disk } = await localStore({ '@wn_nickname': 'Name', '@wn_avatar': 'file:///avatar.jpg', '@wandernote_language': 'zh' });
+  const write = data.saveLocalTrips([{ id: 1, days: [] }]);
+  const clear = data.clearLocalData();
+  await Promise.all([write, clear]);
+  const media = await mediaStore(['file:///new/Documents/wandernote-media/old.jpg'], false, { beforeDelete: () => { throw new Error('File locked'); } });
+  await assert.rejects(media.data.deleteLocalMedia(['file:///new/Documents/wandernote-media/old.jpg']), /File locked/);
+  assert.deepEqual(plain(await data.loadLocalTrips()), []);
+  assert.deepEqual(plain(await data.loadLocalMemos()), []);
+  assert.equal(disk.has('@wn_nickname'), false);
+  assert.equal(disk.has('@wn_avatar'), false);
+  assert.equal(disk.get('@wandernote_language'), 'zh');
+  const profile = read('screens/ProfileScreen.js');
+  assert.ok(profile.indexOf('await clearLocalRecords();') < profile.indexOf('await deleteLocalMedia(mediaToDelete)'), 'clear visible state before media cleanup');
+  assert.doesNotMatch(profile, /setTrips\(\[\]\)/, 'reset must not resave stale state');
+});
+
+test('native place lookups are serialized, cached, bounded, and optional offline', async () => {
+  const calls = [];
+  let resolveFirst;
+  const first = new Promise(resolve => { resolveFirst = resolve; });
+  const geo = await loadModule('lib/geocoding.js', {
+    'expo-location': { geocodeAsync: async query => { calls.push(query); return query === 'First Place' ? first : [{ latitude: 10, longitude: 20 }]; } },
+  });
+  const pending = geo.lookupPlaceCoordinates('First Place', 15);
+  const duplicate = geo.lookupPlaceCoordinates('first place', 15);
+  const queued = geo.lookupPlaceCoordinates('Second Place', 15);
+  await new Promise(resolve => setTimeout(resolve, 5));
+  assert.deepEqual(calls, ['First Place']);
+  assert.equal(await pending, null);
+  assert.equal(await duplicate, null);
+  assert.equal(await queued, null);
+  resolveFirst([{ latitude: 1, longitude: 2 }]);
+  await new Promise(resolve => setTimeout(resolve, 5));
+  assert.deepEqual(plain(await geo.lookupPlaceCoordinates('first place')), { lat: 1, lng: 2 });
+  assert.deepEqual(plain(await geo.lookupPlaceCoordinates('second place')), { lat: 10, lng: 20 });
+  assert.deepEqual(calls, ['First Place', 'Second Place']);
+  const offline = await loadModule('lib/placeSearch.js', {
+    'expo-location': { geocodeAsync: async () => { throw new Error('Offline'); } },
+  });
+  assert.deepEqual(plain(await offline.searchPlaces('Unknown place XYZ')), []);
+  assert.deepEqual(plain(await offline.searchPlaces('')), []);
+  const home = read('screens/HomeScreen.js');
+  assert.match(home, /onSubmitEditing=\{findDestination\}/);
+  assert.doesNotMatch(home, /setTimeout\(/, 'typing must not trigger network autocomplete');
+  assert.doesNotMatch(read('lib/geocoding.js') + read('lib/placeSearch.js'), /nominatim\.openstreetmap|fetch\(/i);
+});
+
+test('all tabs share trip detail routes and photo filters have no remaining entry', () => {
+  const ast = parse(read('App.js'), { sourceType: 'module', plugins: ['jsx'] });
+  let navigator;
+  visit(ast, node => {
+    if (node.type === 'JSXElement' && node.openingElement.name.type === 'JSXMemberExpression'
+      && node.openingElement.name.object.name === 'Stack' && node.openingElement.name.property.name === 'Navigator') navigator = node;
+  });
+  assert.ok(navigator);
+  const shared = navigator.children.filter(child => child.type === 'JSXElement')
+    .map(child => child.openingElement.attributes.find(attribute => attribute.name?.name === 'name')?.value?.value);
+  for (const route of ['TripDetail', 'DayDetail', 'TripMemo', 'TripBudget']) assert.ok(shared.includes(route), route);
+  assert.ok(navigator.openingElement.attributes.some(attribute => attribute.name?.name === 'key' && attribute.value.expression.name === 'activeTab'), 'switching tabs must reset the detail stack');
+  assert.equal(fs.existsSync(path.join(root, 'screens/PhotoFilterScreen.js')), false);
+  assert.doesNotMatch(read('App.js') + read('screens/ProfileScreen.js'), /PhotoFilter|profile_photo_filter/);
+});
+
+test('trip persistence does not delete media on a failed save and preserves newer queued edits', async () => {
+  const old = [{ id: 1, days: [{ photos: [{ uri: 'file:///old.jpg' }] }] }];
+  const latest = [{ id: 2, days: [] }];
+  const cleanup = [];
+  const alerts = [];
+  let fail = true;
+  const bindings = {
+    saveLocalTrips: async () => { if (fail) throw new Error('Disk full'); },
+    savedTripsRef: { current: old }, tripsRef: { current: latest },
+    AsyncStorage: { getItem: async () => 'file:///avatar.jpg' },
+    removeUnusedTripMedia: async (...args) => { cleanup.push(plain(args)); },
+    Alert: { alert: (...args) => alerts.push(args) }, t: key => key,
+  };
+  const persist = handlerFrom('App.js', 'persistTrips', bindings);
+  assert.equal(await persist([]), false);
+  assert.equal(cleanup.length, 0);
+  assert.equal(bindings.savedTripsRef.current, old);
+  assert.equal(alerts.length, 1);
+  fail = false;
+  assert.equal(await persist([]), true);
+  assert.deepEqual(cleanup[0], [old, latest, 'file:///avatar.jpg']);
+  assert.deepEqual(plain(bindings.savedTripsRef.current), []);
+});
+
+test('expense save handler retains the editor on failure and retries the same record identity', async () => {
+  const { createTripExpense } = await loadModule('lib/tripExpenses.js');
+  let expenses = [];
+  let succeed = false;
+  const savedIds = [];
+  const closes = [];
+  const bindings = {
+    saving: false, amount: '12.50', currency: 'USD', category: 'food', date: new Date(2026, 9, 28), note: 'Lunch', editingExpense: null,
+    createTripExpense, formatDate: () => '2026.10.28',
+    t: key => key, Alert: { alert: () => assert.fail('valid amount must not alert') }, Keyboard: { dismiss() {} },
+    setSaving: value => { bindings.saving = value; },
+    setEditingExpense: value => { bindings.editingExpense = value; savedIds.push(value.id); },
+    setShowEditor: value => closes.push(value),
+    updateExpenses: async updater => { expenses = updater(expenses); return succeed; },
+  };
+  // The same context is reused so React's state updates are reflected on retry.
+  const context = vm.createContext(bindings);
+  const source = read('screens/TripBudgetScreen.js');
+  const ast = parse(source, { sourceType: 'module', plugins: ['jsx'] });
+  let node;
+  visit(ast, value => { if (value.type === 'VariableDeclarator' && value.id.name === 'saveExpense') node = value.init; });
+  const save = vm.runInContext(`(${source.slice(node.start, node.end)})`, context);
+  await save();
+  assert.deepEqual(closes, []);
+  assert.equal(expenses.length, 1);
+  assert.equal(bindings.saving, false);
+  succeed = true;
+  await save();
+  assert.deepEqual(closes, [false]);
+  assert.equal(expenses.length, 1);
+  assert.equal(savedIds[0], savedIds[1]);
+});
+
+test('clear-data handler clears visible records before retryable media cleanup', async () => {
+  const events = [];
+  const alerts = [];
+  const bindings = {
+    isClearing: false, setIsClearing: value => events.push(`clearing:${value}`),
+    listLocalMedia: async () => ['file:///old.jpg'],
+    clearLocalRecords: async () => { events.push('disk cleared'); events.push('state cleared'); },
+    setNickname: () => {}, setAvatarUri: () => {},
+    deleteLocalMedia: async () => { events.push('cleanup'); throw new Error('Locked'); },
+    Alert: { alert: (...args) => alerts.push(args) }, t: key => key,
+  };
+  const clear = handlerFrom('screens/ProfileScreen.js', 'handleClearLocalData', bindings);
+  clear();
+  await alerts[0][2][1].onPress();
+  assert.deepEqual(events, ['clearing:true', 'disk cleared', 'state cleared', 'cleanup', 'clearing:false']);
+  assert.equal(alerts[1][1], 'local_media_cleanup_failed');
+  await alerts[1][2][0].onPress();
+  assert.equal(events.filter(item => item === 'disk cleared').length, 1, 'media retry must not clear new records');
+});
+
+test('reset blocks late background trip writes until durable data and visible state are both cleared', async () => {
+  let finishClear;
+  const pendingClear = new Promise(resolve => { finishClear = resolve; });
+  const writes = [];
+  const state = [];
+  const bindings = {
+    resettingRef: { current: false }, tripsRef: { current: [{ id: 1 }] }, savedTripsRef: { current: [{ id: 1 }] },
+    setResetting() {}, setTripsState: value => state.push(plain(value)),
+    clearLocalData: () => pendingClear,
+    persistTrips: async value => { writes.push(plain(value)); return true; },
+  };
+  const reset = handlerFrom('App.js', 'clearLocalRecords', bindings);
+  const update = handlerFrom('App.js', 'setTrips', bindings);
+  const clearing = reset();
+  assert.equal(await update(current => current.map(trip => ({ ...trip, coords: { lat: 1, lng: 2 } }))), false);
+  assert.equal(writes.length, 0);
+  finishClear();
+  await clearing;
+  assert.deepEqual(plain(bindings.tripsRef.current), []);
+  assert.deepEqual(plain(bindings.savedTripsRef.current), []);
+  assert.equal(await update(current => current.map(trip => ({ ...trip, city: 'Late update' }))), true);
+  assert.deepEqual(writes, [[]]);
+  assert.deepEqual(state, [[], []]);
 });
 
 test('AI trip picker keeps the translation function unshadowed in trip rows', () => {
@@ -303,6 +555,20 @@ test('trip expenses validate, normalize localized amounts, filter, sort, and tot
     categories: { EUR: { food: 35 }, JPY: { transport: 2000 } },
   });
   assert.throws(() => createTripExpense({ amount: '0', currency: 'USD', category: 'food', date: '2026.08.03' }), /greater than zero/);
+});
+
+test('expense validation rejects rounded-zero, malformed, unsafe, and invalid-date values', async () => {
+  const { createTripExpense, parseExpenseAmount } = await loadModule('lib/tripExpenses.js');
+  const base = { currency: 'USD', category: 'food', date: '2026.10.28' };
+  for (const amount of ['0.004', '0,004', '-1', '', 'abc', '0x10', '1e3', 'Infinity', '1,2,3', '999999999999999999']) {
+    assert.throws(() => createTripExpense({ ...base, amount }), /greater than zero/);
+  }
+  assert.equal(createTripExpense({ ...base, amount: '1.005' }).amount, 1.01);
+  assert.equal(createTripExpense({ ...base, amount: '0.01' }).amount, 0.01);
+  assert.equal(parseExpenseAmount('1,234'), 1234);
+  assert.equal(parseExpenseAmount('12 345,67'), 12345.67);
+  assert.throws(() => createTripExpense({ ...base, amount: 10, date: '2026.02.30' }), /date/);
+  assert.throws(() => createTripExpense({ ...base, amount: 10, category: 'invalid' }), /category/);
 });
 
 test('day share summary contains localized notes and counts but never local media paths', async () => {
@@ -429,6 +695,7 @@ test('every locale has unique keys, local notices, and no online-AI promises in 
     const dictionary = new Map();
     for (const p of properties) {
       const key = p.key.name || p.key.value;
+      assert.doesNotMatch(key, /^(?:profile_(?:feature_)?photo_filter|photo_filter_|filter_desc_|filter_(?:original|vintage|film|bw|fade|vivid|cool|warm|dramatic|matte)$)/, `${locale}: removed photo filter copy must not return`);
       assert.ok(!dictionary.has(key), `${locale}: duplicate ${key}`);
       dictionary.set(key, p.value.value);
     }
