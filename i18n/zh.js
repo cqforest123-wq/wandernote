@@ -141,8 +141,6 @@ export default {
   // 我的
   profile_free: '免费版',
   profile_nickname: '点击设置昵称',
-  profile_filter: '🎨 照片滤镜',
-  profile_filter_desc: '复古胶片 · 黑白 · 鲜艳等10种风格',
   profile_report: '📊 年度旅行报告',
   profile_report_desc: '回顾你的旅行足迹与故事',
   profile_compare: '功能对比',

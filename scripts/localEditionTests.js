@@ -695,7 +695,7 @@ test('every locale has unique keys, local notices, and no online-AI promises in 
     const dictionary = new Map();
     for (const p of properties) {
       const key = p.key.name || p.key.value;
-      assert.doesNotMatch(key, /^(?:profile_(?:feature_)?photo_filter|photo_filter_|filter_desc_|filter_(?:original|vintage|film|bw|fade|vivid|cool|warm|dramatic|matte)$)/, `${locale}: removed photo filter copy must not return`);
+      assert.doesNotMatch(key, /^(?:profile_(?:filter|feature_photo_filter)|photo_filter_|filter_desc_|filter_(?:original|vintage|film|bw|fade|vivid|cool|warm|dramatic|matte)$)/, `${locale}: removed photo filter copy must not return`);
       assert.ok(!dictionary.has(key), `${locale}: duplicate ${key}`);
       dictionary.set(key, p.value.value);
     }

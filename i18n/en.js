@@ -141,8 +141,6 @@ export default {
   // Profile
   profile_free: 'Free',
   profile_nickname: 'Tap to set nickname',
-  profile_filter: '🎨 Photo Filters',
-  profile_filter_desc: 'Vintage · B&W · Vivid and 10 more',
   profile_report: '📊 Annual Travel Report',
   profile_report_desc: 'Review your travel footprints',
   profile_compare: 'Feature Comparison',
